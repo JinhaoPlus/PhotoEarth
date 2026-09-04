@@ -6,53 +6,74 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @StateObject private var model: AppModel
+
+    @MainActor
+    init(model: AppModel) {
+        _model = StateObject(wrappedValue: model)
+    }
+
+    @MainActor
+    init() {
+        _model = StateObject(wrappedValue: AppModel())
+    }
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+        Group {
+            switch model.phase {
+            case .loading:
+                ScanningView()
+            case .welcome:
+                WelcomeView(
+                    begin: { Task { await model.requestAccessAndScan() } },
+                    showDemo: model.useSampleData
+                )
+            case .scanning:
+                ScanningView()
+            case .globe:
+                GlobeView(model: model)
+            case .empty:
+                MessageView(
+                    symbol: "location.slash",
+                    title: "还没有找到带地点的照片",
+                    message: "请确认 iPhone 拍照时开启了定位。你也可以先进入示例旅程，体验完整界面。",
+                    primaryTitle: "查看示例旅程",
+                    primaryAction: model.useSampleData,
+                    secondaryTitle: "重新扫描",
+                    secondaryAction: { Task { await model.rescan() } }
+                )
+            case .denied:
+                MessageView(
+                    symbol: "lock.shield",
+                    title: "需要照片访问权限",
+                    message: "Photo Earth 只在设备上读取照片的地点和时间。你可以在 Apple TV 设置中允许访问，或先浏览示例旅程。",
+                    primaryTitle: "查看示例旅程",
+                    primaryAction: model.useSampleData,
+                    secondaryTitle: "再次请求",
+                    secondaryAction: { Task { await model.requestAccessAndScan() } }
+                )
+            case .failed(let message):
+                MessageView(
+                    symbol: "exclamationmark.triangle",
+                    title: "旅行地球生成失败",
+                    message: message,
+                    primaryTitle: "重试",
+                    primaryAction: { Task { await model.rescan() } },
+                    secondaryTitle: "查看示例旅程",
+                    secondaryAction: model.useSampleData
+                )
             }
-            .toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
         }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.ignoresSafeArea())
+        .ignoresSafeArea()
+        .task { await model.start() }
+        .preferredColorScheme(.dark)
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }

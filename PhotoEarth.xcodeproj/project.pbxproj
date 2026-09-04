@@ -175,6 +175,11 @@
 				TargetAttributes = {
 					95F0D1B2304A56C100392F9A = {
 						CreatedOnToolsVersion = 26.6;
+						SystemCapabilities = {
+							com.apple.GameControllers = {
+								enabled = 1;
+							};
+						};
 					};
 					95F0D1C1304A56C200392F9A = {
 						CreatedOnToolsVersion = 26.6;
@@ -400,6 +405,9 @@
 				DEVELOPMENT_TEAM = P6ZAGC2P6U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PhotoEarth-Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth 使用 Apple TV 的大致位置，让地球从你所在的区域开始。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth 读取带地点的照片，在设备上生成你的私人旅行地球。";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -424,11 +432,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = PhotoEarth/PhotoEarth.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P6ZAGC2P6U;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PhotoEarth-Info.plist";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth 使用 Apple TV 的大致位置，让地球从你所在的区域开始。";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth 读取带地点的照片，在设备上生成你的私人旅行地球。";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (

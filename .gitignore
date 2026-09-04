@@ -1,0 +1,7 @@
+.DS_Store
+.env*.local
+.local-test-data/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+
