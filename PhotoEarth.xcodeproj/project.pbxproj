@@ -1,0 +1,577 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		95F0D1C3304A56C200392F9A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 95F0D1AB304A56C100392F9A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 95F0D1B2304A56C100392F9A;
+			remoteInfo = PhotoEarth;
+		};
+		95F0D1CD304A56C200392F9A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 95F0D1AB304A56C100392F9A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 95F0D1B2304A56C100392F9A;
+			remoteInfo = PhotoEarth;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		95F0D1B3304A56C100392F9A /* PhotoEarth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoEarth.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		95F0D1C2304A56C200392F9A /* PhotoEarthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoEarthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		95F0D1CC304A56C200392F9A /* PhotoEarthUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoEarthUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		95F0D1B5304A56C100392F9A /* PhotoEarth */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PhotoEarth;
+			sourceTree = "<group>";
+		};
+		95F0D1C5304A56C200392F9A /* PhotoEarthTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PhotoEarthTests;
+			sourceTree = "<group>";
+		};
+		95F0D1CF304A56C200392F9A /* PhotoEarthUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PhotoEarthUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		95F0D1B0304A56C100392F9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95F0D1BF304A56C200392F9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95F0D1C9304A56C200392F9A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		95F0D1AA304A56C100392F9A = {
+			isa = PBXGroup;
+			children = (
+				95F0D1B5304A56C100392F9A /* PhotoEarth */,
+				95F0D1C5304A56C200392F9A /* PhotoEarthTests */,
+				95F0D1CF304A56C200392F9A /* PhotoEarthUITests */,
+				95F0D1B4304A56C100392F9A /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		95F0D1B4304A56C100392F9A /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				95F0D1B3304A56C100392F9A /* PhotoEarth.app */,
+				95F0D1C2304A56C200392F9A /* PhotoEarthTests.xctest */,
+				95F0D1CC304A56C200392F9A /* PhotoEarthUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		95F0D1B2304A56C100392F9A /* PhotoEarth */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95F0D1D6304A56C200392F9A /* Build configuration list for PBXNativeTarget "PhotoEarth" */;
+			buildPhases = (
+				95F0D1AF304A56C100392F9A /* Sources */,
+				95F0D1B0304A56C100392F9A /* Frameworks */,
+				95F0D1B1304A56C100392F9A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				95F0D1B5304A56C100392F9A /* PhotoEarth */,
+			);
+			name = PhotoEarth;
+			packageProductDependencies = (
+			);
+			productName = PhotoEarth;
+			productReference = 95F0D1B3304A56C100392F9A /* PhotoEarth.app */;
+			productType = "com.apple.product-type.application";
+		};
+		95F0D1C1304A56C200392F9A /* PhotoEarthTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95F0D1D9304A56C200392F9A /* Build configuration list for PBXNativeTarget "PhotoEarthTests" */;
+			buildPhases = (
+				95F0D1BE304A56C200392F9A /* Sources */,
+				95F0D1BF304A56C200392F9A /* Frameworks */,
+				95F0D1C0304A56C200392F9A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				95F0D1C4304A56C200392F9A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				95F0D1C5304A56C200392F9A /* PhotoEarthTests */,
+			);
+			name = PhotoEarthTests;
+			packageProductDependencies = (
+			);
+			productName = PhotoEarthTests;
+			productReference = 95F0D1C2304A56C200392F9A /* PhotoEarthTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		95F0D1CB304A56C200392F9A /* PhotoEarthUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 95F0D1DC304A56C200392F9A /* Build configuration list for PBXNativeTarget "PhotoEarthUITests" */;
+			buildPhases = (
+				95F0D1C8304A56C200392F9A /* Sources */,
+				95F0D1C9304A56C200392F9A /* Frameworks */,
+				95F0D1CA304A56C200392F9A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				95F0D1CE304A56C200392F9A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				95F0D1CF304A56C200392F9A /* PhotoEarthUITests */,
+			);
+			name = PhotoEarthUITests;
+			packageProductDependencies = (
+			);
+			productName = PhotoEarthUITests;
+			productReference = 95F0D1CC304A56C200392F9A /* PhotoEarthUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		95F0D1AB304A56C100392F9A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					95F0D1B2304A56C100392F9A = {
+						CreatedOnToolsVersion = 26.6;
+					};
+					95F0D1C1304A56C200392F9A = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 95F0D1B2304A56C100392F9A;
+					};
+					95F0D1CB304A56C200392F9A = {
+						CreatedOnToolsVersion = 26.6;
+						TestTargetID = 95F0D1B2304A56C100392F9A;
+					};
+				};
+			};
+			buildConfigurationList = 95F0D1AE304A56C100392F9A /* Build configuration list for PBXProject "PhotoEarth" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 95F0D1AA304A56C100392F9A;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 95F0D1B4304A56C100392F9A /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				95F0D1B2304A56C100392F9A /* PhotoEarth */,
+				95F0D1C1304A56C200392F9A /* PhotoEarthTests */,
+				95F0D1CB304A56C200392F9A /* PhotoEarthUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		95F0D1B1304A56C100392F9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95F0D1C0304A56C200392F9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95F0D1CA304A56C200392F9A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		95F0D1AF304A56C100392F9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95F0D1BE304A56C200392F9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		95F0D1C8304A56C200392F9A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		95F0D1C4304A56C200392F9A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 95F0D1B2304A56C100392F9A /* PhotoEarth */;
+			targetProxy = 95F0D1C3304A56C200392F9A /* PBXContainerItemProxy */;
+		};
+		95F0D1CE304A56C200392F9A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 95F0D1B2304A56C100392F9A /* PhotoEarth */;
+			targetProxy = 95F0D1CD304A56C200392F9A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		95F0D1D4304A56C200392F9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = appletvos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TVOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Debug;
+		};
+		95F0D1D5304A56C200392F9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = appletvos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				TVOS_DEPLOYMENT_TARGET = 26.5;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		95F0D1D7304A56C200392F9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarth;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Debug;
+		};
+		95F0D1D8304A56C200392F9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarth;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+			};
+			name = Release;
+		};
+		95F0D1DA304A56C200392F9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhotoEarth.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PhotoEarth";
+				TVOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Debug;
+		};
+		95F0D1DB304A56C200392F9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PhotoEarth.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PhotoEarth";
+				TVOS_DEPLOYMENT_TARGET = 26.5;
+			};
+			name = Release;
+		};
+		95F0D1DD304A56C200392F9A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = PhotoEarth;
+			};
+			name = Debug;
+		};
+		95F0D1DE304A56C200392F9A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TEST_TARGET_NAME = PhotoEarth;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		95F0D1AE304A56C100392F9A /* Build configuration list for PBXProject "PhotoEarth" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				95F0D1D4304A56C200392F9A /* Debug */,
+				95F0D1D5304A56C200392F9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		95F0D1D6304A56C200392F9A /* Build configuration list for PBXNativeTarget "PhotoEarth" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				95F0D1D7304A56C200392F9A /* Debug */,
+				95F0D1D8304A56C200392F9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		95F0D1D9304A56C200392F9A /* Build configuration list for PBXNativeTarget "PhotoEarthTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				95F0D1DA304A56C200392F9A /* Debug */,
+				95F0D1DB304A56C200392F9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		95F0D1DC304A56C200392F9A /* Build configuration list for PBXNativeTarget "PhotoEarthUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				95F0D1DD304A56C200392F9A /* Debug */,
+				95F0D1DE304A56C200392F9A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 95F0D1AB304A56C100392F9A /* Project object */;
+}
