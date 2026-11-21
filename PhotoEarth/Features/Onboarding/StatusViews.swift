@@ -8,11 +8,8 @@ struct ScanningView: View {
                 ProgressView()
                     .controlSize(.extraLarge)
                     .tint(.cyan)
-                Text("正在整理你的旅行地球…")
+                Text(AppLocalization.string("scanning.title", defaultValue: "Opening Photo Earth…"))
                     .font(.largeTitle.bold())
-                Text("我们只索引带有地点信息的照片。首次扫描可能需要一点时间。")
-                    .font(.title3)
-                    .foregroundStyle(.secondary)
             }
         }
     }

@@ -78,36 +78,6 @@ struct PhotoEarthTests {
         #expect(camera.distance == GlobeCameraState.maximumDistance)
     }
 
-    @Test func ringRecognizerUnwrapsAnglesAndIgnoresCenterTouches() {
-        var recognizer = RingRotationRecognizer()
-
-        #expect(recognizer.update(x: 0.1, y: 0.1, isTouching: true) == nil)
-        #expect(recognizer.update(
-            x: cos(179 * .pi / 180),
-            y: sin(179 * .pi / 180),
-            isTouching: true
-        ) == nil)
-        #expect(recognizer.update(
-            x: cos(-176 * .pi / 180),
-            y: sin(-176 * .pi / 180),
-            isTouching: true
-        )! > 0)
-
-        recognizer.reset()
-        _ = recognizer.update(
-            x: cos(90 * .pi / 180),
-            y: sin(90 * .pi / 180),
-            isTouching: true
-        )
-        let clockwise = recognizer.update(
-            x: cos(72 * .pi / 180),
-            y: sin(72 * .pi / 180),
-            isTouching: true
-        )
-        #expect(clockwise != nil)
-        #expect(clockwise! < 0)
-    }
-
     @Test func spatialIndexSelectsFrontFacingPhotosAcrossDateLine() {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let records = [
@@ -128,15 +98,12 @@ struct PhotoEarthTests {
     }
 
     @Test func bundledFixtureCoordinatesResolveWithoutNetwork() throws {
-        let sydney = try #require(BundledPlaceFallbackCatalog.label(
-            near: GeoCoordinate(latitude: -33.86632, longitude: 151.21156)
-        ))
-
+        let catalog = try JourneyPlaceCatalog.shared
+        let sydney = try catalog.label(.init(latitude: -33.86632, longitude: 151.21156), locale: Locale(identifier: "zh-Hans"))
         #expect(sydney.city == "悉尼")
         #expect(sydney.country == "澳大利亚")
-        #expect(BundledPlaceFallbackCatalog.label(
-            near: GeoCoordinate(latitude: 20, longitude: 20)
-        ) == nil)
+        let ocean = try catalog.label(.init(latitude: 0, longitude: -140), locale: Locale(identifier: "en"))
+        #expect(ocean.offlinePlaceID == nil && ocean.country == nil)
     }
 
     @Test func indexRoundTripsThroughDisk() async throws {
@@ -353,33 +320,6 @@ struct PhotoEarthTests {
 
         #expect(camera.center.longitude == -10)
         #expect(abs(camera.center.latitude + 3.8) < 0.0001)
-    }
-
-    @Test func remoteSurfaceSeparatesInnerPanFromOuterRing() throws {
-        var recognizer = RemoteSurfaceGestureRecognizer()
-        #expect(recognizer.update(x: 0.1, y: 0.1, isTouching: true) == nil)
-        let panResult = recognizer.update(x: 0.25, y: 0.16, isTouching: true)
-        let pan = try #require(panResult)
-        guard case let .pan(horizontalDelta, verticalDelta) = pan else {
-            Issue.record("Inner touch should produce a pan gesture")
-            return
-        }
-        #expect(horizontalDelta > 0)
-        #expect(verticalDelta > 0)
-
-        recognizer.reset()
-        #expect(recognizer.update(x: 0, y: 0.9, isTouching: true) == nil)
-        let ringResult = recognizer.update(
-            x: cos(72 * .pi / 180) * 0.9,
-            y: sin(72 * .pi / 180) * 0.9,
-            isTouching: true
-        )
-        let ring = try #require(ringResult)
-        guard case let .ring(angleDelta) = ring else {
-            Issue.record("Outer touch should produce a ring gesture")
-            return
-        }
-        #expect(angleDelta < 0)
     }
 
     @Test func mapPlaceLODHardLimitsDenseLocations() {

@@ -1,0 +1,63 @@
+{
+  "distanceMeters" : 6000000,
+  "heading" : 1.2074182745060872e-06,
+  "height" : 900,
+  "latitude" : 29.000000000000004,
+  "longitude" : 116.00000000000001,
+  "pitch" : 34.999999835598871,
+  "pngSHA256" : "98fd147597ddab18a36bde5efa507ab7337747ba9cdac7c41b808b0227688a76",
+  "publicLandmarks" : [
+    {
+      "coordinateConversionDifferencePoints" : 6.3095183629978591,
+      "imageX" : 493.17266112917417,
+      "imageY" : 415.35721980200765,
+      "latitude" : 30.571999999999999,
+      "longitude" : 104.06699999999999,
+      "verifiedLightDelta" : 123
+    },
+    {
+      "coordinateConversionDifferencePoints" : 5.7660138356404653,
+      "imageX" : 743.56481131131432,
+      "imageY" : 638.15682679859435,
+      "latitude" : 22.318999999999999,
+      "longitude" : 114.169,
+      "verifiedLightDelta" : 143
+    },
+    {
+      "coordinateConversionDifferencePoints" : 17.825568152906204,
+      "imageX" : 808.61355626650516,
+      "imageY" : 223.12229422275522,
+      "latitude" : 39.904000000000003,
+      "longitude" : 116.407,
+      "verifiedLightDelta" : 123
+    },
+    {
+      "coordinateConversionDifferencePoints" : 3.4034739017116835,
+      "imageX" : 962.74274780079645,
+      "imageY" : 557.57215405196712,
+      "latitude" : 25.033999999999999,
+      "longitude" : 121.565,
+      "verifiedLightDelta" : 135
+    },
+    {
+      "coordinateConversionDifferencePoints" : 20.243427034537348,
+      "imageX" : 1041.7945132038819,
+      "imageY" : 268.61905522477343,
+      "latitude" : 37.567,
+      "longitude" : 126.97799999999999,
+      "verifiedLightDelta" : 179
+    },
+    {
+      "coordinateConversionDifferencePoints" : 49.051850904909806,
+      "imageX" : 1308.9031834833668,
+      "imageY" : 320.4265448844846,
+      "latitude" : 35.680999999999997,
+      "longitude" : 139.767,
+      "verifiedLightDelta" : 135
+    }
+  ],
+  "source" : "MKMapView + MKImageryMapConfiguration(.realistic)",
+  "system" : "Version 27.0.1 (Build 26A434)",
+  "utc" : "2026-11-19T06:17:41Z",
+  "width" : 1600
+}

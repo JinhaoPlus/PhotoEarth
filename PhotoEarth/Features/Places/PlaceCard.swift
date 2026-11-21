@@ -1,51 +1,164 @@
 import SwiftUI
 
+/// The arrival row uses the proportions of a tvOS Home Screen icon.
+/// City shelves below the fold retain their square covers.
 struct PlaceCard: View {
     let place: TravelPlace
     let isSelected: Bool
     var isFocused = false
+    var displayLabel: PlaceDisplayLabel? = nil
+    var latestAssetID: String? = nil
+    var cardWidth: CGFloat = 312
+    var isArrival = false
+    var loadsImage = true
+    var usesManagedThumbnail = false
+    var thumbnail: OverviewThumbnail?
+    var coverUnavailable = false
     let action: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    private var label: PlaceDisplayLabel {
+        displayLabel ?? PlaceDisplayLabel(place: place)
+    }
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
-                if let coverID = place.coverAssetID {
-                    PhotoAssetImage(assetID: coverID)
-                        .frame(width: 76, height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(place.name)
-                        .font(.headline)
-                        .lineLimit(1)
-                    Text(verbatim: "\(place.year)  ·  \(place.photoCount) 张")
-                        .font(.caption)
-                        .foregroundStyle(isSelected ? .white.opacity(0.75) : .secondary)
-                }
-                Spacer(minLength: 8)
-                Circle()
-                    .fill(isSelected ? Color.orange : Color.cyan.opacity(0.75))
-                    .frame(width: isSelected ? 11 : 8, height: isSelected ? 11 : 8)
-                    .shadow(color: isSelected ? .orange : .cyan, radius: 7)
+            VStack(alignment: .leading, spacing: 0) {
+                photo
+                    .frame(width: cardWidth, height: coverHeight)
+                    .clipped()
+                caption
+                    .padding(.horizontal, isArrival ? 14 : 18)
+                    .padding(.vertical, isArrival ? 9 : 16)
             }
-            .frame(maxWidth: .infinity)
-            .padding(11)
-            .background {
-                RoundedRectangle(cornerRadius: 15, style: .continuous)
-                    .fill(isSelected ? Color.cyan.opacity(0.17) : Color.white.opacity(isFocused ? 0.13 : 0.055))
+            .frame(width: cardWidth)
+            .contentShape(Rectangle())
+            .foregroundStyle(.white)
+            .background(.black.opacity(backgroundOpacity))
+            .clipShape(RoundedRectangle(cornerRadius: isArrival ? 18 : 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: isArrival ? 18 : 22, style: .continuous)
+                    .strokeBorder(
+                        .white.opacity(isFocused ? 0.92 : (isSelected ? 0.56 : 0.10)),
+                        lineWidth: isFocused ? 2 : 0.75
+                    )
+            }
+            .shadow(color: .black.opacity(isFocused ? 0.4 : 0.16), radius: isFocused ? 16 : 6, y: 6)
+            .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isFocused)
+        }
+        .buttonStyle(QuietPhotoButtonStyle())
+        .focusEffectDisabled()
+        .accessibilityLabel(AppLocalization.format(
+            "place_card.accessibility",
+            defaultValue: "%1$@, %2$@ on your most recent visit",
+            label.compactName,
+            AppLocalization.photoCount(place.photoCount)
+        ))
+        .accessibilityHint(AppLocalization.string("place_card.hint", defaultValue: "Start exploring the globe from this place"))
+    }
+
+    private var coverHeight: CGFloat {
+        if isArrival { return cardWidth * 3 / 5 }
+        return usesManagedThumbnail ? cardWidth : cardWidth * 0.56
+    }
+
+    private var backgroundOpacity: Double {
+        if reduceTransparency { return 1 }
+        if isFocused { return 0.65 }
+        return isArrival ? 0.55 : 0.24
+    }
+
+    private var photo: some View {
+        ZStack(alignment: .topTrailing) {
+            if usesManagedThumbnail {
+                OverviewThumbnailView(thumbnail: thumbnail, isArrival: isArrival, isFocused: isFocused, coverUnavailable: coverUnavailable)
+            } else if loadsImage, let assetID = latestAssetID ?? place.coverAssetID {
+                PhotoAssetImage(assetID: assetID, targetSize: isArrival ? CGSize(width: 640, height: 384) : CGSize(width: 640, height: 400))
+            } else {
+                Rectangle()
+                    .fill(.white.opacity(0.08))
                     .overlay {
-                        RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(
-                                isSelected ? Color.cyan.opacity(0.7) : Color.white.opacity(isFocused ? 0.5 : 0.08),
-                                lineWidth: isFocused ? 2 : 1
-                            )
+                        Image(systemName: "photo")
+                            .font(.system(size: 34, weight: .light))
+                            .foregroundStyle(.white.opacity(0.55))
                     }
             }
-            .scaleEffect(isFocused ? 1.035 : 1)
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 25, weight: .medium))
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.black, .white)
+                    .padding(10)
+            }
         }
-        .buttonStyle(.plain)
-        .focusEffectDisabled()
-        .animation(.easeOut(duration: 0.16), value: isFocused)
+        .transaction { $0.animation = nil }
+    }
+
+    private var caption: some View {
+        Text(label.compactName)
+            .font(.system(size: 27, weight: .medium))
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+private struct OverviewThumbnailView: View {
+    let thumbnail: OverviewThumbnail?
+    let isArrival: Bool
+    let isFocused: Bool
+    let coverUnavailable: Bool
+    var body: some View {
+        // The fixed surface owns layout. A wide aspect-fill image must not
+        // change the button's preferred size or the native scroll focus frame.
+        Rectangle().fill(.white.opacity(0.08))
+            .overlay {
+                if let image = thumbnail?.image {
+                    GeometryReader { geometry in
+                        Image(uiImage: image).resizable().aspectRatio(contentMode: .fill)
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .clipped()
+                    }
+                } else {
+                    WaitingCoverView(usesGlassBackground: !isArrival)
+                    if !isArrival, isFocused {
+                        VStack(spacing: 10) {
+                            if thumbnail?.status == .cloud || thumbnail?.status == .unavailable || coverUnavailable {
+                                Image(systemName: thumbnail?.status == .cloud ? "icloud" : "photo")
+                                    .font(.system(size: 34, weight: .light))
+                            }
+                            if thumbnail?.status == .cloud { Text(AppLocalization.string("photo.loading_icloud", defaultValue: "Loading from iCloud")).font(.system(size: 18)) }
+                            else if thumbnail?.status == .unavailable || coverUnavailable { Text(AppLocalization.string("photo.preview_unavailable", defaultValue: "Photo not loaded")).font(.system(size: 18)) }
+                        }
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.65), radius: 3, y: 1)
+                    }
+                }
+            }
+            .clipped()
+            .accessibilityHidden(true)
+    }
+}
+
+struct WaitingCoverView: View {
+    var usesGlassBackground = true
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    var body: some View {
+        GeometryReader { geometry in
+            Image(uiImage: CoverWaitingArtwork.image).resizable().aspectRatio(contentMode: .fill)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .clipped()
+                .opacity(reduceTransparency ? 1 : 0.72)
+                .background {
+                    if !reduceTransparency && usesGlassBackground {
+                        Color.clear.glassEffect(.clear, in: Rectangle())
+                    }
+                }
+        }
+        .accessibilityHidden(true)
     }
 }

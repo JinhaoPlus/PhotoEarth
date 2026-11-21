@@ -1,0 +1,84 @@
+LensPin offline city supplement: CN / JP / US
+
+Natural Earth 1:10m Populated Places 5.1.2. Public domain.
+https://www.naturalearthdata.com/about/terms-of-use/
+All baseline rows, IDs, coordinates and localized names are preserved.
+
+GeoNames geographical database. Creative Commons Attribution 4.0.
+https://www.geonames.org/
+https://creativecommons.org/licenses/by/4.0/
+https://download.geonames.org/export/dump/readme.txt
+Modified by LensPin: selected CN/JP municipalities and US settlements, filtered features, deduplicated identities, selected translated names and representative seat coordinates, and converted to TSV.
+
+Data from Who's On First. License and source attribution:
+https://whosonfirst.org/docs/licenses/
+https://github.com/whosonfirst-data/whosonfirst-data-admin-cn/blob/master/LICENSE.md
+https://github.com/whosonfirst-data/whosonfirst-data-admin-jp/blob/master/LICENSE.md
+https://github.com/whosonfirst-data/whosonfirst-data-admin-us/blob/master/LICENSE.md
+WOF original work is CC0; incorporated sources retain their attribution requirements, including GeoNames (CC BY), Yahoo! GeoPlanet (CC BY 3.0 US), and Foursquare Quattroshapes (CC BY).
+Includes data from Yahoo! GeoPlanet and Foursquare Quattroshapes.
+https://github.com/foursquare/quattroshapes/
+LensPin uses explicit WOF concordances, current feature classifications and selected preferred names; no WOF polygons are shipped.
+
+CN administrative-name validation: modood/Administrative-divisions-of-China, 2023-06-30 snapshot, published under WTFPL v2. Names/codes only; no coordinates.
+https://github.com/modood/Administrative-divisions-of-China
+https://github.com/modood/Administrative-divisions-of-China/blob/master/LICENSE
+US settlement validation: US Census Bureau, 2026 Places Gazetteer.
+https://www.census.gov/geographies/reference-files/2026/geo/gazetter-file.html
+
+The baseline TSV supplies proximity estimates.
+See sources.json for input hashes and provenance.json for record-level transformations.
+
+WorldCityAtlas · world-atlas-20261121.6
+GeoNames cities500 and alternateNamesV2, 2026-11-20, and published urban subdivision relations from the GeoNames hierarchy, CC BY 4.0.
+https://www.geonames.org/ | https://creativecommons.org/licenses/by/4.0/
+Natural Earth Admin 0 Map Units, 1:10m, v5.1.2, public domain.
+https://www.naturalearthdata.com/about/terms-of-use/
+France: © IGN, ADMIN EXPRESS COG CARTO PE, 2025-01-01, metropolitan communes, Licence Ouverte / Open Licence 2.0.
+https://geoservices.ign.fr/adminexpress
+https://www.etalab.gouv.fr/licence-ouverte-open-licence/
+United States: U.S. Census Bureau, 2024 Cartographic Boundary File, places, 1:500,000.
+https://www.census.gov/geographies/mapping-files/time-series/geo/cartographic-boundary.html
+
+LensPin and Photo Earth selected populated places, linked travel-city and municipal identifiers, selected or adapted multilingual labels, and reprojected, simplified, and indexed geometries for offline lookup.
+
+Wikidata labels and public entity identifiers, CC0 1.0. Names are selected by matching published identifiers and geographic reference points.
+https://www.wikidata.org/wiki/Wikidata:Licensing
+https://creativecommons.org/publicdomain/zero/1.0/
+
+國家教育研究院（2026），〈國家教育研究院-外國地名譯名〉，資料集 15211，2026-08-12 詮釋資料版本；此開放資料依政府資料開放授權條款第1版（https://data.gov.tw/license）進行公眾釋出，使用者於遵守本條款各項規定之前提下，得利用之。產品依其篩選及比對臺灣譯名。
+https://data.gov.tw/dataset/15211
+
+Chinese script corrections use OpenCC and the Chinese exemplar sets from Unicode CLDR 48.2, © Unicode, Inc. Unicode License v3.
+https://www.unicode.org/license.txt
+
+Japan: 出典：国土交通省国土数値情報ダウンロードサイト（行政区域データ）。
+https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html
+https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2025.html
+「国土数値情報（行政区域データ）」（国土交通省）をもとに Photo Earth / LensPin が選択、集約、加工。
+https://nlftp.mlit.go.jp/ksj/other/agreement.html
+
+Germany: © BKG (2025) dl-de/by-2-0, Datenquellen:
+https://www.bkg.bund.de | https://www.govdata.de/dl-de/by-2-0
+https://sgx.geodatenzentrum.de/web_public/gdz/datenquellen/datenquellen_vg_nuts.pdf
+
+England and Wales: ONS 2024 Built Up Areas (V2). Contains National Statistics data © Crown copyright and database right 2026. Contains OS data © Crown copyright and database right 2026.
+https://www.data.gov.uk/dataset/99d06794-8a5b-42c1-9cb6-e240ae4bc906/built-up-areas-december-2024-boundaries-ew-bgg-v21
+
+United States: U.S. Census Bureau, 2024 Cartographic Boundary Files, County Subdivisions, 1:500,000.
+https://www.census.gov/geographies/mapping-files/2024/geo/carto-boundary-file.html
+
+Italy: Istat, 2026 administrative boundaries, Creative Commons Attribution 4.0.
+https://www.istat.it/en/legal-notice/
+Canada: Province of Nova Scotia, Municipal Affairs, municipal boundaries under the Open Government Licence – Nova Scotia.
+https://novascotia.ca/opendata/licence.asp
+Egypt: Central Agency for Public Mobilization and Statistics (CAPMAS), via OCHA HDX. CC BY 3.0 IGO.
+https://data.humdata.org/dataset/cod-ab-egy
+Greece: ELSTAT, 2021 census boundaries. The apps reprojected and simplified the supplied boundaries. ELSTAT is not responsible for the alterations.
+https://www.statistics.gr/documents/20181/1412250/Copyright_Reuse_Policy_EN.pdf/dfacb7d1-3d9b-471f-851a-8b8b09994a74
+
+China: Rui Cheng, Yunfeng Hu, Chiwei Xiao and Yanjun Wang, CTAmap: A continuous vector dataset of Chinese administrative divisions from 2000 to 2026, v2.0, CC BY 4.0. The apps selected city membership by spatially matching public place records to the 2026 hierarchy.
+https://doi.org/10.5281/zenodo.22179207 | https://creativecommons.org/licenses/by/4.0/
+
+內政部國土測繪中心，〈縣市界線（TWD97經緯度）〉，依政府資料開放授權條款第 1 版提供。產品依據界線比對縣市歸屬。
+https://data.gov.tw/dataset/7442 | https://data.gov.tw/license

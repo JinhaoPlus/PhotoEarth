@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0"><dict><key>CFBundleExecutable</key><string>PhotoEarthLibrarySample</string><key>CFBundleIdentifier</key><string>local.photoearth.LibrarySample</string><key>CFBundleName</key><string>Photo Earth 图库采样</string><key>CFBundlePackageType</key><string>APPL</string><key>NSPhotoLibraryUsageDescription</key><string>只读采样最近三年的照片与视频到本机 Apple TV 模拟器，验证 Photo Earth 旅行地球和长时间放映。</string></dict></plist>

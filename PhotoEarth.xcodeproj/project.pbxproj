@@ -6,6 +6,23 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+        6CE0F0770000000000000010 /* WorldCityAtlas.swift in Top Shelf Sources */ = {isa = PBXBuildFile; fileRef = 6CE0F077000000000000000F; };
+        6CE0F077000000000000000C /* PhotoEarthTopShelf.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 6CE0F0770000000000000002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+        6CE0F077000000000000000B /* Embed App Extensions */ = {
+            isa = PBXCopyFilesBuildPhase;
+            buildActionMask = 2147483647;
+            dstPath = "";
+            dstSubfolderSpec = 13;
+            files = (6CE0F077000000000000000C, );
+            name = "Embed App Extensions";
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXContainerItemProxy section */
 		95F0D1C3304A56C200392F9A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -21,12 +38,15 @@
 			remoteGlobalIDString = 95F0D1B2304A56C100392F9A;
 			remoteInfo = PhotoEarth;
 		};
+        6CE0F077000000000000000E = {isa = PBXContainerItemProxy; containerPortal = 95F0D1AB304A56C100392F9A; proxyType = 1; remoteGlobalIDString = 6CE0F0770000000000000001; remoteInfo = PhotoEarthTopShelf; };
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+        6CE0F077000000000000000F /* WorldCityAtlas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoEarth/Services/Geocoding/WorldCityAtlas.swift; sourceTree = SOURCE_ROOT; };
 		95F0D1B3304A56C100392F9A /* PhotoEarth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoEarth.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		95F0D1C2304A56C200392F9A /* PhotoEarthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoEarthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		95F0D1CC304A56C200392F9A /* PhotoEarthUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoEarthUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+        6CE0F0770000000000000002 /* PhotoEarthTopShelf.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PhotoEarthTopShelf.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -45,6 +65,8 @@
 			path = PhotoEarthUITests;
 			sourceTree = "<group>";
 		};
+        6CE0F0770000000000000003 /* PhotoEarthTopShelf */ = {isa = PBXFileSystemSynchronizedRootGroup; path = PhotoEarthTopShelf; sourceTree = "<group>"; };
+        6CE0F0770000000000000004 /* PhotoEarthTopShelfShared */ = {isa = PBXFileSystemSynchronizedRootGroup; path = PhotoEarthTopShelfShared; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +91,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+        6CE0F0770000000000000007 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -76,6 +99,8 @@
 			isa = PBXGroup;
 			children = (
 				95F0D1B5304A56C100392F9A /* PhotoEarth */,
+                6CE0F0770000000000000003,
+                6CE0F0770000000000000004,
 				95F0D1C5304A56C200392F9A /* PhotoEarthTests */,
 				95F0D1CF304A56C200392F9A /* PhotoEarthUITests */,
 				95F0D1B4304A56C100392F9A /* Products */,
@@ -85,6 +110,7 @@
 		95F0D1B4304A56C100392F9A /* Products */ = {
 			isa = PBXGroup;
 			children = (
+                6CE0F0770000000000000002,
 				95F0D1B3304A56C100392F9A /* PhotoEarth.app */,
 				95F0D1C2304A56C200392F9A /* PhotoEarthTests.xctest */,
 				95F0D1CC304A56C200392F9A /* PhotoEarthUITests.xctest */,
@@ -102,12 +128,16 @@
 				95F0D1AF304A56C100392F9A /* Sources */,
 				95F0D1B0304A56C100392F9A /* Frameworks */,
 				95F0D1B1304A56C100392F9A /* Resources */,
+                6CE0F077000000000000000B,
+                6CE0F0770000000000000011 /* Verify PhotoEarth release gate */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+                6CE0F077000000000000000D,
 			);
 			fileSystemSynchronizedGroups = (
+                6CE0F0770000000000000004,
 				95F0D1B5304A56C100392F9A /* PhotoEarth */,
 			);
 			name = PhotoEarth;
@@ -163,6 +193,18 @@
 			productReference = 95F0D1CC304A56C200392F9A /* PhotoEarthUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+        6CE0F0770000000000000001 /* PhotoEarthTopShelf */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = 6CE0F0770000000000000008;
+            buildPhases = (6CE0F0770000000000000005, 6CE0F0770000000000000007, 6CE0F0770000000000000006, );
+            buildRules = ();
+            dependencies = ();
+            fileSystemSynchronizedGroups = (6CE0F0770000000000000004, 6CE0F0770000000000000003, );
+            name = PhotoEarthTopShelf;
+            productName = PhotoEarthTopShelf;
+            productReference = 6CE0F0770000000000000002;
+            productType = "com.apple.product-type.app-extension";
+        };
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -195,7 +237,14 @@
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				de,
 				en,
+				es,
+				fr,
+				it,
+				ja,
+				"zh-Hans",
+				"zh-Hant",
 				Base,
 			);
 			mainGroup = 95F0D1AA304A56C100392F9A;
@@ -205,6 +254,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+                6CE0F0770000000000000001,
 				95F0D1B2304A56C100392F9A /* PhotoEarth */,
 				95F0D1C1304A56C200392F9A /* PhotoEarthTests */,
 				95F0D1CB304A56C200392F9A /* PhotoEarthUITests */,
@@ -234,7 +284,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+        6CE0F0770000000000000006 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+        6CE0F0770000000000000011 /* Verify PhotoEarth release gate */ = {
+            isa = PBXShellScriptBuildPhase;
+            alwaysOutOfDate = 1;
+            buildActionMask = 2147483647;
+            files = ();
+            inputFileListPaths = ("$(SRCROOT)/Scripts/release_gate_inputs.xcfilelist",);
+            inputPaths = ("$(SRCROOT)/.local-test-data/release-gate",);
+            name = "Verify PhotoEarth release gate (run Scripts/release_gate.py first)";
+            runOnlyForDeploymentPostprocessing = 1;
+            shellPath = /bin/sh;
+            shellScript = "if [ \"$ACTION\" = install ] && [ \"$PLATFORM_NAME\" = appletvos ]; then\n  exec /usr/bin/python3 \"$SRCROOT/Scripts/release_gate.py\" check-archive\nfi\n";
+        };
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		95F0D1AF304A56C100392F9A /* Sources */ = {
@@ -258,6 +324,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+        6CE0F0770000000000000005 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (6CE0F0770000000000000010, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -271,6 +338,7 @@
 			target = 95F0D1B2304A56C100392F9A /* PhotoEarth */;
 			targetProxy = 95F0D1CD304A56C200392F9A /* PBXContainerItemProxy */;
 		};
+        6CE0F077000000000000000D = {isa = PBXTargetDependency; target = 6CE0F0770000000000000001; targetProxy = 6CE0F077000000000000000E; };
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
@@ -309,7 +377,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -373,7 +441,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -400,14 +468,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "PhotoEarth-Debug.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PhotoEarth-Info.plist";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth 使用 Apple TV 的大致位置，让地球从你所在的区域开始。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth 读取带地点的照片，在设备上生成你的私人旅行地球。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth uses the Apple TV's approximate location to start the globe near you.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth uses capture dates, locations, and camera information to build your travel globe on this Apple TV.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -416,6 +485,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarth;
+				SWIFT_OBJC_BRIDGING_HEADER = PhotoEarth/Services/PhotoLibrary/PECachedPhotoAddress.h;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -433,14 +503,15 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = PhotoEarth/PhotoEarth.entitlements;
+				USE_RECURSIVE_SCRIPT_INPUTS_IN_SCRIPT_PHASES = YES;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PhotoEarth-Info.plist";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth 使用 Apple TV 的大致位置，让地球从你所在的区域开始。";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth 读取带地点的照片，在设备上生成你的私人旅行地球。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth uses the Apple TV's approximate location to start the globe near you.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth uses capture dates, locations, and camera information to build your travel globe on this Apple TV.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -449,6 +520,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarth;
+				SWIFT_OBJC_BRIDGING_HEADER = PhotoEarth/Services/PhotoLibrary/PECachedPhotoAddress.h;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -465,8 +537,8 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthTests;
@@ -487,8 +559,8 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthTests;
@@ -508,8 +580,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthUITests;
@@ -528,8 +600,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = P6ZAGC2P6U;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = K9A998Q5RD;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarthUITests;
@@ -544,6 +616,46 @@
 			};
 			name = Release;
 		};
+        6CE0F0770000000000000009 /* Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                APPLICATION_EXTENSION_API_ONLY = YES;
+                CODE_SIGN_ENTITLEMENTS = "PhotoEarthTopShelf.entitlements";
+                CODE_SIGN_STYLE = Automatic;
+                CURRENT_PROJECT_VERSION = 2;
+                DEVELOPMENT_TEAM = K9A998Q5RD;
+                GENERATE_INFOPLIST_FILE = YES;
+                INFOPLIST_FILE = "PhotoEarthTopShelf-Info.plist";
+                LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+                MARKETING_VERSION = 1.0;
+                PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarth.TopShelf;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SKIP_INSTALL = YES;
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = 3;
+            };
+            name = Debug;
+        };
+        6CE0F077000000000000000A /* Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                APPLICATION_EXTENSION_API_ONLY = YES;
+                CODE_SIGN_ENTITLEMENTS = "PhotoEarthTopShelf.entitlements";
+                CODE_SIGN_STYLE = Automatic;
+                CURRENT_PROJECT_VERSION = 2;
+                DEVELOPMENT_TEAM = K9A998Q5RD;
+                GENERATE_INFOPLIST_FILE = YES;
+                INFOPLIST_FILE = "PhotoEarthTopShelf-Info.plist";
+                LD_RUNPATH_SEARCH_PATHS = ("$(inherited)", "@executable_path/Frameworks", "@executable_path/../../Frameworks", );
+                MARKETING_VERSION = 1.0;
+                PRODUCT_BUNDLE_IDENTIFIER = com.doupi.PhotoEarth.PhotoEarth.TopShelf;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+                SKIP_INSTALL = YES;
+                SWIFT_VERSION = 5.0;
+                TARGETED_DEVICE_FAMILY = 3;
+            };
+            name = Release;
+        };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -583,6 +695,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+        6CE0F0770000000000000008 = {isa = XCConfigurationList; buildConfigurations = (6CE0F0770000000000000009, 6CE0F077000000000000000A, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 	};
 	rootObject = 95F0D1AB304A56C100392F9A /* Project object */;

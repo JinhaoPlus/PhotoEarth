@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>到访封面对照 · Photo Earth</title>
+<style>
+:root { color-scheme:dark; --ink:#f2eee6; --muted:#bcbeb3; --rule:#41443c; --green:#d9eabe }
+* { box-sizing:border-box }
+body { margin:0; color:var(--ink); background:#171916; font:16px/1.5 system-ui,"PingFang SC",sans-serif }
+main { max-width:1380px; margin:auto; padding:48px clamp(16px,4.4vw,66px) }
+h1,h2,h3,p,figure { margin:0 } h1 { font-size:clamp(34px,4.4vw,60px); letter-spacing:-.045em; font-weight:570 }
+h2 { font-size:25px; letter-spacing:-.02em } h3 { font-size:20px; margin-top:2px }
+p,small,figcaption { color:var(--muted) } h1+p { margin:12px 0 24px; max-width:60em }
+table { border-collapse:collapse; width:min(100%,680px); margin:16px 0 12px; font-size:15px }
+th,td { padding:6px 20px 6px 0; text-align:right; border-bottom:1px solid var(--rule) }
+th:first-child,td:first-child { text-align:left; font-weight:550 }
+th { font-size:13px; color:var(--muted) }
+a { color:var(--green); text-underline-offset:.22em }
+nav { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:20px 0 6px }
+input,select,button { min-height:40px; border-radius:6px; border:1px solid var(--rule); background:#242822; color:var(--ink); padding:6px 10px; font:inherit }
+button { cursor:pointer } button:disabled { opacity:.45; cursor:default }
+:focus-visible { outline:2px solid var(--green); outline-offset:3px }
+input { min-width:0; width:min(100%,240px) }
+section { margin-top:36px } #feature { margin-top:26px }
+article { border-bottom:1px solid var(--rule); padding:18px 0 24px; scroll-margin-top:8px }
+header { display:flex; align-items:baseline; justify-content:space-between; gap:15px; flex-wrap:wrap; margin-bottom:10px }
+.tripmeta { color:var(--muted); font-size:14px } .status { font-size:14px; color:var(--green) }
+.frames { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(7px,2vw,22px) }
+figure { min-width:0 } .image { position:relative; display:grid; place-items:center; overflow:hidden; aspect-ratio:5/3; background:#242721; border-radius:6px; text-decoration:none; color:var(--muted) }
+.image img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block }
+body[data-crop="tall"] .image { aspect-ratio:2/3 }
+body[data-crop="full"] .image img { object-fit:contain }
+figcaption { font-size:13px; margin-top:7px; overflow-wrap:anywhere }
+figcaption strong { display:block; font-size:15px; color:var(--ink) }
+#results { margin-top:6px } #status { font-size:14px; padding-top:2px }
+.sheet { display:inline-block; margin-top:12px } .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:18px }
+.diagnostic { display:flex; gap:18px; align-items:center; margin-top:20px; font-size:14px }
+.diagnostic img { display:block; width:clamp(100px,18vw,230px); height:auto; border-radius:6px }
+.diagnostic strong { color:var(--ink); font-size:16px }
+@media(max-width:620px) { main { padding-top:24px } article { padding:14px 0 18px } figcaption { font-size:11px } figcaption strong { font-size:12px } th,td{padding-right:6px} }
+</style>
+</head>
+<body data-crop="wide">
+<main>
+<h1>到访封面对照</h1>
+<p>同一份图库索引、同一台 Mac 的本机预览。A 使用现行算法，B 将拍摄密度用于选候选，C 在 B 的候选中给画质达标的照片最多增加 0.09 分。</p>
+<table><thead><tr><th>选图方式</th><th>评分选出</th><th>评分选出率</th><th>最新素材兜底</th><th>缺图</th></tr></thead><tbody id="stats"></tbody></table>
+<p id="counts"></p>
+<section id="feature" hidden><h2>格拉纳达</h2><div id="granada"></div></section>
+<section><h2>全部到访</h2>
+<nav>
+<input type="search" id="search" aria-label="搜索城市、国家或文件名" placeholder="城市、国家或文件名">
+<select id="filter" aria-label="筛选选图结果"><option value="all">所有结果</option><option value="changes">任一版换图</option><option value="ab">采样换图 · A → B</option><option value="bc">加分换图 · B → C</option><option value="ac">最终换图 · A → C</option><option value="fallback">至少一版兜底</option></select>
+<select id="crop" aria-label="裁切比例"><option value="wide">首页横卡 · 5:3</option><option value="tall">Top Shelf 竖卡 · 2:3</option><option value="full">完整构图</option></select>
+</nav>
+<p id="status" role="status" aria-live="polite"></p><div id="results"></div>
+<div class="controls"><button id="prev" type="button">上一页</button><button id="next" type="button">下一页</button><span id="page"></span></div>
+</section></main>
+<script>
+const visits = /*VISITS*/;
+const names = ['A · 现行算法','B · 密度采样','C · 密度采样与加分'];
+const reasons = {scored:'评分选出',fallback:'最新素材兜底',unavailable:'本机缺图'};
+const get = id => document.getElementById(id);
+function el(tag, value, className) {
+    const result = document.createElement(tag);
+    if (value != null) result.textContent = value;
+    if (className) result.className = className;
+    return result;
+}
+for (let index = 0; index < names.length; index++) {
+    const stats = {scored:0, fallback:0, unavailable:0};
+    for (const visit of visits) {
+        const reason = visit.photos[index].reason;
+        stats[reason] = (stats[reason] || 0) + 1;
+    }
+    const row = el('tr');
+    const rate = visits.length ? (100 * stats.scored / visits.length).toFixed(1) + '%' : '—';
+    [names[index], stats.scored, rate, stats.fallback, stats.unavailable].forEach(value => row.append(el('td', value)));
+    get('stats').append(row);
+}
+const total = selector => visits.filter(selector).length;
+get('counts').textContent = '共 '+visits.length+' 趟。采样让 '+total(v=>v.ab)+' 趟换了封面，加分让 '+total(v=>v.bc)+' 趟换图。最终有 '+total(v=>v.ac)+' 趟与现行算法不同。';
+function renderVisit(v, featured=false) {
+    const article = el('article');
+    const header = el('header');
+    const title = el('div');
+    title.append(el('h3', featured ? v.country : [v.city,v.country].filter(Boolean).join(' · ')));
+    const dates = v.date === v.end ? v.date : v.date+' 至 '+v.end;
+    title.append(el('p',dates+' · '+v.count+' 项素材','tripmeta'));
+    const change = v.ab && v.bc ? (v.ac?'三版各选一张':'B 换图，C 选回 A') : v.ab?'B 换图，C 沿用 B':v.bc?'C 换图':'三版相同';
+    header.append(title,el('span', change, 'status'));
+    const frames = el('div',null,'frames');
+    v.photos.forEach((photo, i) => {
+        const fig = el('figure');
+        const art = el(photo.img?'a':'div',null,'image');
+        if (photo.img) {
+            art.href = photo.img; art.target='_blank'; art.rel='noopener';
+            const img = el('img'); img.loading=featured?'eager':'lazy';
+            img.src=photo.img; img.alt=v.city+' '+names[i]+' '+(photo.filename || '');
+            art.append(img);
+        } else { art.textContent='无本机预览'; }
+        const cap=el('figcaption');
+        cap.append(el('strong',names[i]),document.createTextNode([photo.filename,reasons[photo.reason]].filter(Boolean).join(' · ')));
+        fig.append(art,cap); frames.append(fig);
+    });
+    article.append(header,frames);
+    if (featured && v.panorama) {
+        const p=v.panorama, aside=el('aside',null,'diagnostic'), link=el('a');
+        link.href=p.img; link.target='_blank'; link.rel='noopener';
+        const img=el('img'); img.src=p.img; img.alt='暮色中的建筑群全景'; link.append(img);
+        const description=el('div'); description.append(el('strong','宫殿全景 · '+p.filename));
+        const groups=[p.old?'A':'',p.new?'B/C':''].filter(Boolean).join(' 与 ');
+        const tier=p.tier==='general'?'普通场景':p.tier==='landmark'?'地标':'其他';
+        description.append(el('p',groups+' 候选中可以看到这张。密度强度 '+p.strength.toFixed(2)+' / 1.00，评分分在「'+tier+'」。'));
+        aside.append(link,description); article.append(aside);
+    }
+    if (featured && v.sheet) {
+        const link=el('a','查看格拉纳达全部入围照片','sheet'); link.href=v.sheet; link.target='_blank'; link.rel='noopener'; article.append(link);
+    }
+    return article;
+}
+for (const visit of visits.filter(v => v.sheet)) { get('feature').hidden=false; get('granada').append(renderVisit(visit,true)); }
+let page=0;
+const limit=12;
+function show() {
+    const query=get('search').value.toLowerCase().trim(), filter=get('filter').value;
+    const matched=visits.filter(v => {
+        const matchesText = [v.city,v.country,...v.photos.map(p=>p.filename)].filter(Boolean).some(s=>s.toLowerCase().includes(query));
+        if (!matchesText) return false;
+        if (filter==='changes') return v.ab || v.bc;
+        if (filter==='fallback') return v.photos.some(p=>p.reason==='fallback');
+        return filter==='all' || v[filter];
+    });
+    const shown=matched.slice(page*limit,(page+1)*limit);
+    get('status').textContent=matched.length ? matched.length+' 趟中显示第 '+(page*limit+1)+' 至 '+(page*limit+shown.length)+' 趟' : '没有符合条件的到访';
+    get('results').replaceChildren(...shown.map(v=>renderVisit(v)));
+    get('prev').disabled=page===0; get('next').disabled=(page+1)*limit>=matched.length;
+    get('page').textContent=matched.length?'第 '+(page+1)+' / '+Math.ceil(matched.length/limit)+' 页':'';
+}
+for (const key of ['search','filter']) get(key).addEventListener('input',()=>{page=0;show()});
+get('crop').addEventListener('input',()=>document.body.dataset.crop=get('crop').value);
+function turn(direction) { page+=direction; show(); get('status').scrollIntoView({block:'start'}); }
+get('prev').onclick=()=>turn(-1); get('next').onclick=()=>turn(1);
+show();
+</script>
+</body></html>

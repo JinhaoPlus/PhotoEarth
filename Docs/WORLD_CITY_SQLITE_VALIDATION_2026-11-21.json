@@ -1,0 +1,111 @@
+{
+  "catalog_version": "world-atlas-20261121.4",
+  "previous_catalog_version": "world-atlas-20261121.3",
+  "schema_version": 4,
+  "atlas_bytes": 61849600,
+  "atlas_sha256": "0410658ce39eeeae436e4da60b578e208b4f368c0970848a96d33a28e68ee090",
+  "previous_atlas_sha256": "31d32e4e20965eff976051a31cf60096b43f23030a837808d80eda8fe3196036",
+  "product_adapter_comparison": {
+    "public_coordinates": 1258,
+    "locales": [
+      "en",
+      "de",
+      "es",
+      "fr",
+      "it",
+      "ja",
+      "zh-Hans",
+      "zh-Hant"
+    ],
+    "multilingual_cases": 10064,
+    "dense_english_cases": 56191,
+    "total_cases_per_product": 66255,
+    "cross_product_differences": 0,
+    "previous_release_differences": 0,
+    "compared_fields": [
+      "region",
+      "place_id",
+      "source",
+      "city",
+      "country"
+    ],
+    "fixture": "Scripts/Fixtures/WorldCityAtlas-20261121.3-labels.tsv.gz",
+    "fixture_sha256": "9c9b84d71c2834a66b7962c2c4bc23e64fd71e720084c9ebcec95b7d86d0ba6e"
+  },
+  "public_geographic_gate": {
+    "all_correct": 289,
+    "city_centers": 72,
+    "initial_landmarks": 118,
+    "heldout_landmarks": 68,
+    "additional_landmarks": 31,
+    "priority_points": 2177,
+    "priority_matching": 2075,
+    "priority_different_city": 99,
+    "priority_different_region": 3,
+    "priority_output_sha256": "9e6ae76a292a45d2beaca28f4cca408600ec5f7491dd51e7a4afd748bf0b881d",
+    "priority_output_differs_from_previous_release": false
+  },
+  "language_audit": {
+    "places": 190521,
+    "base_language_rows": 1524168,
+    "regional_rows": 571563,
+    "total_rows": 2095731,
+    "target_attested_base_rows": 716181,
+    "locales": {
+      "de": 110835,
+      "en": 134252,
+      "es": 109657,
+      "fr": 118571,
+      "it": 105870,
+      "ja": 49186,
+      "zh-Hans": 45606,
+      "zh-Hant": 42204,
+      "zh-Hant-HK": 30500,
+      "zh-Hant-MO": 683,
+      "zh-Hant-TW": 19793
+    },
+    "unwitnessed_base_rows": 807987,
+    "previous_release_name_identity_and_evidence_differences": {},
+    "compared_rows_each_locale": {
+      "en": 190521,
+      "de": 190521,
+      "es": 190521,
+      "fr": 190521,
+      "it": 190521,
+      "ja": 190521,
+      "zh-Hans": 190521,
+      "zh-Hant": 190521,
+      "zh-Hant-HK": 190521,
+      "zh-Hant-MO": 190521,
+      "zh-Hant-TW": 190521
+    },
+    "source_sha256": {
+      "baseline": "6de4ff1e1de35bee23d1f6d6730d1cbfe69479c38620bd47353a13c871f5e87d",
+      "census": "2be68094759b710979f41afd1996cf0132eec78350dfef45566a65478a6944b3",
+      "cn_areas": "169b8d99654c28cbd285e771e00688837f77af8d50c2b703592146388d2a99ab",
+      "cn_cities": "a9c818e8a5120189173668b40882ce8bf59a7ec2b057c49d7a724a04bec727f2",
+      "communes": "150e08244c72af8bcd66b77cdf4e5ce6eb8752b2d1c3ee6922b9e5845dc644d6",
+      "gazetteer": "36593c7d1e211fb258d82cd20976a362aa450a001d0642383d6198f420f704ae",
+      "identity_conflicts": "93075b0192df71dc728f050f5227de3998ae5cd2fa0401a44a4a36b9598e3c96",
+      "legacy_provenance": "bcaff9e69585b94ca16a8aff51c45de905f7f88aa161223c1be495ca476871d5",
+      "natural_earth": "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b",
+      "review_sources": "33a8f69dc2b10c4d4837023cef330a5135256cc3ef77edf5340d574987e29e4b",
+      "reviewed": "67ef10cb4596f5a0bc93606e1b0ac824e3da76c4a1592bab4cee4e741f13a15d",
+      "taiwan": "b481e15090c93f3ebd6996c6e6e3533ca5cf97e521cad9bac4a53943393f17e3",
+      "translations": "70abf09e809d8dd707087d364b0a489224ee322c2bb67817af9638f7010954fd",
+      "travel_review": "a05e83ff47b5cb028f534669b4a6125367cd0c4d1505caa8f7f959d67beb4436",
+      "ungegn": "282a7a0c26fe81d8f9d852435dc2913ae37b0f074811043cec4ea0824f928ab5",
+      "wikidata": "f4654ea59cc5ac05bcd431a1fe2880f2f65ffe6179539d1d67a6b6af9c5e107b"
+    },
+    "output_sha256": "583cdd208b665aae3cc9aa07af38bc0c71b44091a83b66dc55e21e78c28e9db8",
+    "previous_output_sha256": "c9a3d0f5eb944e10501fd42804c09b5305ab65535838f6ce8c38809047ec5898",
+    "application_api_checks": [
+      "WorldCityAtlas.name(for:locale:)",
+      "WorldCityAtlas.localizedNames(for:languages:)"
+    ],
+    "priority_country_rows": 20,
+    "all_eight_languages_attested_priority_points": 1342,
+    "priority_language_output_sha256": "573d6246cae2402649dd9bbdf733c283f97074ff04630d00d07e07e04af23a66",
+    "priority_language_output_differs_from_previous_release": false
+  }
+}

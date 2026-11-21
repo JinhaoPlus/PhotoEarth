@@ -1,0 +1,63 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "NSPhotoLibraryUsageDescription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth shows previews from your recent journeys on the Apple TV Home Screen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth zeigt auf dem Home-Bildschirm deines Apple TV Vorschaubilder deiner letzten Reisen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth muestra vistas previas de tus viajes recientes en la pantalla de inicio del Apple TV."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth affiche des aperçus de vos voyages récents sur l’écran d’accueil de votre Apple TV."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth mostra le anteprime dei tuoi viaggi recenti nella schermata Home di Apple TV."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth は、Apple TV のホーム画面に最近の旅のプレビューを表示します。"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth 会在 Apple TV 主屏幕上显示你最近旅程的预览。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo Earth 會在 Apple TV 主畫面上顯示你近期旅程的預覽。"
+          }
+        }
+      }
+    },
+    "CFBundleDisplayName" : {
+      "comment" : "Fixed product name",
+      "shouldTranslate" : false
+    }
+  },
+  "version" : "1.0"
+}

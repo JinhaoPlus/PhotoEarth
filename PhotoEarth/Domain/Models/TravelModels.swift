@@ -9,6 +9,16 @@ nonisolated struct GeoCoordinate: Codable, Hashable, Sendable {
     }
 }
 
+/// The presentation carried by a Photos asset. Raw values are persisted in the
+/// derived SQLite index, so append new cases instead of reordering them.
+nonisolated enum PhotoMediaKind: Int, Codable, Hashable, Sendable {
+    case photo = 0
+    case livePhoto = 1
+    case video = 2
+
+    var isPlayable: Bool { self != .photo }
+}
+
 nonisolated struct PhotoAssetRecord: Codable, Hashable, Identifiable, Sendable {
     let id: String
     let coordinate: GeoCoordinate
@@ -16,13 +26,48 @@ nonisolated struct PhotoAssetRecord: Codable, Hashable, Identifiable, Sendable {
     let pixelWidth: Int
     let pixelHeight: Int
     let isFavorite: Bool
-    var placeID: String? = nil
+    let mediaKind: PhotoMediaKind
+    let duration: TimeInterval
+    let altitudeMeters: Double?
+    let horizontalAccuracyMeters: Double?
+    let verticalAccuracyMeters: Double?
+    var placeID: String?
+
+    init(
+        id: String,
+        coordinate: GeoCoordinate,
+        creationDate: Date,
+        pixelWidth: Int,
+        pixelHeight: Int,
+        isFavorite: Bool,
+        mediaKind: PhotoMediaKind = .photo,
+        duration: TimeInterval = 0,
+        placeID: String? = nil,
+        altitudeMeters: Double? = nil,
+        horizontalAccuracyMeters: Double? = nil,
+        verticalAccuracyMeters: Double? = nil
+    ) {
+        self.id = id
+        self.coordinate = coordinate
+        self.creationDate = creationDate
+        self.pixelWidth = pixelWidth
+        self.pixelHeight = pixelHeight
+        self.isFavorite = isFavorite
+        self.mediaKind = mediaKind
+        self.duration = mediaKind == .video && duration.isFinite ? max(0, duration) : 0
+        self.placeID = placeID
+        self.altitudeMeters = altitudeMeters
+        self.horizontalAccuracyMeters = horizontalAccuracyMeters
+        self.verticalAccuracyMeters = verticalAccuracyMeters
+    }
 }
 
 nonisolated struct TravelPlace: Codable, Hashable, Identifiable, Sendable {
     let id: String
     var name: String
     var country: String?
+    var regionCode: String? = nil
+    var offlinePlaceID: String? = nil
     let coordinate: GeoCoordinate
     let startDate: Date
     let endDate: Date
@@ -32,15 +77,7 @@ nonisolated struct TravelPlace: Codable, Hashable, Identifiable, Sendable {
     var year: Int { Calendar(identifier: .gregorian).component(.year, from: startDate) }
 
     var dateRangeText: String {
-        let startFormatter = DateFormatter()
-        startFormatter.locale = Locale(identifier: "zh_CN")
-        startFormatter.dateFormat = "yyyy年M月d日"
-        let start = startFormatter.string(from: startDate)
-        guard !Calendar.current.isDate(startDate, inSameDayAs: endDate) else { return start }
-        let endFormatter = DateFormatter()
-        endFormatter.locale = Locale(identifier: "zh_CN")
-        endFormatter.dateFormat = "M月d日"
-        return start + " — " + endFormatter.string(from: endDate)
+        AppLocalization.dateRange(from: startDate, to: endDate)
     }
 }
 
@@ -53,7 +90,7 @@ nonisolated struct TravelJourney: Codable, Hashable, Identifiable, Sendable {
 }
 
 nonisolated struct TravelIndex: Codable, Equatable, Sendable {
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 6
 
     let schemaVersion: Int
     let generatedAt: Date
@@ -61,6 +98,12 @@ nonisolated struct TravelIndex: Codable, Equatable, Sendable {
     let locatedPhotoCount: Int
     var places: [TravelPlace]
     var journeys: [TravelJourney]
+    /// Raw located count remains available even when every visit is filtered.
+    var hiddenTransitPhotoCount: Int = 0
+    var transitFilteringApplied: Bool = false
+    var transitRevision: String? = nil
+    var contentRevision: String { "\(generatedAt.timeIntervalSince1970):\(transitRevision ?? "raw")" }
+    var visiblePhotoCount: Int { locatedPhotoCount - hiddenTransitPhotoCount }
 
     var isCompatible: Bool { schemaVersion == Self.currentSchemaVersion }
 

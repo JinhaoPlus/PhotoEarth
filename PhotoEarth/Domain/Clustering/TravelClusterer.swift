@@ -78,7 +78,7 @@ nonisolated struct TravelClusterer: Sendable {
     }
 
     private func makePlace(offset: Int, records: [PhotoAssetRecord]) -> TravelPlace {
-        let center = GlobeMath.centroid(of: records.map(\.coordinate))
+        let center = records[0].coordinate
         let cover = records.max { lhs, rhs in
             coverScore(lhs) < coverScore(rhs)
         }
@@ -86,7 +86,7 @@ nonisolated struct TravelClusterer: Sendable {
 
         return TravelPlace(
             id: "place-\(stableHash(idSeed))",
-            name: String(format: "地点 %02d", offset + 1),
+            name: "",
             country: nil,
             coordinate: center,
             startDate: records.first?.creationDate ?? .distantPast,
@@ -109,11 +109,10 @@ nonisolated struct TravelClusterer: Sendable {
             }
         }
 
-        return groups.enumerated().map { offset, group in
-            let year = Calendar(identifier: .gregorian).component(.year, from: group[0].startDate)
+        return groups.map { group in
             return TravelJourney(
                 id: "journey-\(stableHash(group[0].id))",
-                title: "\(year) · 旅程 \(offset + 1)",
+                title: "",
                 startDate: group[0].startDate,
                 endDate: group.last?.endDate ?? group[0].endDate,
                 placeIDs: group.map(\.id)

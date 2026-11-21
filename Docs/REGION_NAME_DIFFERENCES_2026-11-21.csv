@@ -1,0 +1,68 @@
+locale,region,foundation,cldr_49_default,matching_cldr_49_alternative,product_decision,product_display
+en,CN,China mainland,China,different,retain Foundation,China mainland
+en,GS,So. Georgia & So. Sandwich Isl.,South Georgia & South Sandwich Islands,different,use CLDR default,South Georgia & South Sandwich Islands
+en,HK,Hong Kong,Hong Kong SAR China,short,retain Foundation,Hong Kong
+en,HM,Heard & McDonald Islands,Heard Island & McDonald Islands,short,retain Foundation,Heard & McDonald Islands
+en,IO,Chagos Archipelago,British Indian Ocean Territory,chagos,retain Foundation,Chagos Archipelago
+en,MO,Macao,Macao SAR China,short,retain Foundation,Macao
+en,SH,St. Helena,"St. Helena, Ascension & Tristan da Cunha",short,retain Foundation,St. Helena
+en,TF,French Southern Territories,French Southern and Antarctic Lands,short,retain Foundation,French Southern Territories
+ja,CC,ココス（キーリング）諸島,ココス(キーリング)諸島,different,retain Foundation,ココス（キーリング）諸島
+ja,CD,コンゴ民主共和国（キンシャサ）,コンゴ民主共和国(キンシャサ),different,retain Foundation,コンゴ民主共和国（キンシャサ）
+ja,CG,コンゴ共和国（ブラザビル）,コンゴ共和国(ブラザビル),different,retain Foundation,コンゴ共和国（ブラザビル）
+ja,CN,中国本土,中国,different,retain Foundation,中国本土
+ja,HK,香港,中華人民共和国香港特別行政区,short,retain Foundation,香港
+ja,IO,チャゴス諸島,英領インド洋地域,chagos,retain Foundation,チャゴス諸島
+ja,MO,マカオ,中華人民共和国マカオ特別行政区,short,retain Foundation,マカオ
+de,CN,"China, Festland",China,different,retain Foundation,"China, Festland"
+de,HK,Hongkong,Sonderverwaltungsregion Hongkong,short,retain Foundation,Hongkong
+de,IO,Chagos-Archipel,Britisches Territorium im Indischen Ozean,chagos,retain Foundation,Chagos-Archipel
+de,MO,Macao,Sonderverwaltungsregion Macau,different,retain Foundation,Macao
+fr,CN,Chine continentale,Chine,different,retain Foundation,Chine continentale
+fr,HK,Hong Kong,R.A.S. chinoise de Hong Kong,short,retain Foundation,Hong Kong
+fr,IO,Archipel des Chagos,Territoire britannique de l’océan Indien,chagos,retain Foundation,Archipel des Chagos
+fr,MO,Macao,R.A.S. chinoise de Macao,short,retain Foundation,Macao
+fr,UM,Îles mineures éloignées des É.-U.,Îles mineures éloignées des États-Unis,different,retain Foundation,Îles mineures éloignées des É.-U.
+es,CN,China continental,China,different,retain Foundation,China continental
+es,HK,Hong Kong,RAE de Hong Kong (China),short,retain Foundation,Hong Kong
+es,IO,Archipiélago de Chagos,Territorio Británico del Océano Índico,chagos,retain Foundation,Archipiélago de Chagos
+es,MO,Macao,RAE de Macao (China),short,retain Foundation,Macao
+es,TL,Timor Oriental,Timor-Leste,variant,retain Foundation,Timor Oriental
+it,CD,Congo-Kinshasa,Congo - Kinshasa,different,retain Foundation,Congo-Kinshasa
+it,CI,Côte d'Ivoire,Costa d’Avorio,different,use CLDR default,Costa d’Avorio
+it,CN,Cina continentale,Cina,different,retain Foundation,Cina continentale
+it,HK,Hong Kong,RAS di Hong Kong,short,retain Foundation,Hong Kong
+it,IO,Isole Chagos,Territorio Britannico dell’Oceano Indiano,different,retain Foundation,Isole Chagos
+it,MO,Macao,RAS di Macao,short,retain Foundation,Macao
+it,SH,Sant'Elena,Sant’Elena,different,retain Foundation,Sant'Elena
+zh-Hans,CN,中国大陆,中国,different,retain Foundation,中国大陆
+zh-Hans,HK,香港,中国香港特别行政区,short,retain Foundation,香港
+zh-Hans,IO,查戈斯群岛,英属印度洋领地,chagos,retain Foundation,查戈斯群岛
+zh-Hans,MO,澳门,中国澳门特别行政区,short,retain Foundation,澳门
+zh-Hant,CN,中國大陸,中國,different,retain Foundation,中國大陸
+zh-Hant,HK,香港,中國香港特別行政區,short,retain Foundation,香港
+zh-Hant,IO,查戈斯群島,英屬印度洋領地,different,retain Foundation,查戈斯群島
+zh-Hant,MO,澳門,中國澳門特別行政區,short,retain Foundation,澳門
+zh-Hant,SL,獅子山共和國,獅子山,different,retain Foundation,獅子山共和國
+zh-Hant-HK,CC,科科斯（基林）群島,科科斯 (基林) 群島,different,retain Foundation,科科斯（基林）群島
+zh-Hant-HK,CN,中國大陸,中國,different,retain Foundation,中國大陸
+zh-Hant-HK,HK,香港,中國香港特別行政區,short,retain Foundation,香港
+zh-Hant-HK,IO,查戈斯群島,英屬印度洋領地,different,retain Foundation,查戈斯群島
+zh-Hant-HK,MO,澳門,中國澳門特別行政區,short,retain Foundation,澳門
+zh-Hant-MO,CC,科科斯（基林）群島,科科斯 (基林) 群島,different,retain Foundation,科科斯（基林）群島
+zh-Hant-MO,CN,中國大陸,中國,different,retain Foundation,中國大陸
+zh-Hant-MO,HK,香港,中國香港特別行政區,short,retain Foundation,香港
+zh-Hant-MO,IO,查戈斯群島,英屬印度洋領地,different,retain Foundation,查戈斯群島
+zh-Hant-MO,MO,澳門,中國澳門特別行政區,short,retain Foundation,澳門
+zh-Hant-TW,CN,中國大陸,中國,different,retain Foundation,中國大陸
+zh-Hant-TW,HK,香港,中國香港特別行政區,short,retain Foundation,香港
+zh-Hant-TW,IO,查戈斯群島,英屬印度洋領地,different,retain Foundation,查戈斯群島
+zh-Hant-TW,MO,澳門,中國澳門特別行政區,short,retain Foundation,澳門
+zh-Hant-TW,SL,獅子山共和國,獅子山,different,retain Foundation,獅子山共和國
+en,NR,Nauru,Nauru,default,use current regional authority,Naoero
+de,NR,Nauru,Nauru,default,use current regional authority,Naoero
+es,NR,Nauru,Nauru,default,use current regional authority,Naoero
+fr,NR,Nauru,Nauru,default,use current regional authority,Naoero
+it,NR,Nauru,Nauru,default,use current regional authority,Naoero
+zh-Hant,NR,諾魯,諾魯,default,use current regional authority,諾埃羅
+zh-Hant-TW,NR,諾魯,諾魯,default,use current regional authority,諾埃羅

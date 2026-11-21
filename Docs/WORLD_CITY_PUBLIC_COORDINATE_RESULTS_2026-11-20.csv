@@ -1,0 +1,259 @@
+sample,source_id,source_url,site,expected_region,accepted_city_names,latitude,longitude,current_region,current_city,current_grade,dense_region,dense_city,dense_grade,bounded_region,bounded_city,bounded_grade
+geonames_center,1609350,https://www.geonames.org/1609350,Bangkok,TH,Bangkok,13.75398,100.50144,TH,Bangkok,right,TH,Bangkok,right,TH,Bangkok,right
+geonames_center,1151254,https://www.geonames.org/1151254,Phuket,TH,Phuket,7.89059,98.3981,TH,Phuket,right,TH,Phuket,right,TH,Phuket,right
+geonames_center,1153671,https://www.geonames.org/1153671,Chiang Mai,TH,Chiang Mai,18.79038,98.98468,TH,Chiang Mai,right,TH,Chiang Mai,right,TH,Chiang Mai,right
+geonames_center,1614295,https://www.geonames.org/1614295,Pattaya,TH,Pattaya,12.93333,100.88333,TH,Si Racha,wrong_city,TH,Pattaya,right,TH,Pattaya,right
+geonames_center,1152633,https://www.geonames.org/1152633,Krabi,TH,Krabi,8.07257,98.91052,TH,Krabi,right,TH,Krabi,right,TH,Krabi,right
+geonames_center,1819729,https://www.geonames.org/1819729,Hong Kong,HK,Hong Kong,22.27832,114.17469,HK,Hong Kong,right,HK,Hong Kong,right,HK,Hong Kong,right
+geonames_center,1821274,https://www.geonames.org/1821274,Macao,MO,Macao|Macau,22.20056,113.54611,MO,Macau,right,MO,Macau,right,MO,Macau,right
+geonames_center,2643743,https://www.geonames.org/2643743,London,GB,London,51.50853,-0.12574,GB,London,right,GB,London,right,GB,London,right
+geonames_center,2640729,https://www.geonames.org/2640729,Oxford,GB,Oxford,51.75222,-1.25596,GB,Oxford,right,GB,Oxford,right,GB,Oxford,right
+geonames_center,2653941,https://www.geonames.org/2653941,Cambridge,GB,Cambridge,52.2,0.11667,GB,Cambridge,right,GB,Cambridge,right,GB,Cambridge,right
+geonames_center,2656173,https://www.geonames.org/2656173,Bath,GB,Bath,51.3751,-2.36172,GB,Bath,right,GB,Bath,right,GB,Bath,right
+geonames_center,2633352,https://www.geonames.org/2633352,York,GB,York,53.95763,-1.08271,GB,York,right,GB,York,right,GB,York,right
+geonames_center,745044,https://www.geonames.org/745044,Istanbul,TR,Istanbul,41.01384,28.94966,TR,Istanbul,right,TR,Istanbul,right,TR,Istanbul,right
+geonames_center,323777,https://www.geonames.org/323777,Antalya,TR,Antalya,36.90812,30.69556,TR,Antalya,right,TR,Antalya,right,TR,Antalya,right
+geonames_center,320995,https://www.geonames.org/320995,Bodrum,TR,Bodrum,37.03833,27.42917,GR,Kos,wrong_country,TR,Bodrum,right,TR,Bodrum,right
+geonames_center,314967,https://www.geonames.org/314967,Fethiye,TR,Fethiye,36.64038,29.12758,,,unknown,TR,Fethiye,right,TR,Fethiye,right
+geonames_center,292223,https://www.geonames.org/292223,Dubai,AE,Dubai,25.07725,55.30927,AE,Dubai,right,AE,Dubai,right,AE,Dubai,right
+geonames_center,104515,https://www.geonames.org/104515,Mecca,SA,Mecca|Makkah,21.42664,39.82563,SA,Mecca,right,SA,Mecca,right,SA,Mecca,right
+geonames_center,2988507,https://www.geonames.org/2988507,Paris,FR,Paris,48.85341,2.3488,FR,Paris,right,FR,Paris,right,FR,Paris,right
+geonames_center,3028808,https://www.geonames.org/3028808,Cannes,FR,Cannes,43.55135,7.01275,FR,Nice,wrong_city,FR,Cannes,right,FR,Cannes,right
+geonames_center,3035681,https://www.geonames.org/3035681,Avignon,FR,Avignon,43.94834,4.80892,FR,Nîmes,wrong_city,FR,Avignon,right,FR,Avignon,right
+geonames_center,2969679,https://www.geonames.org/2969679,Versailles,FR,Versailles,48.80359,2.13424,FR,Versailles,right,FR,Versailles,right,FR,Versailles,right
+geonames_center,3037543,https://www.geonames.org/3037543,Annecy,FR,Annecy,45.90878,6.12565,FR,Annecy,right,FR,Annecy,right,FR,Annecy,right
+geonames_center,3024297,https://www.geonames.org/3024297,Colmar,FR,Colmar,48.08078,7.35584,FR,Mulhouse,wrong_city,FR,Colmar,right,FR,Colmar,right
+geonames_center,2990440,https://www.geonames.org/2990440,Nice,FR,Nice,43.70313,7.26608,FR,Nice,right,FR,Nice,right,FR,Nice,right
+geonames_center,1735161,https://www.geonames.org/1735161,Kuala Lumpur,MY,Kuala Lumpur,3.1412,101.68653,MY,Kuala Lumpur,right,MY,Kuala Lumpur,right,MY,Kuala Lumpur,right
+geonames_center,1734759,https://www.geonames.org/1734759,Malacca,MY,Malacca|Melaka City|Melaka,2.196,102.2405,MY,Melaka City,right,MY,Melaka City,right,MY,Melaka City,right
+geonames_center,3117735,https://www.geonames.org/3117735,Madrid,ES,Madrid,40.4165,-3.70256,ES,Madrid,right,ES,Madrid,right,ES,Madrid,right
+geonames_center,3128760,https://www.geonames.org/3128760,Barcelona,ES,Barcelona,41.38879,2.15899,ES,Barcelona,right,ES,Barcelona,right,ES,Barcelona,right
+geonames_center,2514169,https://www.geonames.org/2514169,Marbella,ES,Marbella,36.51543,-4.88583,ES,Marbella,right,ES,Marbella,right,ES,Marbella,right
+geonames_center,2521088,https://www.geonames.org/2521088,Benidorm,ES,Benidorm,38.53816,-0.13098,ES,Alicante,wrong_city,ES,Benidorm,right,ES,Benidorm,right
+geonames_center,2510409,https://www.geonames.org/2510409,Toledo,ES,Toledo,39.8581,-4.02263,ES,Toledo,right,ES,Toledo,right,ES,Toledo,right
+geonames_center,3109256,https://www.geonames.org/3109256,Segovia,ES,Segovia,40.94808,-4.11839,ES,,country_only,ES,Segovia,right,ES,Segovia,right
+geonames_center,3169070,https://www.geonames.org/3169070,Rome,IT,Rome|Roma,41.89193,12.51133,IT,Rome,right,IT,Rome,right,IT,Rome,right
+geonames_center,3176959,https://www.geonames.org/3176959,Florence,IT,Florence|Firenze,43.77925,11.24626,IT,Florence,right,IT,Florence,right,IT,Florence,right
+geonames_center,3170647,https://www.geonames.org/3170647,Pisa,IT,Pisa,43.70853,10.4036,IT,Pisa,right,IT,Pisa,right,IT,Pisa,right
+geonames_center,3166548,https://www.geonames.org/3166548,Siena,IT,Siena,43.31822,11.33064,IT,Siena,right,IT,Siena,right,IT,Siena,right
+geonames_center,3178229,https://www.geonames.org/3178229,Como,IT,Como,45.80819,9.0832,IT,Como,right,IT,Como,right,IT,Como,right
+geonames_center,3164603,https://www.geonames.org/3164603,Venice,IT,Venice,45.43713,12.33265,IT,Venice,right,IT,Venice,right,IT,Venice,right
+geonames_center,3531673,https://www.geonames.org/3531673,Cancun,MX,Cancun|Cancún,21.17429,-86.84656,MX,Cancun,right,MX,Cancun,right,MX,Cancun,right
+geonames_center,3521342,https://www.geonames.org/3521342,Playa del Carmen,MX,Playa del Carmen,20.6274,-87.07987,MX,San Miguel de Cozumel,wrong_city,MX,Playa del Carmen,right,MX,Playa del Carmen,right
+geonames_center,3515040,https://www.geonames.org/3515040,Tulum,MX,Tulum,20.21173,-87.46325,MX,,country_only,MX,Tulum,right,MX,Tulum,right
+geonames_center,2950159,https://www.geonames.org/2950159,Berlin,DE,Berlin,52.52437,13.41053,DE,Berlin,right,DE,Berlin,right,DE,Berlin,right
+geonames_center,2907911,https://www.geonames.org/2907911,Heidelberg,DE,Heidelberg,49.40768,8.69079,DE,Heidelberg,right,DE,Heidelberg,right,DE,Heidelberg,right
+geonames_center,2952984,https://www.geonames.org/2952984,Bamberg,DE,Bamberg,49.89873,10.90067,DE,Coburg,wrong_city,DE,Bamberg,right,DE,Bamberg,right
+geonames_center,2761369,https://www.geonames.org/2761369,Vienna,AT,Vienna|Wien,48.20849,16.37208,AT,Vienna,right,AT,Vienna,right,AT,Vienna,right
+geonames_center,2766824,https://www.geonames.org/2766824,Salzburg,AT,Salzburg,47.79941,13.04399,AT,Salzburg,right,AT,Salzburg,right,AT,Salzburg,right
+geonames_center,2775220,https://www.geonames.org/2775220,Innsbruck,AT,Innsbruck,47.26266,11.39454,AT,Innsbruck,right,AT,Innsbruck,right,AT,Innsbruck,right
+geonames_center,264371,https://www.geonames.org/264371,Athens,GR,Athens|Athína,37.98376,23.72784,GR,Athens,right,GR,Athens,right,GR,Athens,right
+geonames_center,260114,https://www.geonames.org/260114,Chania,GR,Chania|Chaniá,35.51124,24.02921,GR,Chania,right,GR,Chania,right,GR,Chania,right
+geonames_center,400666,https://www.geonames.org/400666,Rhodes,GR,Rhodes|Ródos,36.43556,28.22199,GR,Rhodes,right,GR,Rhodes,right,GR,Rhodes,right
+geonames_center,2267057,https://www.geonames.org/2267057,Lisbon,PT,Lisbon,38.72509,-9.1498,PT,Lisbon,right,PT,Lisbon,right,PT,Lisbon,right
+geonames_center,2262912,https://www.geonames.org/2262912,Sintra,PT,Sintra,38.80097,-9.37826,PT,Lisbon,wrong_city,PT,Sintra,right,PT,Sintra,right
+geonames_center,2267226,https://www.geonames.org/2267226,Lagos,PT,Lagos,37.10202,-8.67422,PT,Portimão,wrong_city,PT,Lagos,right,PT,Lagos,right
+geonames_center,1816670,https://www.geonames.org/1816670,Beijing,CN,Beijing,39.9075,116.39723,CN,Beijing,right,CN,Beijing,right,CN,Beijing,right
+geonames_center,1796236,https://www.geonames.org/1796236,Shanghai,CN,Shanghai,31.22222,121.45806,CN,Shanghai,right,CN,Shanghai,right,CN,Shanghai,right
+geonames_center,5128581,https://www.geonames.org/5128581,New York City,US,New York City|New York,40.71427,-74.00597,US,Hoboken,wrong_city,US,New York City,right,US,New York,right
+geonames_center,5506956,https://www.geonames.org/5506956,Las Vegas,US,Las Vegas,36.17497,-115.13722,US,North Las Vegas,wrong_city,US,Las Vegas,right,US,Las Vegas,right
+geonames_center,1850147,https://www.geonames.org/1850147,Tokyo,JP,Tokyo,35.6895,139.69171,JP,Tokyo,right,JP,Tokyo,right,JP,Tokyo,right
+geonames_center,1857910,https://www.geonames.org/1857910,Kyoto,JP,Kyoto,35.02107,135.75385,JP,Kyoto,right,JP,Kyoto,right,JP,Kyoto,right
+geonames_center,2759794,https://www.geonames.org/2759794,Amsterdam,NL,Amsterdam,52.37403,4.88969,NL,Amsterdam,right,NL,Amsterdam,right,NL,Amsterdam,right
+geonames_center,2757345,https://www.geonames.org/2757345,Delft,NL,Delft,52.00667,4.35556,NL,The Hague,wrong_city,NL,Delft,right,NL,The Hague,wrong_city
+geonames_center,3094802,https://www.geonames.org/3094802,Krakow,PL,Krakow|Kraków,50.06143,19.93658,PL,Kraków,right,PL,Kraków,right,PL,Kraków,right
+geonames_center,3080866,https://www.geonames.org/3080866,Zakopane,PL,Zakopane,49.29899,19.94885,,,unknown,PL,Zakopane,right,PL,Zakopane,right
+geonames_center,1580541,https://www.geonames.org/1580541,Hoi An,VN,Hoi An,15.87944,108.335,VN,Da Nang,wrong_city,VN,Hoi An,right,VN,Hoi An,right
+geonames_center,1622846,https://www.geonames.org/1622846,Ubud,ID,Ubud,-8.5098,115.2654,ID,Denpasar,wrong_city,ID,Ubud,right,ID,Ubud,right
+geonames_center,3201047,https://www.geonames.org/3201047,Dubrovnik,HR,Dubrovnik,42.64125,18.10909,HR,Dubrovnik,right,HR,Dubrovnik,right,HR,Dubrovnik,right
+geonames_center,3190261,https://www.geonames.org/3190261,Split,HR,Split,43.50891,16.43915,HR,Split,right,HR,Split,right,HR,Split,right
+geonames_center,2659811,https://www.geonames.org/2659811,Lucerne,CH,Lucerne|Luzern,47.05048,8.30635,CH,Lucerne,right,CH,Lucerne,right,CH,Lucerne,right
+geonames_center,2659601,https://www.geonames.org/2659601,Montreux,CH,Montreux,46.43301,6.91143,CH,Lausanne,wrong_city,CH,Montreux,right,CH,Montreux,right
+geonames_center,3042091,https://www.geonames.org/3042091,Saint Helier,JE,Saint Helier,49.18804,-2.10491,FR,,wrong_country,JE,Saint Helier,right,JE,Saint Helier,right
+geonames_center,7626461,https://www.geonames.org/7626461,Yaren,NR,Yaren,-0.55085,166.9252,,,unknown,NR,Yaren,right,NR,Yaren,right
+landmark_initial,162bis,https://whc.unesco.org/en/list/162/maps/,Amiens Cathedral,FR,Amiens,49.895,2.301666667,FR,Amiens,right,FR,Amiens,right,FR,Amiens,right
+landmark_initial,635bis,https://whc.unesco.org/en/list/635/maps/,Bourges Cathedral,FR,Bourges,47.08222222,2.398333333,FR,Bourges,right,FR,Bourges,right,FR,Bourges,right
+landmark_initial,601,https://whc.unesco.org/en/list/601/maps/,"Cathedral of Notre-Dame, Former Abbey of Saint-Rémi and Palace of Tau, Reims",FR,Reims,49.254,4.034,FR,Reims,right,FR,Reims,right,FR,Reims,right
+landmark_initial,81bis,https://whc.unesco.org/en/list/81/maps/,Chartres Cathedral,FR,Chartres,48.4475,1.487222222,FR,,country_only,FR,Chartres,right,FR,Chartres,right
+landmark_initial,1337,https://whc.unesco.org/en/list/1337/maps/,Episcopal City of Albi,FR,Albi,43.9291666667,2.1441666667,FR,,country_only,FR,Albi,right,FR,Albi,right
+landmark_initial,228rev,https://whc.unesco.org/en/list/228/maps/,"Historic Centre of Avignon: Papal Palace, Episcopal Ensemble and Avignon Bridge",FR,Avignon,43.95277778,4.806111111,FR,Nîmes,wrong_city,FR,Avignon,right,FR,Avignon,right
+landmark_initial,345rev,https://whc.unesco.org/en/list/345/maps/,Historic Fortified City of Carcassonne,FR,Carcassonne,43.2070631,2.3636562,,,unknown,FR,Carcassonne,right,FR,Carcassonne,right
+landmark_initial,872,https://whc.unesco.org/en/list/872/maps/,Historic Site of Lyon,FR,Lyon,45.76722,4.83333,FR,Lyon,right,FR,Lyon,right,FR,Lyon,right
+landmark_initial,1181,https://whc.unesco.org/en/list/1181/maps/,"Le Havre, the City Rebuilt by Auguste Perret",FR,Le Havre,49.49278,0.1075,FR,Le Havre,right,FR,Le Havre,right,FR,Le Havre,right
+landmark_initial,1635,https://whc.unesco.org/en/list/1635/maps/,"Nice, Winter Resort Town of the Riviera",FR,Nice,43.7016944444,7.2723055556,FR,Nice,right,FR,Nice,right,FR,Nice,right
+landmark_initial,160bis,https://whc.unesco.org/en/list/160/maps/,Palace and Park of Fontainebleau,FR,Fontainebleau,48.40194444,2.698055556,FR,Melun,wrong_city,FR,Fontainebleau,right,FR,Fontainebleau,right
+landmark_initial,83bis,https://whc.unesco.org/en/list/83/maps/,Palace and Park of Versailles,FR,Versailles,48.805,2.119444444,FR,Versailles,right,FR,Versailles,right,FR,Versailles,right
+landmark_initial,600bis,https://whc.unesco.org/en/list/600/maps/,"Paris, Banks of the Seine",FR,Paris,48.8655,2.3211388889,FR,Paris,right,FR,Paris 07 Palais-Bourbon,wrong_city,FR,Paris,right
+landmark_initial,873rev,https://whc.unesco.org/en/list/873/maps/,"Provins, Town of Medieval Fairs",FR,Provins,48.55972222,3.298888889,FR,,country_only,FR,Montereau-Fault-Yonne,wrong_city,FR,Provins,right
+landmark_initial,316bis,https://whc.unesco.org/en/list/316/maps/,Burgos Cathedral,ES,Burgos,42.3407333333,-3.7040111111,ES,Burgos,right,ES,Burgos,right,ES,Burgos,right
+landmark_initial,383bis-001,https://whc.unesco.org/en/list/383/maps/,Catedral de Sevilla,ES,Seville|Sevilla,37.3856944444,-5.9930555556,ES,Seville,right,ES,Sevilla,right,ES,Seville,right
+landmark_initial,313bis,https://whc.unesco.org/en/list/313/maps/,Historic Centre of Cordoba,ES,Córdoba,37.87919444,-4.779722222,ES,Córdoba,right,ES,Córdoba,right,ES,Córdoba,right
+landmark_initial,379,https://whc.unesco.org/en/list/379/maps/,Historic City of Toledo,ES,Toledo,39.8569444444,-4.0244444444,ES,Toledo,right,ES,Toledo,right,ES,Toledo,right
+landmark_initial,781-001,https://whc.unesco.org/en/list/781/maps/,Recinto Intramuros,ES,Cuenca,40.0766111111,-2.13175,ES,,country_only,ES,Cuenca,right,ES,Cuenca,right
+landmark_initial,381-001,https://whc.unesco.org/en/list/381/maps/,Old Quarter of the City,ES,Salamanca,40.96525,-5.6645,ES,Salamanca,right,ES,Salamanca,right,ES,Salamanca,right
+landmark_initial,384bis,https://whc.unesco.org/en/list/384/maps/,Old Town of Cáceres,ES,Cáceres,39.47444,-6.37,,,unknown,ES,Cáceres,right,ES,Cáceres,right
+landmark_initial,311bis,https://whc.unesco.org/en/list/311/maps/,Old Town of Segovia and its Aqueduct,ES,Segovia,40.94847222,-4.11675,ES,,country_only,ES,Segovia,right,ES,Segovia,right
+landmark_initial,348-001,https://whc.unesco.org/en/list/348/maps/,Town of Avila intra-muros,ES,Ávila,40.6563888889,-4.7,ES,,country_only,ES,Ávila,right,ES,Ávila,right
+landmark_initial,347-001,https://whc.unesco.org/en/list/347/maps/,Historic Centre of Santiago de Compostela,ES,Santiago de Compostela,42.88075,-8.5446944444,ES,Santiago de Compostela,right,ES,Santiago de Compostela,right,ES,Santiago de Compostela,right
+landmark_initial,876,https://whc.unesco.org/en/list/876/maps/,University and Historic Precinct of Alcalá de Henares,ES,Alcalá de Henares,40.48138889,-3.368055556,ES,Guadalajara,wrong_city,ES,Alcalá de Henares,right,ES,Alcalá de Henares,right
+landmark_initial,78,https://whc.unesco.org/en/list/78/maps/,Independence Hall,US,Philadelphia,39.94861111,-75.15,US,Camden,wrong_city,US,Philadelphia,right,US,Philadelphia,right
+landmark_initial,307,https://whc.unesco.org/en/list/307/maps/,Statue of Liberty,US,New York City|New York,40.68944444,-74.04472222,US,Hoboken,wrong_city,US,New York City,right,US,New York,right
+landmark_initial,614-001,https://whc.unesco.org/en/list/614/maps/,Çukur - the Hole,TR,Safranbolu,41.2455555556,32.6926388889,TR,Karabük,wrong_city,TR,Safranbolu,right,TR,Karabük,wrong_city
+landmark_initial,356bis-001,https://whc.unesco.org/en/list/356/maps/,Sultanahmet Urban Archaeological Component Area of World Heritage Site,TR,Istanbul,41.0083333333,28.9833333333,TR,Istanbul,right,TR,Istanbul,right,TR,Istanbul,right
+landmark_initial,827,https://whc.unesco.org/en/list/827/maps/,"Cathedral, Torre Civica and Piazza Grande, Modena",IT,Modena,44.64624,10.92568,IT,Modena,right,IT,Modena,right,IT,Modena,right
+landmark_initial,797rev,https://whc.unesco.org/en/list/797/maps/,City of Verona,IT,Verona,45.43861111,10.99388889,IT,Verona,right,IT,Verona,right,IT,Verona,right
+landmark_initial,712-001,https://whc.unesco.org/en/list/712/maps/,City of Vicenza (including 23 buildings constructed by Palladio),IT,Vicenza,45.5491666667,11.5494444444,IT,,country_only,IT,Vicenza,right,IT,Vicenza,right
+landmark_initial,733bis-001,https://whc.unesco.org/en/list/733/maps/,Ferrara,IT,Ferrara,44.8372418244,11.6197696436,IT,Ferrara,right,IT,Ferrara,right,IT,Ferrara,right
+landmark_initial,174quater,https://whc.unesco.org/en/list/174/maps/,Historic Centre of Florence,IT,Florence|Firenze,43.77306,11.25611,IT,Florence,right,IT,Florence,right,IT,Florence,right
+landmark_initial,726-001,https://whc.unesco.org/en/list/726/maps/,Historical Centre of Naples,IT,Naples|Napoli,40.8487888889,14.2468,IT,Naples,right,IT,Naples,right,IT,Naples,right
+landmark_initial,550,https://whc.unesco.org/en/list/550/maps/,Historic Centre of San Gimignano,IT,San Gimignano,43.46806,11.04167,IT,Siena,wrong_city,IT,Poggibonsi,wrong_city,IT,Siena,wrong_city
+landmark_initial,717,https://whc.unesco.org/en/list/717/maps/,Historic Centre of Siena,IT,Siena,43.31861111,11.33166667,IT,Siena,right,IT,Siena,right,IT,Siena,right
+landmark_initial,828,https://whc.unesco.org/en/list/828/maps/,Historic Centre of Urbino,IT,Urbino,43.7261395291,12.635924895,SM,San Marino,wrong_country,IT,Cattolica,wrong_city,IT,Cattolica,wrong_city
+landmark_initial,789,https://whc.unesco.org/en/list/789/maps/,Historic Centre of the City of Pienza,IT,Pienza,43.07694444,11.67861111,IT,Siena,wrong_city,IT,Siena,wrong_city,IT,Siena,wrong_city
+landmark_initial,1538bis,https://whc.unesco.org/en/list/1538/maps/,"Ivrea, industrial city of the 20th century",IT,Ivrea,45.4575,7.8691666667,IT,,country_only,IT,Ivrea,right,IT,Ivrea,right
+landmark_initial,707-001,https://whc.unesco.org/en/list/707/maps/,Potala Palace,CN,Lhasa,29.655485,91.118418,CN,Lhasa,right,CN,Lhasa,right,CN,Lhasa,right
+landmark_initial,811-001,https://whc.unesco.org/en/list/811/maps/,Dayan Old Town,CN,Lijiang,26.875,100.233333333,CN,Lijiang,right,CN,Lijiang,right,CN,Lijiang,right
+landmark_initial,880,https://whc.unesco.org/en/list/880/maps/,"Summer Palace, an Imperial Garden in Beijing",CN,Beijing,39.9969444444,116.268027778,CN,Beijing,right,CN,Beijing,right,CN,Beijing,right
+landmark_initial,881,https://whc.unesco.org/en/list/881/maps/,Temple of Heaven: an Imperial Sacrificial Altar in Beijing,CN,Beijing,39.8821666667,116.406666667,CN,Beijing,right,CN,Beijing,right,CN,Beijing,right
+landmark_initial,1334-001,https://whc.unesco.org/en/list/1334/maps/,West Lake Cultural Landscape of Hangzhou,CN,Hangzhou,30.2375,120.1408333333,CN,Hangzhou,right,CN,Hangzhou,right,CN,Hangzhou,right
+landmark_initial,585,https://whc.unesco.org/en/list/585/maps/,Historic Centre of Morelia,MX,Morelia,19.700927,-101.190376,MX,Morelia,right,MX,Morelia,right,MX,Morelia,right
+landmark_initial,416,https://whc.unesco.org/en/list/416/maps/,Historic Centre of Puebla,MX,Puebla|Puebla de Zaragoza|Puebla City,19.045967,-98.197769,MX,Puebla City,right,MX,Puebla City,right,MX,Puebla City,right
+landmark_initial,676,https://whc.unesco.org/en/list/676/maps/,Historic Centre of Zacatecas,MX,Zacatecas,22.775484,-102.573531,MX,Zacatecas,right,MX,Zacatecas,right,MX,Zacatecas,right
+landmark_initial,895,https://whc.unesco.org/en/list/895/maps/,Historic Fortified Town of Campeche,MX,Campeche|San Francisco de Campeche,19.84639,-90.53722,MX,Campeche,right,MX,Campeche,right,MX,Campeche,right
+landmark_initial,792,https://whc.unesco.org/en/list/792/maps/,Historic Monuments Zone of Querétaro,MX,Querétaro|Santiago de Querétaro,20.593292,-100.392135,MX,Santiago de Querétaro,right,MX,Santiago de Querétaro,right,MX,Santiago de Querétaro,right
+landmark_initial,862,https://whc.unesco.org/en/list/862/maps/,Historic Monuments Zone of Tlacotalpan,MX,Tlacotalpan,18.613459,-95.658676,MX,Santiago Tuxtla,wrong_city,MX,Lerdo de Tejada,wrong_city,MX,Santiago Tuxtla,wrong_city
+landmark_initial,482,https://whc.unesco.org/en/list/482/maps/,Historic Town of Guanajuato and Adjacent Mines,MX,Guanajuato|Guanajuato City,21.01694,-101.25556,MX,Guanajuato City,right,MX,Guanajuato City,right,MX,Guanajuato City,right
+landmark_initial,775,https://whc.unesco.org/en/list/775/maps/,Hiroshima Peace Memorial (Genbaku Dome),JP,Hiroshima,34.395556,132.453611,JP,Hiroshima,right,JP,Hiroshima,right,JP,Hiroshima,right
+landmark_initial,870-001,https://whc.unesco.org/en/list/870/maps/,Tôdai-ji,JP,Nara,34.6888888889,135.839722222,JP,Nara,right,JP,Nara,right,JP,Nara,right
+landmark_initial,404,https://whc.unesco.org/en/list/404/maps/,"Acropolis, Athens",GR,Athens|Athína,37.97087,23.72618,GR,Athens,right,GR,Athens,right,GR,Athens,right
+landmark_initial,493,https://whc.unesco.org/en/list/493/maps/,Medieval City of Rhodes,GR,Rhodes|Ródos,36.44722,28.22778,GR,Rhodes,right,GR,Rhodes,right,GR,Rhodes,right
+landmark_initial,978,https://whc.unesco.org/en/list/978/maps/,Old Town of Corfu,GR,Corfu|Kérkyra,39.6239413889,19.9275,GR,Corfu,right,GR,Corfu,right,GR,Corfu,right
+landmark_initial,3bis,https://whc.unesco.org/en/list/3/maps/,Aachen Cathedral,DE,Aachen,50.7747468537,6.083919968,NL,Maastricht,wrong_country,DE,Aachen,right,DE,Aachen,right
+landmark_initial,535-001,https://whc.unesco.org/en/list/535/maps/,Old and new towns of Quedlinburg,DE,Quedlinburg,51.7888888889,11.1427777778,DE,,country_only,DE,Quedlinburg,right,DE,Quedlinburg,right
+landmark_initial,292bis,https://whc.unesco.org/en/list/292/maps/,Cologne Cathedral,DE,Cologne|Köln,50.94111111,6.957222222,DE,Cologne,right,DE,Köln,right,DE,Cologne,right
+landmark_initial,272bis-001,https://whc.unesco.org/en/list/272/maps/,Zone 1: Burgkloster - Aegidienstrasse,DE,Lübeck,53.8666666667,10.6916666667,DE,Lübeck,right,DE,Lübeck,right,DE,Lübeck,right
+landmark_initial,1470rev,https://whc.unesco.org/en/list/1470/maps/,Naumburg Cathedral,DE,Naumburg|Naumburg (Saale),51.1548055556,11.804,DE,Jena,wrong_city,DE,Naumburg,right,DE,Naumburg,right
+landmark_initial,1155,https://whc.unesco.org/en/list/1155/maps/,Old town of Regensburg with Stadtamhof,DE,Regensburg,49.02055556,12.09916667,DE,Regensburg,right,DE,Regensburg,right,DE,Regensburg,right
+landmark_initial,367-001,https://whc.unesco.org/en/list/367/maps/,Ampitheatre,DE,Trier,49.748,6.6490555555,LU,Grevenmacher,wrong_country,DE,Trier,right,DE,Trier,right
+landmark_initial,168,https://whc.unesco.org/en/list/168/maps/,Speyer Cathedral,DE,Speyer,49.3172222222,8.4423888889,DE,Mannheim,wrong_city,DE,Speyer,right,DE,Speyer,right
+landmark_initial,187bis-001,https://whc.unesco.org/en/list/187/maps/,St Michael's Lutheran Church,DE,Hildesheim,52.1527777778,9.9438888889,DE,Hanover,wrong_city,DE,Hildesheim,right,DE,Hildesheim,right
+landmark_initial,1087,https://whc.unesco.org/en/list/1087/maps/,Town Hall and Roland on the Marketplace of Bremen,DE,Bremen,53.07597222,8.807472222,DE,Bremen,right,DE,Bremen,right,DE,Bremen,right
+landmark_initial,624,https://whc.unesco.org/en/list/624/maps/,Town of Bamberg,DE,Bamberg,49.89166667,10.88888889,DE,Coburg,wrong_city,DE,Bamberg,right,DE,Bamberg,right
+landmark_initial,169bis-001,https://whc.unesco.org/en/list/169/maps/,Residenz,DE,Würzburg,49.7927777778,9.9388888889,DE,Würzburg,right,DE,Würzburg,right,DE,Würzburg,right
+landmark_initial,496-001,https://whc.unesco.org/en/list/496/maps/,Canterbury Cathedral,GB,Canterbury,51.28,1.0832222222,GB,Dover,wrong_city,GB,Canterbury,right,GB,Canterbury,right
+landmark_initial,428,https://whc.unesco.org/en/list/428/maps/,City of Bath,GB,Bath,51.3813055556,-2.3590555556,GB,Bath,right,GB,Bath,right,GB,Bath,right
+landmark_initial,370bis,https://whc.unesco.org/en/list/370/maps/,Durham Castle and Cathedral,GB,Durham,54.77472222,-1.576111111,GB,Sunderland,wrong_city,GB,Durham,right,GB,Durham,right
+landmark_initial,728,https://whc.unesco.org/en/list/728/maps/,Old and New Towns of Edinburgh,GB,Edinburgh,55.95,-3.216666667,GB,Edinburgh,right,GB,Edinburgh,right,GB,Edinburgh,right
+landmark_initial,426bis,https://whc.unesco.org/en/list/426/maps/,Palace of Westminster and Westminster Abbey including Saint Margaret’s Church,GB,London,51.499,-0.127,GB,London,right,GB,City of Westminster,wrong_city,GB,London,right
+landmark_initial,488,https://whc.unesco.org/en/list/488/maps/,Tower of London,GB,London,51.50805556,-0.076111111,GB,London,right,GB,Shadwell,wrong_city,GB,London,right
+landmark_initial,931ter-001,https://whc.unesco.org/en/list/931/maps/,City of Graz - Historic Centre,AT,Graz,47.0730555556,15.4386111111,AT,Graz,right,AT,Graz,right,AT,Graz,right
+landmark_initial,1033,https://whc.unesco.org/en/list/1033/maps/,Historic Centre of Vienna,AT,Vienna|Wien,48.2094,16.3699,AT,Vienna,right,AT,Vienna,right,AT,Vienna,right
+landmark_initial,784,https://whc.unesco.org/en/list/784/maps/,Historic Centre of the City of Salzburg,AT,Salzburg,47.80055556,13.04333333,AT,Salzburg,right,AT,Salzburg,right,AT,Salzburg,right
+landmark_initial,576,https://whc.unesco.org/en/list/576/maps/,Historic City of Ayutthaya,TH,Ayutthaya|Phra Nakhon Si Ayutthaya,14.34778,100.56056,TH,Phra Nakhon Si Ayutthaya,right,TH,Phra Nakhon Si Ayutthaya,right,TH,Phra Nakhon Si Ayutthaya,right
+landmark_initial,206,https://whc.unesco.org/en/list/206/maps/,Central Zone of the Town of Angra do Heroismo in the Azores,PT,Angra do Heroísmo,38.655,-27.22,PT,Angra do Heroísmo,right,PT,Angra do Heroísmo,right,PT,Angra do Heroísmo,right
+landmark_initial,1367bis-002,https://whc.unesco.org/en/list/1367/maps/,Historic Centre,PT,Elvas,38.8806166667,-7.1633222222,ES,Badajoz,wrong_country,ES,Badajoz,wrong_country,PT,,country_only
+landmark_initial,1031bis,https://whc.unesco.org/en/list/1031/maps/,Historic Centre of Guimarães and Couros Zone,PT,Guimarães,41.443,-8.2927777778,PT,Braga,wrong_city,PT,Guimarães,right,PT,Guimarães,right
+landmark_initial,755,https://whc.unesco.org/en/list/755/maps/,"Historic Centre of Oporto, Luiz I Bridge and Monastery of Serra do Pilar",PT,Porto|Oporto,41.14166667,-8.616666667,PT,Porto,right,PT,Porto,right,PT,Porto,right
+landmark_initial,361,https://whc.unesco.org/en/list/361/maps/,Historic Centre of Évora,PT,Évora,38.57306,-7.90778,PT,Évora,right,PT,Évora,right,PT,Évora,right
+landmark_initial,263bis-001,https://whc.unesco.org/en/list/263/maps/,Monastery of the Hieronymites,PT,Lisbon|Lisboa,38.6977777778,-9.2066666667,PT,Lisbon,right,PT,Belém,wrong_city,PT,Lisbon,right
+landmark_initial,1573,https://whc.unesco.org/en/list/1573/maps/,"Royal Building of <i>Mafra</i> – Palace, Basilica, Convent, <i>Cerco</i> Garden and Hunting Park (<i>Tapada</i>)",PT,Mafra,38.9371666667,-9.3255277778,PT,Lisbon,wrong_city,PT,Algueirão,wrong_city,PT,Lisbon,wrong_city
+landmark_initial,1590,https://whc.unesco.org/en/list/1590/maps/,Sanctuary of Bom Jesus do Monte in Braga,PT,Braga,41.5549444444,-8.3770277778,PT,Braga,right,PT,Bairro Novo,wrong_city,PT,Braga,right
+landmark_initial,1361,https://whc.unesco.org/en/list/1361/maps/,"Historic Jeddah, the Gate to Makkah",SA,Jeddah|Jiddah,21.4838888889,39.1875,SA,Jeddah,right,SA,Jeddah,right,SA,Jeddah,right
+landmark_initial,1343-004,https://whc.unesco.org/en/list/1343/maps/,Al Ain Oasis (4.1),AE,Al Ain|Al ‘Ayn,24.217429,55.766967,AE,Al Ain,right,AE,Al Ain City,wrong_city,AE,Al Ain,right
+landmark_initial,1349,https://whc.unesco.org/en/list/1349/maps/,Seventeenth-Century Canal Ring Area of Amsterdam inside the Singelgracht,NL,Amsterdam,52.365,4.8877777778,NL,Amsterdam,right,NL,Amsterdam,right,NL,Amsterdam,right
+landmark_initial,1715rev,https://whc.unesco.org/en/list/1715/maps/,Gdynia Modernist City Centre,PL,Gdynia,54.5193611111,18.5425277777,PL,Gdynia,right,PL,Gdynia,right,PL,Gdynia,right
+landmark_initial,29bis,https://whc.unesco.org/en/list/29/maps/,Historic Centre of Kraków,PL,Kraków,50.0613888889,19.9372222222,PL,Kraków,right,PL,Kraków,right,PL,Kraków,right
+landmark_initial,30bis,https://whc.unesco.org/en/list/30/maps/,Historic Centre of Warsaw,PL,Warsaw|Warszawa,52.25,21.013,PL,Warsaw,right,PL,Praga Północ,wrong_city,PL,Warsaw,right
+landmark_initial,835,https://whc.unesco.org/en/list/835/maps/,Medieval Town of Toruń,PL,Toruń,53.0105555556,18.6041666667,PL,Inowrocław,wrong_city,PL,Toruń,right,PL,Toruń,right
+landmark_initial,564,https://whc.unesco.org/en/list/564/maps/,Old City of Zamość,PL,Zamość,50.7169444444,23.2527777778,,,unknown,PL,Zamość,right,PL,Zamość,right
+landmark_initial,948,https://whc.unesco.org/en/list/948/maps/,Hoi An Ancient Town,VN,Hoi An|Hội An,15.88333333,108.3333333,VN,Da Nang,wrong_city,VN,Hoi An,right,VN,Hoi An,right
+landmark_initial,331-001,https://whc.unesco.org/en/list/331/maps/,Médina et le jardin d'Agdal,MA,Marrakesh|Marrakech,31.6313888889,-7.9866666667,MA,Marrakesh,right,MA,Marrakesh,right,MA,Marrakesh,right
+landmark_initial,170-001,https://whc.unesco.org/en/list/170/maps/,Fès El Bali,MA,Fez|Fès,34.0625833333,-4.9726111111,MA,Fez,right,MA,Fez,right,MA,Fez,right
+landmark_initial,793,https://whc.unesco.org/en/list/793/maps/,Historic City of Meknes,MA,Meknes|Meknès,33.88333,-5.55833,MA,Meknes,right,MA,Meknes,right,MA,Meknes,right
+landmark_initial,753rev-001,https://whc.unesco.org/en/list/753/maps/,La médina d'Essaouira,MA,Essaouira,31.5141111111,-9.7703055556,MA,,country_only,MA,Essaouira,right,MA,Essaouira,right
+landmark_initial,1401-001,https://whc.unesco.org/en/list/1401/maps/,"Ville nouvelle, Qasba des Oudaïa, Jardin d'Essais, Médina, Remparts et portes almohades, Site archéologique du Chellah",MA,Rabat,34.0163888889,-6.8352777778,MA,Rabat,right,MA,Rabat,right,MA,Rabat,right
+landmark_initial,1058rev,https://whc.unesco.org/en/list/1058/maps/,Portuguese City of Mazagan (El Jadida),MA,El Jadida,33.25667,-8.50194,MA,El Jadida,right,MA,El Jadida,right,MA,El Jadida,right
+landmark_initial,821,https://whc.unesco.org/en/list/821/maps/,Historic Centre of São Luís,BR,São Luís,-2.530054,-44.303369,BR,São Luís,right,BR,São Luís,right,BR,São Luís,right
+landmark_initial,189,https://whc.unesco.org/en/list/189/maps/,Historic Centre of the Town of Olinda,BR,Olinda,-8.013333333,-34.845,BR,Olinda,right,BR,Olinda,right,BR,Olinda,right
+landmark_initial,124,https://whc.unesco.org/en/list/124/maps/,Historic Town of Ouro Preto,BR,Ouro Preto,-20.38888889,-43.50555556,BR,Conselheiro Lafaiete,wrong_city,BR,Ouro Preto,right,BR,Ouro Preto,right
+landmark_initial,166rev,https://whc.unesco.org/en/list/166/maps/,Sydney Opera House,AU,Sydney,-33.8566666667,151.2152777777,AU,Sydney,right,AU,Sydney,right,AU,Sydney,right
+landmark_initial,741,https://whc.unesco.org/en/list/741/maps/,Old Town Lunenburg,CA,Lunenburg,44.37611111,-64.30916667,CA,,country_only,CA,,country_only,CA,,country_only
+landmark_initial,1016,https://whc.unesco.org/en/list/1016/maps/,Historical Centre of the City of Arequipa,PE,Arequipa,-16.398353,-71.536777,PE,Arequipa,right,PE,Arequipa,right,PE,Arequipa,right
+landmark_initial,500ter-001,https://whc.unesco.org/en/list/500/maps/,Historic Centre of Lima,PE,Lima,-12.0465416666,-77.0304,PE,Lima,right,PE,Lima,right,PE,Lima,right
+landmark_initial,273-001,https://whc.unesco.org/en/list/273/maps/,Main Square and Historic Centre,PE,Cusco|Cuzco,-13.5166888889,-71.9786972222,PE,Cuzco,right,PE,Santiago,wrong_city,PE,Cuzco,right
+landmark_initial,732-001,https://whc.unesco.org/en/list/732/maps/,Kutnà Hora: Historical Town Centre with the Church of St. Barbara,CZ,Kutná Hora,49.949976,15.267402,CZ,Pardubice,wrong_city,CZ,Kutná Hora,right,CZ,Kutná Hora,right
+landmark_initial,617,https://whc.unesco.org/en/list/617/maps/,Historic Centre of Český Krumlov,CZ,Český Krumlov,48.8106944444,14.3150277778,CZ,České Budějovice,wrong_city,CZ,České Budějovice,wrong_city,CZ,České Budějovice,wrong_city
+landmark_initial,621,https://whc.unesco.org/en/list/621/maps/,Historic Centre of Telč,CZ,Telč,49.1841388889,15.4539722222,CZ,Jihlava,wrong_city,CZ,Jihlava,wrong_city,CZ,Jihlava,wrong_city
+landmark_initial,616bis-001,https://whc.unesco.org/en/list/616/maps/,Historic Centre of Prague,CZ,Prague|Praha,50.0897222222,14.4194444444,CZ,Prague,right,CZ,Prague,right,CZ,Prague,right
+landmark_initial,996,https://whc.unesco.org/en/list/996/maps/,Historic Centre of Brugge,BE,Bruges|Brugge,51.20891,3.22527,BE,Bruges,right,BE,Bruges,right,BE,Bruges,right
+landmark_initial,1055,https://whc.unesco.org/en/list/1055/maps/,Lamu Old Town,KE,Lamu,-2.284444444,40.8525,KE,Lamu,right,KE,Lamu,right,KE,Lamu,right
+landmark_initial,89-001,https://whc.unesco.org/en/list/89/maps/,Al-Fustat,EG,Cairo|Al Qāhirah,30.0066666667,31.2334444444,EG,Giza,wrong_city,EG,Giza,wrong_city,EG,Giza,wrong_city
+landmark_initial,1483,https://whc.unesco.org/en/list/1483/maps/,Singapore Botanic Gardens,SG,Singapore,1.3152777778,103.8161111111,SG,Singapore,right,SG,Queenstown Estate,wrong_city,SG,Singapore,right
+landmark_holdout,1703,https://whc.unesco.org/en/list/1703/maps/,The Historic Centre of Odesa,UA,Odesa|Odessa,46.48645,30.7416138889,UA,Odessa,right,UA,Odesa,right,UA,Odessa,right
+landmark_holdout,1658,https://whc.unesco.org/en/list/1658/maps/,Old town of Kuldīga,LV,Kuldīga,56.96775,21.9715277778,LV,,country_only,,,unknown,LV,,country_only
+landmark_holdout,1549rev,https://whc.unesco.org/en/list/1549/maps/,Historic Centre of Sheki with the Khan’s Palace,AZ,Sheki|Shaki|Şəki,41.2033333333,47.1875,AZ,Shaki,right,AZ,Shaki,right,AZ,Shaki,right
+landmark_holdout,1544-001,https://whc.unesco.org/en/list/1544/maps/,Area 1,IR,Yazd,31.9013888889,54.3691666667,IR,Yazd,right,IR,Yazd,right,IR,Yazd,right
+landmark_holdout,1551,https://whc.unesco.org/en/list/1551/maps/,Historic City of Ahmadabad,IN,Ahmedabad|Ahmadabad,23.0263888889,72.5880555556,IN,Ahmedabad,right,IN,Ahmedabad,right,IN,Ahmedabad,right
+landmark_holdout,1268,https://whc.unesco.org/en/list/1268/maps/,Historic Centre of Agadez,NE,Agadez,16.9736111111,7.9913888889,NE,Agadez,right,NE,Agadez,right,NE,Agadez,right
+landmark_holdout,1322-001,https://whc.unesco.org/en/list/1322/maps/,La ville historique,CI,Grand-Bassam,5.1958333333,-3.7363888889,CI,Grand-Bassam,right,CI,Grand-Bassam,right,CI,Grand-Bassam,right
+landmark_holdout,1272rev,https://whc.unesco.org/en/list/1272/maps/,São Francisco Square in the Town of São Cristóvão,BR,São Cristóvão,-11.0136554428,-37.2053747585,BR,Aracaju,wrong_city,BR,São Cristóvão,right,BR,São Cristóvão,right
+landmark_holdout,1270,https://whc.unesco.org/en/list/1270/maps/,Historic Centre of Camagüey,CU,Camagüey,21.3786111111,-77.9186111111,CU,Camagüey,right,CU,Camagüey,right,CU,Camagüey,right
+landmark_holdout,946rev,https://whc.unesco.org/en/list/946/maps/,Old Bridge Area of the Old City of Mostar,BA,Mostar,43.3373055556,17.815,BA,Mostar,right,BA,Mostar,right,BA,Mostar,right
+landmark_holdout,1202,https://whc.unesco.org/en/list/1202/maps/,Urban Historic Centre of Cienfuegos,CU,Cienfuegos,22.145887,-80.452183,CU,Cienfuegos,right,CU,Cienfuegos,right,CU,Cienfuegos,right
+landmark_holdout,1042,https://whc.unesco.org/en/list/1042/maps/,Old City of Acre,IL,Acre|Akko|‘Akko,32.9216666667,35.0688888889,IL,Haifa,wrong_city,IL,Acre,right,IL,Acre,right
+landmark_holdout,993,https://whc.unesco.org/en/list/993/maps/,Historic Centre of the Town of Goiás,BR,Goiás,-15.934231,-50.140164,BR,Itaberaí,wrong_city,BR,Goiás,right,BR,Goiás,right
+landmark_holdout,1009,https://whc.unesco.org/en/list/1009/maps/,Notre-Dame Cathedral in Tournai,BE,Tournai,50.60603,3.38926,FR,Lille,wrong_country,BE,Tournai,right,BE,Tournai,right
+landmark_holdout,884bis-001,https://whc.unesco.org/en/list/884/maps/,Castel Grande,CH,Bellinzona,46.1929579,9.0216716,CH,Bellinzona,right,CH,Bellinzona,right,CH,Bellinzona,right
+landmark_holdout,173rev,https://whc.unesco.org/en/list/173/maps/,Stone Town of Zanzibar,TZ,Zanzibar|Zanzibar City,-6.16306,39.18917,TZ,Zanzibar City,right,TZ,Zanzibar City,right,TZ,Zanzibar City,right
+landmark_holdout,885,https://whc.unesco.org/en/list/885/maps/,Historic Centre of Shakhrisyabz,UZ,Shakhrisyabz|Shahrisabz,39.05,66.83333,UZ,Shahrisabz,right,UZ,Shahrisabz,right,UZ,Shahrisabz,right
+landmark_holdout,502rev,https://whc.unesco.org/en/list/502/maps/,Historic City of Vigan,PH,Vigan|Vigan City,17.575,120.3875,PH,Vigan,right,PH,Vigan,right,PH,Vigan,right
+landmark_holdout,890,https://whc.unesco.org/en/list/890/maps/,Historic Centre of the Town of Diamantina,BR,Diamantina,-18.244776,-43.59768,BR,Diamantina,right,BR,Diamantina,right,BR,Diamantina,right
+landmark_holdout,863,https://whc.unesco.org/en/list/863/maps/,Historic Centre of Santa Ana de los Ríos de Cuenca,EC,Cuenca,-2.897447,-79.004382,EC,Cuenca,right,EC,Cuenca,right,EC,Cuenca,right
+landmark_holdout,902,https://whc.unesco.org/en/list/902/maps/,Historic Centre of Sighişoara,RO,Sighișoara,46.21777778,24.79222222,RO,Târgu Mureș,wrong_city,RO,Sighișoara,right,RO,Sighișoara,right
+landmark_holdout,810,https://whc.unesco.org/en/list/810/maps/,Historic City of Trogir,HR,Trogir,43.5170833333,16.2513611111,HR,Split,wrong_city,HR,Split,wrong_city,HR,Split,wrong_city
+landmark_holdout,837,https://whc.unesco.org/en/list/837/maps/,Medina of Tétouan (formerly known as Titawin),MA,Tétouan|Tetuan,35.57083,-5.36667,ES,Ceuta,wrong_country,MA,Tétouan,right,MA,Tétouan,right
+landmark_holdout,809,https://whc.unesco.org/en/list/809/maps/,Episcopal Complex of the Euphrasian Basilica in the Historic Centre of Poreč,HR,Poreč,45.2285833333,13.5933333333,HR,Pula,wrong_city,SI,Koper,wrong_country,HR,Pula,wrong_city
+landmark_holdout,852,https://whc.unesco.org/en/list/852/maps/,Historic Centre of Riga,LV,Riga,56.95417,24.11667,LV,Riga,right,LV,Riga,right,LV,Riga,right
+landmark_holdout,479bis,https://whc.unesco.org/en/list/479/maps/,Town of Luang Prabang,LA,Luang Prabang,19.88889,102.13333,LA,Luang Prabang,right,LA,Luang Prabang,right,LA,Luang Prabang,right
+landmark_holdout,731,https://whc.unesco.org/en/list/731/maps/,Hanseatic Town of Visby,SE,Visby,57.64167,18.29583,SE,Visby,right,SE,Visby,right,SE,Visby,right
+landmark_holdout,602bis,https://whc.unesco.org/en/list/602/maps/,Historic Centre of Bukhara,UZ,Bukhara|Buxoro,39.77472,64.42861,UZ,Bukhara,right,UZ,Bukhara,right,UZ,Bukhara,right
+landmark_holdout,618rev,https://whc.unesco.org/en/list/618/maps/,Historic Town of Banská Štiavnica and the Technical Monuments in its Vicinity,SK,Banská Štiavnica,48.46111,18.9,SK,Zvolen,wrong_city,SK,Žiar nad Hronom,wrong_city,SK,Zvolen,wrong_city
+landmark_holdout,566,https://whc.unesco.org/en/list/566/maps/,Historic City of Sucre,BO,Sucre,-19.04799,-65.259592,BO,Sucre,right,BO,Sucre,right,BO,Sucre,right
+landmark_holdout,498bis,https://whc.unesco.org/en/list/498/maps/,Medina of Sousse,TN,Sousse,35.82778,10.63861,TN,Sousse,right,TN,Sousse,right,TN,Sousse,right
+landmark_holdout,451,https://whc.unesco.org/en/list/451/maps/,Old Town of Galle and its Fortifications,LK,Galle,6.028051,80.216346,LK,Galle,right,LK,Galle,right,LK,Galle,right
+landmark_holdout,412-001,https://whc.unesco.org/en/list/412/maps/,Historic Centre of Mexico City,MX,Mexico City|Ciudad de México,19.433481,-99.13301,MX,Mexico City,right,MX,Mexico City,right,MX,Mexico City,right
+landmark_holdout,385,https://whc.unesco.org/en/list/385/maps/,Old City of Sana'a,YE,Sana'a|Sanaa,15.35555556,44.20805556,YE,Sanaa,right,YE,Sanaa,right,YE,Sanaa,right
+landmark_holdout,21,https://whc.unesco.org/en/list/21/maps/,Ancient City of Aleppo,SY,Aleppo|Halab,36.1991666667,37.1627777778,SY,Aleppo,right,SY,Aleppo,right,SY,Aleppo,right
+landmark_holdout,309,https://whc.unesco.org/en/list/309/maps/,Historic Centre of Salvador de Bahia,BR,Salvador|Salvador de Bahia,-12.972917,-38.512981,BR,Salvador,right,BR,Salvador,right,BR,Salvador,right
+landmark_holdout,300,https://whc.unesco.org/en/list/300/maps/,Historic District of Old Québec,CA,Québec|Quebec City,46.80944444,-71.21055556,CA,Quebec City,right,CA,Quebec City,right,CA,Quebec City,right
+landmark_holdout,217ter,https://whc.unesco.org/en/list/217/maps/,Ancient City of Nessebar,BG,Nessebar|Nesebar,42.6591111111,27.7360277778,BG,Burgas,wrong_city,BG,Burgas,wrong_city,BG,Burgas,wrong_city
+landmark_holdout,267,https://whc.unesco.org/en/list/267/maps/,Old City of Berne,CH,Bern|Berne,46.94806,7.45028,CH,Bern,right,CH,Bern,right,CH,Bern,right
+landmark_holdout,204-001,https://whc.unesco.org/en/list/204/maps/,Old Havana,CU,Havana|La Habana,23.136521,-82.352078,CU,Havana,right,CU,Regla,wrong_city,CU,Havana,right
+landmark_holdout,20bis,https://whc.unesco.org/en/list/20/maps/,Ancient City of Damascus,SY,Damascus|Dimashq,33.5108333333,36.3097222222,SY,Damascus,right,SY,Damascus,right,SY,Damascus,right
+landmark_holdout,95ter-001,https://whc.unesco.org/en/list/95/maps/,Old City of Dubrovnik,HR,Dubrovnik,42.6414166666,18.1088611111,HR,Dubrovnik,right,HR,Dubrovnik,right,HR,Dubrovnik,right
+landmark_holdout,36bis,https://whc.unesco.org/en/list/36/maps/,Medina of Tunis,TN,Tunis,36.81667,10.16667,TN,Tunis,right,TN,Tunis,right,TN,Tunis,right
+landmark_holdout,1623-001,https://whc.unesco.org/en/list/1623/maps/,Scrovegni Chapel Church of the Eremitani,IT,Padua|Padova,45.4118916667,11.8796166667,IT,Venice,wrong_city,IT,Padua,right,IT,Padua,right
+landmark_holdout,1650-001,https://whc.unesco.org/en/list/1650/maps/,Santa Caterina e Saragozza,IT,Bologna,44.4913888889,11.3327777778,IT,Bologna,right,IT,Bologna,right,IT,Bologna,right
+landmark_holdout,1488,https://whc.unesco.org/en/list/1488/maps/,Diyarbakır Fortress and Hevsel Gardens Cultural Landscape,TR,Diyarbakır,37.9031,40.2393083333,TR,Diyarbakır,right,TR,Diyarbakır,right,TR,Diyarbakır,right
+landmark_holdout,1452-001,https://whc.unesco.org/en/list/1452/maps/,Khans Area (Orhan Ghazi Külliye and its surroundings),TR,Bursa,40.1847305556,29.0623361111,TR,Bursa,right,TR,Bursa,right,TR,Bursa,right
+landmark_holdout,1277rev-001,https://whc.unesco.org/en/list/1277/maps/,Chûson-ji,JP,Hiraizumi,39.0011111111,141.1077777778,JP,Ichinoseki,wrong_city,JP,Ichinoseki,wrong_city,JP,Ichinoseki,wrong_city
+landmark_holdout,1256,https://whc.unesco.org/en/list/1256/maps/,"Bordeaux, Port of the Moon",FR,Bordeaux,44.8388888889,-0.5722222222,FR,Bordeaux,right,FR,Bordeaux,right,FR,Bordeaux,right
+landmark_holdout,896,https://whc.unesco.org/en/list/896/maps/,"Museumsinsel (Museum Island), Berlin",DE,Berlin,52.51972222,13.39861111,DE,Berlin,right,DE,Berlin,right,DE,Berlin,right
+landmark_holdout,913,https://whc.unesco.org/en/list/913/maps/,Shrines and Temples of Nikko,JP,Nikkō,36.7475,139.6105556,JP,Nikko,right,JP,Nikko,right,JP,Nikko,right
+landmark_holdout,804bis-001,https://whc.unesco.org/en/list/804/maps/,Palau de la Música Catalana,ES,Barcelona,41.3877777778,2.175,ES,Barcelona,right,ES,Barcelona,right,ES,Barcelona,right
+landmark_holdout,795,https://whc.unesco.org/en/list/795/maps/,Maritime Greenwich,GB,London,51.4811666667,-0.0037777778,GB,London,right,GB,Blackheath,wrong_city,GB,London,right
+landmark_holdout,824,https://whc.unesco.org/en/list/824/maps/,"Botanical Garden (Orto Botanico), Padua",IT,Padua|Padova,45.39911111,11.88066667,IT,Venice,wrong_city,IT,Padua,right,IT,Padua,right
+landmark_holdout,788-001,https://whc.unesco.org/en/list/788/maps/,Mausoleum of Galla Placida,IT,Ravenna,44.4209912916,12.1971363245,IT,Ravenna,right,IT,Ravenna,right,IT,Ravenna,right
+landmark_holdout,782,https://whc.unesco.org/en/list/782/maps/,La Lonja de la Seda de Valencia,ES,Valencia,39.47441667,-0.378444444,ES,Valencia,right,ES,Valencia,right,ES,Valencia,right
+landmark_holdout,723,https://whc.unesco.org/en/list/723/maps/,Cultural Landscape of Sintra,PT,Sintra,38.78333,-9.41667,PT,Lisbon,wrong_city,PT,Sintra,right,PT,Sintra,right
+landmark_holdout,661,https://whc.unesco.org/en/list/661/maps/,Himeji-jo,JP,Himeji,34.83333333,134.7,JP,Himeji,right,JP,Himeji,right,JP,Himeji,right
+landmark_holdout,495bis,https://whc.unesco.org/en/list/495/maps/,"Strasbourg, Grande-Île and <em>Neustadt</em>",FR,Strasbourg,48.5844444444,7.7488888889,FR,Strasbourg,right,FR,Strasbourg,right,FR,Strasbourg,right
+landmark_holdout,395bis,https://whc.unesco.org/en/list/395/maps/,"Piazza del Duomo, Pisa",IT,Pisa,43.72305556,10.39638889,IT,Pisa,right,IT,Pisa,right,IT,Pisa,right
+landmark_holdout,394,https://whc.unesco.org/en/list/394/maps/,Venice and its Lagoon,IT,Venice|Venezia,45.43430556,12.33894444,IT,Venice,right,IT,Venice,right,IT,Venice,right
+landmark_holdout,314bis,https://whc.unesco.org/en/list/314/maps/,"Alhambra, Generalife and Albayzín, Granada",ES,Granada,37.1767777778,-3.5899166667,ES,Granada,right,ES,Granada,right,ES,Granada,right
+landmark_holdout,229bis,https://whc.unesco.org/en/list/229/maps/,"Place Stanislas, Place de la Carrière and Place d'Alliance in Nancy",FR,Nancy,48.69361111,6.183333333,FR,Nancy,right,FR,Nancy,right,FR,Nancy,right
+landmark_holdout,164bis,https://whc.unesco.org/en/list/164/maps/,"Arles, Roman and Romanesque Monuments",FR,Arles,43.67763889,4.630694444,FR,Nîmes,wrong_city,FR,Arles,right,FR,Arles,right
+landmark_holdout,163-001,https://whc.unesco.org/en/list/163/maps/,Théâtre antique,FR,Orange,44.1357222222,4.8084166667,FR,,country_only,FR,Orange,right,FR,Orange,right
+landmark_holdout,1223-001,https://whc.unesco.org/en/list/1223/maps/,The Historic City of Melaka,MY,Malacca|Melaka|Melaka City,2.1916666667,102.2625,MY,Melaka City,right,MY,Melaka City,right,MY,Melaka City,right
+landmark_holdout,1223-002,https://whc.unesco.org/en/list/1223/maps/,The Historic City of George Town,MY,George Town|Georgetown,5.419776,100.343257,MY,George Town,right,MY,George Town,right,MY,George Town,right
+landmark_holdout,HKO,https://www.hko.gov.hk/en/cis/stn.htm,Hong Kong Observatory Headquarters,HK,Hong Kong,22.301944444444445,114.17416666666666,HK,Hong Kong,right,HK,Jordan,wrong_city,HK,Hong Kong,right

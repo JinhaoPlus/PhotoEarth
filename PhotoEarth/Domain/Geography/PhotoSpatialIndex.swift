@@ -6,14 +6,16 @@ nonisolated struct PhotoSpatialBounds: Sendable {
     let longitudeRanges: [ClosedRange<Double>]
 
     init(viewport: EarthViewport) {
-        let radius = min(max(viewport.angularRadius, 2), 94)
+        let radius = viewport.angularRadius
         minimumLatitude = max(-90, viewport.center.latitude - radius)
         maximumLatitude = min(90, viewport.center.latitude + radius)
 
-        let longitudeRadius = min(
-            180,
-            radius / max(abs(cos(viewport.center.latitude * .pi / 180)), 0.2)
-        )
+        // Exact spherical-cap longitude extent; the linear radius/cos(latitude)
+        // approximation can omit photos near polar regions or larger viewports.
+        let reachesPole = abs(viewport.center.latitude) + radius >= 90
+        let longitudeRadius = reachesPole ? 180 : asin(min(
+            1, sin(radius * .pi / 180) / cos(viewport.center.latitude * .pi / 180)
+        )) * 180 / .pi
         guard longitudeRadius < 180 else {
             longitudeRanges = [-180...180]
             return
@@ -56,7 +58,7 @@ nonisolated enum PhotoSelection {
         limit: Int
     ) -> [PhotoAssetRecord] {
         guard limit > 0, !candidates.isEmpty else { return [] }
-        let radius = min(max(viewport.angularRadius, 2), 94)
+        let radius = viewport.angularRadius
         let newestDate = candidates.map(\.creationDate).max() ?? .distantPast
         var seen = Set<String>()
 
@@ -66,9 +68,9 @@ nonisolated enum PhotoSelection {
                 from: viewport.center,
                 to: record.coordinate
             )
-            guard distance <= radius else { return nil }
+            guard viewport.contains(record.coordinate) else { return nil }
 
-            let centrality = distance / max(radius, 1)
+            let centrality = distance / radius
             let favoriteBonus = record.isFavorite ? 0.2 : 0
             let landscapeBonus = record.pixelWidth >= record.pixelHeight ? 0.07 : 0
             let ageDays = max(0, newestDate.timeIntervalSince(record.creationDate) / 86_400)
@@ -84,7 +86,7 @@ nonisolated enum PhotoSelection {
             return $0.score < $1.score
         }
 
-        let diversitySize = max(2, radius / 4)
+        let diversitySize = max(EarthViewport.minimumAngularRadius, radius / 4)
         var selected: [PhotoAssetRecord] = []
         var deferred: [PhotoAssetRecord] = []
         var countByCell: [Cell: Int] = [:]
@@ -158,7 +160,7 @@ nonisolated struct PhotoSpatialIndex: Sendable {
         recordIndicesByCell = buckets
     }
 
-    func photos(in viewport: EarthViewport, limit: Int = 18) -> [PhotoAssetRecord] {
+    func photos(in viewport: EarthViewport, limit: Int = 18, placeIDs: Set<String>? = nil) -> [PhotoAssetRecord] {
         guard limit > 0, !records.isEmpty else { return [] }
         let bounds = PhotoSpatialBounds(viewport: viewport)
         let latitudeCells = (0..<latitudeCellCount).filter { cellIndex in
@@ -180,7 +182,9 @@ nonisolated struct PhotoSpatialIndex: Sendable {
                 for recordIndex in recordIndicesByCell[
                     Cell(latitude: latitudeCell, longitude: longitudeCell)
                 ] ?? [] {
-                    candidates.append(records[recordIndex])
+                    let record = records[recordIndex]
+                    if let placeIDs, !placeIDs.contains(record.placeID ?? "") { continue }
+                    candidates.append(record)
                 }
             }
         }

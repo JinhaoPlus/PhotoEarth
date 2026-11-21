@@ -1,0 +1,32 @@
+sample,source_id,source_url,site,expected_region,accepted_city_names,latitude,longitude
+new_landmark,1569,https://whc.unesco.org/en/list/1569/,The Maison Carrée of Nîmes,FR,Nîmes,43.8382222222,4.3561944444
+new_landmark,932,https://whc.unesco.org/en/list/932/,Jurisdiction of Saint-Emilion,FR,Saint-Émilion,44.89472222,-0.1552777778
+new_landmark,1211,https://whc.unesco.org/en/list/1211/,Genoa: Le Strade Nuove and the system of the Palazzi dei Rolli,IT,Genoa|Genova,44.412,8.93
+new_landmark,1025,https://whc.unesco.org/en/list/1025/,"Villa d'Este, Tivoli",IT,Tivoli,41.96391667,12.79625
+new_landmark,825,https://whc.unesco.org/en/list/825/,Archaeological Area and the Patriarchal Basilica of Aquileia,IT,Aquileia,45.76833333,13.3675
+new_landmark,549,https://whc.unesco.org/en/list/549/,"18th-Century Royal Palace at Caserta with the Park, the Aqueduct of Vanvitelli, and the San Leucio Complex",IT,Caserta,41.07333,14.32639
+new_landmark,833,https://whc.unesco.org/en/list/833/,Su Nuraxi di Barumini,IT,Barumini,39.70583333,8.991388889
+new_landmark,1044,https://whc.unesco.org/en/list/1044/,Aranjuez Cultural Landscape,ES,Aranjuez,40.03645,-3.60934
+new_landmark,930,https://whc.unesco.org/en/list/930/,Palmeral of Elche,ES,Elche|Elx,38.26666667,-0.716666667
+new_landmark,987,https://whc.unesco.org/en/list/987/,Roman Walls of Lugo,ES,Lugo,43.0106407944,-7.5530699413
+new_landmark,929,https://whc.unesco.org/en/list/929/,San Cristóbal de La Laguna,ES,San Cristóbal de La Laguna,28.47788889,-16.31177778
+new_landmark,393,https://whc.unesco.org/en/list/393/,Archaeological Site of Delphi,GR,Delphi|Delfoí,38.48149,22.49617
+new_landmark,786,https://whc.unesco.org/en/list/786/,Palace and Gardens of Schönbrunn,AT,Vienna|Wien,48.18666667,16.31333333
+new_landmark,815,https://whc.unesco.org/en/list/815/,"Hospicio Cabañas, Guadalajara",MX,Guadalajara,20.676888,-103.337798
+new_landmark,945,https://whc.unesco.org/en/list/945/,Chhatrapati Shivaji Terminus (formerly Victoria Terminus),IN,Mumbai,18.9401222222,72.8362027777
+new_landmark,1056,https://whc.unesco.org/en/list/1056/,Mahabodhi Temple Complex at Bodh Gaya,IN,Bodh Gaya|Bodhgayā,24.69528,84.99389
+new_landmark,1379,https://whc.unesco.org/en/list/1379/,Margravial Opera House Bayreuth,DE,Bayreuth,49.9443931107,11.5784979437
+new_landmark,975,https://whc.unesco.org/en/list/975/,Zollverein Coal Mine Industrial Complex in Essen,DE,Essen,51.49138889,7.046111111
+new_landmark,846,https://whc.unesco.org/en/list/846/,Classical Weimar,DE,Weimar,50.9775,11.32861
+new_landmark,687,https://whc.unesco.org/en/list/687/,Völklingen Ironworks,DE,Völklingen,49.2487222222,6.8442222222
+new_landmark,1131,https://whc.unesco.org/en/list/1131/,Royal Exhibition Building and Carlton Gardens,AU,Melbourne,-37.8044601952,144.971693113
+new_landmark,505,https://whc.unesco.org/en/list/505/,Monastery of Alcobaça,PT,Alcobaça,39.55,-8.97667
+new_landmark,264,https://whc.unesco.org/en/list/264/,Monastery of Batalha,PT,Batalha,39.65778,-8.82694
+new_landmark,265,https://whc.unesco.org/en/list/265/,Convent of Christ in Tomar,PT,Tomar,39.60472,-8.4175
+new_landmark,445,https://whc.unesco.org/en/list/445/,Brasilia,BR,Brasília,-15.78333,-47.9
+new_landmark,334,https://whc.unesco.org/en/list/334/,Sanctuary of Bom Jesus do Congonhas,BR,Congonhas,-20.508201,-43.860806
+new_landmark,1683,https://whc.unesco.org/en/list/1683/,Eisinga Planetarium in Franeker,NL,Franeker,53.187375,5.5437527778
+new_landmark,965,https://whc.unesco.org/en/list/965/,Rietveld Schröderhuis (Rietveld Schröder House),NL,Utrecht,52.0853333333,5.1475555556
+new_landmark,816,https://whc.unesco.org/en/list/816/,Changdeokgung Palace Complex,KR,Seoul,37.5788888889,126.9911111111
+new_landmark,817,https://whc.unesco.org/en/list/817/,Hwaseong Fortress,KR,Suwon,37.27222,127.00833
+new_landmark,1761,https://whc.unesco.org/en/list/1761/,"Wat Phra Mahathat Woramahawihan, Nakhon Si Thammarat",TH,Nakhon Si Thammarat,8.411475,99.9662166667

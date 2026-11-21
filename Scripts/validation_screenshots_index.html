@@ -1,0 +1,33 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Photo Earth 验收截图</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101418;color:#ebedef;font:15px/1.5 system-ui,sans-serif}main{max-width:1540px;padding:28px 4vw 60px;margin:auto}h1{font-size:clamp(26px,4vw,42px);margin:0}#stats,p{color:#bdc6cf}nav{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:18px 0}select,input,button{padding:7px 9px;background:#222b32;color:inherit;border:1px solid #4a5560;border-radius:5px;font:inherit}button:disabled{opacity:.4}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(285px,100%),1fr));gap:16px}article{min-width:0;background:#192127;border-radius:7px;overflow:hidden}img{width:100%;aspect-ratio:16/9;object-fit:contain;display:block;background:#080a0c}section{padding:10px 12px}h2{font-size:15px;margin:3px 0;overflow-wrap:anywhere}small,li{color:#c1c9ce}summary,a{color:#a5d6ff}details,li{overflow-wrap:anywhere;font-size:12px}ul{padding-left:16px}label{display:grid;font-size:12px;gap:3px}footer{display:flex;align-items:center;gap:12px;margin:14px 0}code{word-break:break-all}
+</style><main><h1>Photo Earth 验收截图</h1><p id="stats"></p><nav id="filters"></nav><footer><button id="prev">上一页</button><span id="page"></span><button id="next">下一页</button></footer><div class="grid" id="cards"></div></main>
+<script id="payload" type="application/json">__SCREENSHOTS__</script><script>
+const rows=JSON.parse(document.querySelector('#payload').textContent), filters=document.querySelector('#filters'), grid=document.querySelector('#cards'), pager=document.querySelector('#page'), prev=document.querySelector('#prev'), next=document.querySelector('#next'), size=36;
+let page=0;
+const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n};
+const choices={};
+for(const [key,title] of Object.entries({platform:'设备',category:'内容',status:'验证记录'})){
+ const label=el('label',title), select=el('select');label.append(select);filters.append(label);choices[key]=select;
+ select.add(new Option('全部',''));for(const v of [...new Set(rows.flatMap(r=>r.sources.map(s=>s[key])))].sort())select.add(new Option(v,v));
+ select.onchange=()=>{page=0;render()};
+}
+const search=el('input');search.setAttribute('aria-label','搜索截图');search.placeholder='搜索用例、来源或文件名';filters.append(search);search.oninput=()=>{page=0;render()};
+document.querySelector('#stats').textContent=rows.filter(r=>!r.sources.some(s=>s.title.startsWith('真机首卡 JPEG'))).length+' 张设备截图 · '+rows.filter(r=>r.sources.some(s=>s.title.startsWith('真机首卡 JPEG'))).length+' 张另列的真机首卡 JPEG · 时间为 UTC+8。点缩略图可打开原始文件。';
+function render(){
+ const query=search.value.trim().toLowerCase();
+ const matches=s=>Object.entries(choices).every(([k,v])=>!v.value||s[k]===v.value)&&(!query||Object.values(s).join(' ').toLowerCase().includes(query));
+ const selected=rows.filter(r=>r.sources.some(matches));
+ const pages=Math.max(1,Math.ceil(selected.length/size));page=Math.max(0,Math.min(page,pages-1));
+ pager.textContent=selected.length+' 张 · 第 '+(page+1)+' / '+pages+' 页';prev.disabled=!page;next.disabled=page>=pages-1;grid.replaceChildren();
+ for(const r of selected.slice(page*size,(page+1)*size)){
+ const s=r.sources.find(matches),card=el('article'),link=el('a'),img=el('img'),section=el('section'),info=el('details'),ul=el('ul');
+ link.href=r.file;link.target='_blank';img.src='缩略图/'+r.id+'.jpg';img.alt=s.title;img.loading='lazy';link.append(img);
+ section.append(el('small',s.platform+' · '+s.category),el('h2',s.title.replace(/_\d+_[\dA-F-]{36}(?=\.)/gi,'')),el('small',s.time.slice(0,19).replace('T',' ')+' · '+s.status));
+ info.append(el('summary','来源与用例（'+r.sources.length+'）'),ul);
+ for(const origin of r.sources){const li=el('li',origin.clock+' '+origin.time+' · '+origin.status+' · '+origin.device);li.append(el('br'),document.createTextNode(origin.test),el('br'),document.createTextNode(origin.origin));ul.append(li)}
+ info.append(el('code','SHA-256 '+r.id));section.append(info);card.append(link,section);grid.append(card);
+ }
+}
+prev.onclick=()=>{page--;render()};next.onclick=()=>{page++;render()};render();
+</script></html>

@@ -1,386 +1,333 @@
 import SwiftUI
 
 struct GlobeOverviewView: View {
-    let places: [TravelPlace]
-    let labels: [String: PlaceDisplayLabel]
-    let latestAssetIDs: [String: String]
-    let hasMorePlaces: Bool
-    let hasUserLocation: Bool
-    let isAwaitingUserLocation: Bool
+    let content: OverviewContentModel
     let isUsingSampleData: Bool
-    let photoCount: Int
     let enterGlobe: () -> Void
+    var startSlideshow: (() -> Void)? = nil
     let openPlace: (TravelPlace) -> Void
-    let loadMorePlaces: () -> Void
+    let prepareSatelliteCity: (GeoCoordinate?) -> Void
+    var isActive = true
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedID: String?
+    @State private var focusHandoff = OverviewFocusHandoff()
+    @State private var isBelowPageTop = false
 
     private let placesPerShelf = 5
-
-    private var recentPlaces: [TravelPlace] {
-        Array(places.prefix(placesPerShelf))
-    }
-
-    private var additionalShelves: [PlaceShelf] {
-        let remaining = Array(places.dropFirst(recentPlaces.count))
-        guard !remaining.isEmpty else { return [] }
-
-        var shelves: [PlaceShelf] = []
-        for (shelfIndex, start) in stride(
-            from: 0,
-            to: remaining.count,
-            by: placesPerShelf
-        ).enumerated() {
-            let end = min(start + placesPerShelf, remaining.count)
-            let shelfPlaces = Array(remaining[start..<end])
-            let years = Set(shelfPlaces.map { Calendar.current.component(.year, from: $0.endDate) })
-            let title = years.count == 1
-                ? "\(years.first ?? 0) 年的足迹"
-                : "更多城市与国家"
-            shelves.append(
-                PlaceShelf(
-                    id: "places-shelf-\(shelfIndex)",
-                    title: title,
-                    subtitle: "\(shelfPlaces.count) 个地点",
-                    places: shelfPlaces
-                )
-            )
-        }
-        return shelves
-    }
+    private let horizontalInset: CGFloat = 80
+    private let shelfSpacing: CGFloat = 34
+    private var shelfInset: CGFloat { FullScreenMapLayout.contentHorizontalInset - horizontalInset }
+    private let entryFocusID = OverviewFocusHandoff.entryID
+    private let slideshowFocusID = "home-slideshow"
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 46) {
-                header
-                    .padding(.horizontal, 66)
-                    .padding(.top, 38)
+        GeometryReader { geometry in
+            let cardWidth = (geometry.size.width - horizontalInset * 2 - shelfInset * 2
+                             - shelfSpacing * CGFloat(placesPerShelf - 1)) / CGFloat(placesPerShelf)
 
-                hero
-                    .padding(.horizontal, 66)
-                    .frame(minHeight: 290, alignment: .bottomLeading)
+            ScrollViewReader { scroll in
+                ScrollView(.vertical, showsIndicators: false) {
+                    // Keep loaded shelf destinations in the native focus graph.
+                    // A lazy full-screen first child can trap focus in the dock.
+                    // Place data and image requests still expand in small batches.
+                    VStack(alignment: .leading, spacing: 48) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            header
+                                .padding(.top, 60)
+                            actions
+                                // Leave the native scan-progress focus row above these buttons.
+                                .padding(.top, isUsingSampleData ? 28 : 84)
+                            Spacer(minLength: 200)
+                            recentShelf(cardWidth: cardWidth)
+                                .id("places-shelf-0")
+                        }
+                        .frame(height: geometry.size.height)
+                        .id("overview-top")
 
-                recentDock
+                        ForEach(content.shelves) { shelf in
+                            placeShelf(shelf, cardWidth: cardWidth)
+                                .id(shelf.id)
+                        }
 
-                if !additionalShelves.isEmpty {
-                    morePlacesHeader
-
-                    ForEach(additionalShelves) { shelf in
-                        placeShelf(shelf)
+                        if content.hasMore {
+                            Button(AppLocalization.string("home.expand", defaultValue: "Unfold More Places"), action: content.expand)
+                                .font(.system(size: 29, weight: .medium))
+                                .buttonStyle(.glass)
+                                .focused($focusedID, equals: "load-more-places")
+                                .id("load-more-places")
+                                .frame(maxWidth: .infinity)
+                                .accessibilityIdentifier("overview-load-more")
+                        }
+                    }
+                    .padding(.horizontal, horizontalInset)
+                    .padding(.bottom, 80)
+                }
+                .scrollClipDisabled()
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.contentOffset.y + geometry.contentInsets.top > 8
+                } action: { _, belowTop in
+                    isBelowPageTop = belowTop
+                    if !belowTop, focusHandoff.phase == .returningToTop, focusedID != entryFocusID {
+                        focusedID = entryFocusID
+                    }
+                    commitFocus()
+                }
+                .onScrollPhaseChange { _, phase in content.scrollChanged(moving: phase != .idle) }
+                .onChange(of: content.structureRevision) { _, _ in
+                    if focusHandoff.phase == .browsing, let focusedID, content.validFocusID(focusedID) != focusedID {
+                        self.focusedID = content.validFocusID(content.restoredFocusID)
                     }
                 }
-
-                if hasMorePlaces {
-                    ProgressView("正在展开更多足迹…")
-                        .tint(.cyan)
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.5))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 50)
-                } else if places.count > placesPerShelf {
-                    Text("你走过的地方，都在这里")
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .tracking(2)
-                        .foregroundStyle(.white.opacity(0.28))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 48)
+                .onChange(of: focusedID) { _, _ in commitFocus() }
+                .onExitCommand(perform: handlesHomeBack ? { returnToPageTop(using: scroll) } : nil)
+                .task(id: isActive) {
+                    content.setActive(isActive)
+                    guard isActive else {
+                        focusHandoff.deactivate()
+                        focusedID = nil
+                        return
+                    }
+                    let restoredID = validRestoredFocusID
+                    focusHandoff.restore(restoredID)
+                    await Task.yield()
+                    guard !Task.isCancelled, focusHandoff.phase == .restoring(restoredID) else { return }
+                    if restoredID != entryFocusID, restoredID != slideshowFocusID {
+                        scroll.scrollTo(content.scrollTarget(restoredID), anchor: .center)
+                    } else if isBelowPageTop {
+                        scroll.scrollTo("overview-top", anchor: .top)
+                    }
+                    focusedID = restoredID
+                    commitFocus()
                 }
             }
-            .padding(.bottom, 40)
         }
         .foregroundStyle(.white)
-        .background(overviewMask)
-        .onAppear {
-            Task { @MainActor in
-                await Task.yield()
-                focusedID = "enter-globe"
+        .defaultFocus($focusedID, validRestoredFocusID)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("globe-overview")
+        .task(id: satelliteFocus) {
+            prepareSatelliteCity(nil)
+            guard let city = satelliteFocus else { return }
+            do { try await Task.sleep(for: .milliseconds(350)) } catch { return }
+            prepareSatelliteCity(city)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: PhotoAssetChangeNotice.name)) { notice in
+            content.invalidateImages(changed: notice.userInfo?["changed"] as? Set<String> ?? [],
+                                     removed: notice.userInfo?["removed"] as? Set<String> ?? [])
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didReceiveMemoryWarningNotification)) { _ in
+            content.images.memoryWarning()
+        }
+        .onDisappear {
+            prepareSatelliteCity(nil)
+            content.setActive(false)
+        }
+#if DEBUG
+        .overlay(alignment: .topLeading) {
+            if ProcessInfo.processInfo.arguments.contains("--home-performance") {
+                OverviewPerformanceReadout(content: content)
             }
         }
-        .accessibilityIdentifier("globe-overview")
+#endif
     }
 
     private var header: some View {
         HStack {
-            HStack(spacing: 14) {
-                Circle()
-                    .fill(.cyan)
-                    .frame(width: 8, height: 8)
-                    .shadow(color: .cyan, radius: 10)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("PHOTO EARTH")
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                        .tracking(4)
-                    Text("A PRIVATE ATLAS OF MEMORY")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .tracking(2.7)
-                        .foregroundStyle(.cyan.opacity(0.72))
-                }
+            if !isUsingSampleData { Spacer() }
+            Text(verbatim: "PHOTO EARTH")
+                .font(.system(size: 23, weight: .medium))
+                .accessibilityAddTraits(.isHeader)
+                .tracking(5)
+                .foregroundStyle(.white.opacity(0.7))
+            if isUsingSampleData {
+                Spacer()
+                Text(AppLocalization.string("sample.journey", defaultValue: "Sample Journey"))
+                    .font(.system(size: 23, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.55))
             }
+        }
+    }
 
-            Spacer()
-
+    private var actions: some View {
+        HStack(spacing: 28) {
             Button(action: enterGlobe) {
                 HStack(spacing: 14) {
-                    Image(systemName: "move.3d")
-                        .font(.system(size: 21, weight: .semibold))
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("滚动地球")
-                            .font(.system(size: 19, weight: .semibold, design: .rounded))
-                        Text("用遥控器把玩你的世界")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.6))
-                    }
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.cyan)
+                    Text(AppLocalization.string("home.explore_globe", defaultValue: "Explore the Globe"))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 23, weight: .medium))
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 15)
+                .font(.system(size: 27, weight: .medium))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 12)
+                .frame(minHeight: 66)
             }
             .buttonStyle(.glassProminent)
-            .tint(.cyan.opacity(0.28))
-            .focused($focusedID, equals: "enter-globe")
-            .accessibilityIdentifier("enter-globe-control")
-        }
-    }
+            .tint(.white)
+            .focused($focusedID, equals: entryFocusID)
+            .id(entryFocusID)
+            .accessibilityHint(AppLocalization.string("home.explore_hint", defaultValue: "Turn the globe with the remote, then press the clickpad center or touch surface to browse visible photos."))
+            .accessibilityIdentifier("overview-explore-button")
 
-    private var hero: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("YOUR WORLD, REMEMBERED")
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .tracking(5)
-                .foregroundStyle(.cyan.opacity(0.84))
-            Text("从你所在的地方，\n重新看见走过的世界")
-                .font(.system(size: 45, weight: .semibold, design: .rounded))
-                .tracking(-1.2)
-                .lineSpacing(3)
-            HStack(spacing: 12) {
-                Circle()
-                    .fill(hasUserLocation ? .cyan : .white.opacity(0.42))
-                    .frame(width: 7, height: 7)
-                    .shadow(color: hasUserLocation ? .cyan : .clear, radius: 7)
-                Text(locationText)
-                Text("·")
-                    .foregroundStyle(.white.opacity(0.28))
-                Text("\(photoCount) 张地理记忆")
-                    .monospacedDigit()
-            }
-            .font(.system(size: 16, weight: .medium, design: .rounded))
-            .foregroundStyle(.white.opacity(0.56))
-        }
-    }
-
-    private var recentDock: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            shelfHeader(
-                title: "最近抵达",
-                eyebrow: "RECENT PLACES",
-                trailing: "选择地点，或从那里开始滚动"
-            )
-            .padding(.horizontal, 30)
-
-            GlassEffectContainer(spacing: 28) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 34) {
-                        ForEach(recentPlaces) { place in
-                            placeCard(place)
-                        }
-                    }
-                    .padding(.horizontal, 30)
-                    .padding(.vertical, 27)
+            if let startSlideshow {
+                Button {
+                    content.focusChanged(slideshowFocusID)
+                    startSlideshow()
+                } label: {
+                    Label(AppLocalization.string("slideshow.start", defaultValue: "Earth Slideshow"),
+                          systemImage: "play.fill")
+                        .font(.system(size: 25, weight: .medium))
+                        .padding(.horizontal, 10)
+                        .frame(minHeight: 66)
                 }
-                .scrollClipDisabled()
-                .glassEffect(
-                    .regular.tint(.black.opacity(0.24)),
-                    in: RoundedRectangle(cornerRadius: 34, style: .continuous)
-                )
+                .buttonStyle(.glass)
+                .focused($focusedID, equals: slideshowFocusID)
+                .id(slideshowFocusID)
+                .accessibilityIdentifier("overview-slideshow")
             }
         }
-        .padding(.horizontal, 66)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .shadow(color: .black.opacity(0.55), radius: 10, y: 2)
         .focusSection()
-        .accessibilityIdentifier("recent-places-dock")
     }
 
-    private var morePlacesHeader: some View {
-        HStack(alignment: .lastTextBaseline) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("更多城市与国家")
-                    .font(.system(size: 28, weight: .semibold, design: .rounded))
-                Text("继续向下，沿着时间翻阅你的世界")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.44))
-            }
-            Spacer()
-            Image(systemName: "chevron.down")
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.cyan.opacity(0.65))
-        }
-        .padding(.horizontal, 66)
-        .padding(.top, 14)
-    }
-
-    private func placeShelf(_ shelf: PlaceShelf) -> some View {
-        VStack(alignment: .leading, spacing: 15) {
-            shelfHeader(
-                title: shelf.title,
-                eyebrow: "TRAVEL SHELF",
-                trailing: shelf.subtitle
-            )
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 34) {
-                    ForEach(shelf.places) { place in
-                        placeCard(place)
-                    }
+    private func recentShelf(cardWidth: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .lastTextBaseline) {
+                Text(AppLocalization.string("home.recent_arrivals", defaultValue: "Recently Visited Cities"))
+                    .font(.system(size: 29, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                if !content.shelves.isEmpty {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 21, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .accessibilityHidden(true)
                 }
-                .padding(.horizontal, 2)
-                .padding(.vertical, 23)
             }
-            .scrollClipDisabled()
-        }
-        .padding(.horizontal, 66)
-        .focusSection()
-        .accessibilityIdentifier(shelf.id)
-    }
+            .padding(.horizontal, shelfInset)
+            .shadow(color: .black.opacity(0.8), radius: 4, y: 1)
 
-    private func shelfHeader(title: String, eyebrow: String, trailing: String) -> some View {
-        HStack {
-            Text(title)
-                .font(.system(size: 19, weight: .semibold, design: .rounded))
-            Text(eyebrow)
-                .font(.system(size: 10, weight: .bold, design: .rounded))
-                .tracking(3.2)
-                .foregroundStyle(.cyan.opacity(0.64))
-            Spacer()
-            Text(trailing)
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.42))
-        }
-    }
-
-    private func placeCard(_ place: TravelPlace) -> some View {
-        let label = labels[place.id] ?? PlaceDisplayLabel(place: place)
-        let assetID = latestAssetIDs[place.id] ?? place.coverAssetID
-        let focusID = "place-\(place.id)"
-        let isFocused = focusedID == focusID
-
-        return Button { openPlace(place) } label: {
-            ZStack(alignment: .bottomLeading) {
-                if let assetID {
-                    PhotoAssetImage(
-                        assetID: assetID,
-                        targetSize: CGSize(width: 680, height: 400)
-                    )
-                } else {
-                    Color.white.opacity(0.06)
-                }
-
-                LinearGradient(
-                    colors: [.white.opacity(0.05), .clear, .black.opacity(0.88)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(label.country?.uppercased() ?? "TRAVEL MEMORY")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .tracking(2.4)
-                        .foregroundStyle(.cyan.opacity(0.9))
-                    Text(label.city)
-                        .font(.system(size: 23, weight: .semibold, design: .rounded))
-                        .lineLimit(1)
-                    Text("\(place.photoCount) 张 · \(place.dateRangeText)")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.64))
-                        .lineLimit(1)
-                }
-                .padding(17)
-            }
-            .frame(width: 286, height: 174)
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(
-                        isFocused ? .cyan.opacity(0.48) : .white.opacity(0.12),
-                        lineWidth: isFocused ? 1.5 : 1
-                    )
-            }
-            .shadow(
-                color: isFocused ? .cyan.opacity(0.28) : .black.opacity(0.22),
-                radius: isFocused ? 22 : 8,
-                y: isFocused ? 8 : 4
-            )
-            .scaleEffect(isFocused ? 1.035 : 1)
-            .animation(.spring(response: 0.28, dampingFraction: 0.82), value: isFocused)
-        }
-        .buttonStyle(.plain)
-        .focusEffectDisabled()
-        .focused($focusedID, equals: focusID)
-        .zIndex(isFocused ? 2 : 0)
-        .accessibilityLabel("\(label.city)，\(label.country ?? "旅行地点")")
-        .accessibilityIdentifier("place-card-\(place.id)")
-        .onMoveCommand { direction in
-            moveFocusVertically(from: place, direction: direction)
-        }
-        .onChange(of: isFocused) { _, focused in
-            guard focused,
-                  hasMorePlaces,
-                  places.suffix(placesPerShelf).contains(where: { $0.id == place.id }) else {
-                return
-            }
-            loadMorePlaces()
-        }
-    }
-
-    private func moveFocusVertically(
-        from place: TravelPlace,
-        direction: MoveCommandDirection
-    ) {
-        guard let index = places.firstIndex(where: { $0.id == place.id }) else { return }
-        switch direction {
-        case .left:
-            guard index % placesPerShelf > 0 else { return }
-            focusedID = "place-\(places[index - 1].id)"
-        case .right:
-            let targetIndex = index + 1
-            guard targetIndex < places.count,
-                  targetIndex / placesPerShelf == index / placesPerShelf else { return }
-            focusedID = "place-\(places[targetIndex].id)"
-        case .down:
-            let targetIndex = index + placesPerShelf
-            guard targetIndex < places.count else { return }
-            focusedID = "place-\(places[targetIndex].id)"
-        case .up:
-            let targetIndex = index - placesPerShelf
-            if targetIndex >= 0 {
-                focusedID = "place-\(places[targetIndex].id)"
+            if content.recent.isEmpty {
+                Text(content.hasVisitsBelowMinimum
+                     ? AppLocalization.string("journey.minimum.empty", defaultValue: "No visits meet the minimum. Lower it in Settings to see more.")
+                     : (content.hiddenTransitPhotoCount > 0
+                         ? AppLocalization.string("home.transit_empty", defaultValue: "Passing-through photos are hidden. Show them again in Settings.")
+                         : AppLocalization.string("home.empty", defaultValue: "No visits yet")))
+                    .font(.system(size: 29, weight: .regular))
+                    .foregroundStyle(.white.opacity(0.74))
+                    .frame(maxWidth: .infinity, minHeight: 200, alignment: .leading)
+                    .padding(.horizontal, shelfInset)
             } else {
-                focusedID = "enter-globe"
+                HStack(spacing: shelfSpacing) {
+                    ForEach(content.recent) { place in
+                        placeCard(place, width: cardWidth, isArrival: true)
+                    }
+                }
+                .padding(.horizontal, shelfInset)
+                .padding(.top, 14)
+                .padding(.bottom, 6)
             }
-        default:
-            break
         }
+        .focusSection()
     }
 
-    private var overviewMask: some View {
-        LinearGradient(
-            colors: [.black.opacity(0.12), .black.opacity(0.38), .black.opacity(0.92)],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .ignoresSafeArea()
+    private func placeShelf(_ shelf: OverviewPlaceShelf, cardWidth: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 24) {
+            if shelf.showsYearHeading {
+                Text(shelf.year.formatted(.number.grouping(.never).locale(AppLocalization.locale)))
+                    .font(.system(size: 29, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("overview-year-\(shelf.year)")
+            }
+
+            HStack(spacing: shelfSpacing) {
+                ForEach(shelf.items) { place in
+                    placeCard(place, width: cardWidth)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+        }
+        .padding(.horizontal, shelfInset)
+        .focusSection()
     }
 
-    private var locationText: String {
-        if hasUserLocation { return "已锚定你所在的区域" }
-        if isUsingSampleData { return "示例从最近旅行地展开" }
-        return isAwaitingUserLocation ? "正在确定你所在的区域" : "已从最近旅行地展开"
+    private func placeCard(_ item: OverviewPlaceItem, width: CGFloat, isArrival: Bool = false) -> some View {
+        let focusID = "place-\(item.id)"
+        let isFocused = focusedID == focusID
+        return OverviewPlaceCard(item: item, width: width, isArrival: isArrival,
+                                 isFocused: isFocused, openPlace: openPlace)
+            .focused($focusedID, equals: focusID)
+            .id(focusID)
+            .zIndex(isFocused ? 1 : 0)
+            .onScrollVisibilityChange(threshold: 0.05) { visible in
+                content.visibilityChanged(item.id, visible: visible)
+            }
+            .accessibilityIdentifier("overview-place-\(item.id)")
+    }
+
+    private var validRestoredFocusID: String {
+        let id = content.validFocusID(content.restoredFocusID)
+        return id == slideshowFocusID && startSlideshow == nil ? entryFocusID : id
+    }
+
+    private var satelliteFocus: GeoCoordinate? {
+        isActive && !reduceMotion ? content.coordinate(forFocus: focusedID) : nil
+    }
+
+    private var handlesHomeBack: Bool {
+        isActive && focusHandoff.handlesBack(hasFocus: focusedID != nil,
+            belowTop: isBelowPageTop || content.isPastRecentDock(focusedID))
+    }
+
+    private func commitFocus() {
+        guard isActive, let accepted = focusHandoff.accept(focusedID, atTop: !isBelowPageTop) else { return }
+        content.focusChanged(accepted)
+    }
+
+    private func returnToPageTop(using scroll: ScrollViewProxy) {
+        focusHandoff.returnToTop()
+        content.focusChanged(entryFocusID)
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            focusedID = entryFocusID
+            scroll.scrollTo("overview-top", anchor: .top)
+        }
+        commitFocus()
     }
 }
 
-private struct PlaceShelf: Identifiable {
-    let id: String
-    let title: String
-    let subtitle: String
-    let places: [TravelPlace]
+private struct OverviewPlaceCard: View {
+    let item: OverviewPlaceItem
+    let width: CGFloat
+    let isArrival: Bool
+    let isFocused: Bool
+    let openPlace: (TravelPlace) -> Void
+
+    var body: some View {
+        PlaceCard(place: item.place, isSelected: false, isFocused: isFocused,
+                  cardWidth: width, isArrival: isArrival, usesManagedThumbnail: true,
+                  thumbnail: item.thumbnail, coverUnavailable: item.coverFailed, action: { openPlace(item.place) })
+            .accessibilityValue(item.thumbnail?.image == nil
+                ? AppLocalization.string("photo.pending", defaultValue: "Photo pending")
+                : AppLocalization.string("photo.loaded", defaultValue: "Photo loaded"))
+    }
 }
+
+#if DEBUG
+private struct OverviewPerformanceReadout: View {
+    let content: OverviewContentModel
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.5)) { _ in
+            let images = content.images
+            let metrics = images.metrics
+            Text(verbatim: "loaded=\(content.loadedCount);local=\(metrics.localRequests);cloud=\(metrics.networkRequests);hits=\(metrics.cacheHits);bytes=\(images.accountedBytes);peakBytes=\(metrics.peakAccountedBytes);images=\(images.retainedImageCount);active=\(images.activeRequestCount);maxLocal=\(metrics.peakLocal);maxCloud=\(metrics.peakNetwork);row=\(content.focusedShelfIndex);")
+                .font(.system(size: 1)).opacity(0.01)
+                .accessibilityIdentifier("overview-performance")
+        }.allowsHitTesting(false)
+    }
+}
+#endif

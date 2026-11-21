@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CFBundleDisplayName</key>
+	<string>Photo Earth</string>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Photo Earth accesses Apple Music only when you choose background music for a slideshow.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Photo Earth 使用 Apple TV 的大致位置，让地球从你所在的区域开始。</string>
+	<string>Photo Earth uses the Apple TV's approximate location to start the globe near you.</string>
 	<key>GCSupportedGameControllers</key>
 	<array>
 		<dict>
@@ -19,5 +23,18 @@
 	<true/>
 	<key>GCSupportsMultipleMicroGamepads</key>
 	<true/>
+	<key>PhotoEarthShelfAccessGroup</key>
+	<string>$(AppIdentifierPrefix)com.doupi.PhotoEarth.RecentJourneys</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.doupi.PhotoEarth.journey</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>photoearth</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

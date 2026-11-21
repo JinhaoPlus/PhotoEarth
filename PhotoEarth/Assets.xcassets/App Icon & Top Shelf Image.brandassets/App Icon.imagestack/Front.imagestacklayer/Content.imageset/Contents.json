@@ -1,10 +1,12 @@
 {
   "images" : [
     {
+      "filename" : "PhotoEarth-Front.png",
       "idiom" : "tv",
       "scale" : "1x"
     },
     {
+      "filename" : "PhotoEarth-Front@2x.png",
       "idiom" : "tv",
       "scale" : "2x"
     }

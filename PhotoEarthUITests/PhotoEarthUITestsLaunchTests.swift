@@ -21,6 +21,7 @@ final class PhotoEarthUITestsLaunchTests: XCTestCase {
     func testLaunch() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--demo"]
+        app.useSimplifiedChineseTestLanguage()
         app.launch()
 
         let attachment = XCTAttachment(screenshot: app.screenshot())

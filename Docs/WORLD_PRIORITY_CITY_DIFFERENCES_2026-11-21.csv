@@ -1,0 +1,114 @@
+﻿geonames_id,reference_region,reference_city,latitude,longitude,before_id,before_region,before_city,before_grade,after_id,after_region,after_city,after_grade,review,reference_source
+12278193,FR,Marne La Vallée,48.83584,2.64241,gn:2997904,FR,Lognes,city,catalog:gn:2997904,FR,Lognes,different_city,reference_municipal_group,https://www.epamarne-epafrance.fr/actualites/marne-la-vallee-et-son-perimetre-dintervention/
+2970479,FR,Paris 15 Vaugirard,48.8412,2.3003,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+2994540,FR,Paris 20 Ménilmontant,48.8646,2.3984,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+3029374,FR,Paris 18 Buttes-Montmartre,48.8925,2.3444,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+3015772,FR,Paris 13 Gobelins,48.8322,2.3561,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+3029372,FR,Paris 19 Buttes-Chaumont,48.8817,2.3822,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+2988394,FR,Paris 16 Passy,48.8637,2.2769,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+3034610,FR,Paris 17 Batignolles-Monceau,48.8835,2.3219,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+8533870,FR,Saint-Quentin-en-Yvelines,48.77186,2.01891,gn:2992415,FR,Montigny-le-Bretonneux,city,catalog:gn:2992415,FR,Montigny-le-Bretonneux,different_city,reference_municipal_group,https://saint-quentin-en-yvelines.fr/agglomeration/
+2986082,FR,Paris 11 Popincourt,48.8574,2.3795,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+2983854,FR,Paris 12 Reuilly,48.8412,2.3876,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+2989781,FR,Paris 14 Observatoire,48.8331,2.3264,1159151613,FR,Paris,city,catalog:1159151613,FR,Paris,different_city,confirmed_parent_city,https://opendata.paris.fr/explore/dataset/arrondissements/
+5110302,US,Brooklyn,40.6501,-73.94958,1159151575,US,New York City,city,catalog:1159151575,US,New York City,different_city,confirmed_parent_city,https://portal.311.nyc.gov/article/?kanumber=KA-02877
+5133273,US,Queens,40.68149,-73.83652,1159151575,US,New York City,city,catalog:1159151575,US,New York City,different_city,confirmed_parent_city,https://portal.311.nyc.gov/article/?kanumber=KA-02877
+5125771,US,Manhattan,40.78343,-73.96625,1159151575,US,New York City,city,catalog:1159151575,US,New York City,different_city,confirmed_parent_city,https://portal.311.nyc.gov/article/?kanumber=KA-02877
+5110266,US,The Bronx,40.84985,-73.86641,1159151575,US,New York City,city,catalog:1159151575,US,New York City,different_city,confirmed_parent_city,https://portal.311.nyc.gov/article/?kanumber=KA-02877
+5139568,US,Staten Island,40.56233,-74.13986,1159151575,US,New York City,city,catalog:1159151575,US,New York City,different_city,confirmed_parent_city,https://portal.311.nyc.gov/article/?kanumber=KA-02877
+4300488,US,Meads,38.41258,-82.70905,gn:4286913,US,Cannonsburg,city,catalog:gn:4286913,US,Cannonsburg,different_city,needs_local_boundary_or_parent_review,
+5317071,US,Tempe Junction,33.41421,-111.94348,gn:5317058,US,Tempe,city,catalog:gn:5317058,US,Tempe,different_city,needs_local_boundary_or_parent_review,
+4619947,US,East Chattanooga,35.06535,-85.24912,1159147455,US,Chattanooga,city,catalog:1159147455,US,Chattanooga,different_city,needs_local_boundary_or_parent_review,
+4756955,US,East Hampton,37.03737,-76.33161,1159125473,US,Hampton,city,catalog:1159125473,US,Hampton,different_city,needs_local_boundary_or_parent_review,
+5107129,US,Amherst,42.97839,-78.79976,gn:5116303,US,Eggertsville,city,catalog:gn:5107129,US,Amherst,right,corrected_alias_grade,
+4839745,US,North Stamford,41.13815,-73.54346,1159124569,US,Stamford,city,catalog:1159124569,US,Stamford,different_city,needs_local_boundary_or_parent_review,
+4903976,US,North Peoria,40.71754,-89.58426,us-census:1759000,US,Peoria,city,catalog:us-census:1759000,US,Peoria,different_city,needs_local_boundary_or_parent_review,
+5097529,US,Edison,40.51872,-74.4121,gn:5099057,US,Highland Park,city,catalog:gn:5097529,US,Edison,right,corrected_alias_grade,
+6955677,TR,Çankaya,39.9179,32.86268,1159151255,TR,Ankara,city,catalog:1159151255,TR,Ankara,different_city,needs_local_boundary_or_parent_review,
+308988,TR,Karşıyaka,38.45772,27.1142,1159149371,TR,İzmir,city,catalog:1159149371,TR,İzmir,different_city,needs_local_boundary_or_parent_review,
+1798524,CN,Pudong,31.23995,121.50094,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1794035,CN,Songjiang,31.03443,121.22326,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1806508,CN,Jiading,31.38575,121.24465,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1797798,CN,Qingpu,31.15394,121.11408,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1798439,CN,Putuo,31.251,121.3897,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1787375,CN,Yangpu,31.26193,121.51904,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+13608002,CN,Fengxiang,30.85841,121.46779,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1787957,CN,Xuhui,31.19594,121.44709,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+7602670,CN,Zhu Cheng City,35.99502,119.40259,1159130203,CN,Zhucheng,city,catalog:1159130203,CN,Zhucheng,different_city,needs_local_boundary_or_parent_review,
+2036662,CN,Huludao,40.75243,120.83552,1159149137,CN,Lianshan,city,catalog:1159149137,CN,Lianshan,different_city,needs_local_boundary_or_parent_review,
+13608000,CN,Jinshan,30.83556,121.29373,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1815611,CN,Changning,31.21739,121.42105,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1808090,CN,Hongkou,31.25,121.48917,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+8307452,CN,Huangpu,31.2378,121.4781,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1793424,CN,Tanggu,39.02111,117.64694,1159151381,CN,Tianjin,city,catalog:1159151381,CN,Tianjin,different_city,needs_local_boundary_or_parent_review,
+12446699,CN,Daxing’anling,52.33385,124.71242,gn:2034613,CN,Tahe,city,catalog:gn:2034613,CN,Tahe,different_city,needs_local_boundary_or_parent_review,
+1909733,CN,Banan,29.37861,106.54,1159151327,CN,Chongqing,city,catalog:1159151327,CN,Chongqing,different_city,confirmed_parent_city,https://mzj.cq.gov.cn/zwgk_218/zfxxgkml/tzgg/202601/t20260119_15332641.html
+1814544,CN,Dachang,31.30873,121.41526,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1799823,CN,Nanqiao,30.91611,121.44944,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1798097,CN,Qibao,31.15267,121.35688,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1816790,CN,Beibei,29.82739,106.43645,1159151327,CN,Chongqing,city,catalog:1159151327,CN,Chongqing,different_city,confirmed_parent_city,https://mzj.cq.gov.cn/zwgk_218/zfxxgkml/tzgg/202601/t20260119_15332641.html
+1809571,CN,Gucun,31.34933,121.39341,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+2036713,CN,Huanren,41.26472,125.36667,gn:2036711,CN,Huanren Manchu Autonomous County,city,catalog:gn:2036711,CN,Huanren Manchu Autonomous County,different_city,needs_local_boundary_or_parent_review,
+7843638,CN,Changzheng,31.23913,121.36779,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1816329,CN,Bishan,29.59491,106.22476,1159151327,CN,Chongqing,city,catalog:1159151327,CN,Chongqing,different_city,confirmed_parent_city,https://mzj.cq.gov.cn/zwgk_218/zfxxgkml/tzgg/202601/t20260119_15332641.html
+1787592,CN,Yanghang,31.37022,121.43742,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1800657,CN,Mentougou,39.93819,116.09307,1159151595,CN,Beijing,city,catalog:1159151595,CN,Beijing,different_city,confirmed_parent_city,https://english.beijing.gov.cn/investinginbeijing/Start_Your_Business/focus_guide/thematic_guide/inv_IncreaseOfCapitals/202403/t20240313_3588702.html
+8416933,CN,Huixing,29.68403,106.61486,1159151327,CN,Chongqing,city,catalog:1159151327,CN,Chongqing,different_city,confirmed_parent_city,https://mzj.cq.gov.cn/zwgk_218/zfxxgkml/tzgg/202601/t20260119_15332641.html
+1792520,CN,Tongzhou,39.90395,116.66183,1159151595,CN,Beijing,city,catalog:1159151595,CN,Beijing,different_city,confirmed_parent_city,https://english.beijing.gov.cn/investinginbeijing/Start_Your_Business/focus_guide/thematic_guide/inv_IncreaseOfCapitals/202403/t20240313_3588702.html
+1788669,CN,Xinqiao,31.065,121.3075,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1798919,CN,Pengpu,31.2855,121.4367,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1785916,CN,Yuepu,31.42694,121.42139,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+2037335,CN,Fuyu,45.18333,124.81667,1159141037,CN,Songyuan,city,catalog:1159141037,CN,Songyuan,different_city,needs_local_boundary_or_parent_review,
+7845495,CN,Xiayang,31.14967,121.11588,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1794806,CN,Huinong,39.23333,106.76944,1159149885,CN,Shizuishan,city,catalog:1159149885,CN,Shizuishan,different_city,needs_local_boundary_or_parent_review,
+13527315,CN,Santo António,22.20208,113.54394,1159149085,MO,Macau,country,catalog:1159149085,MO,Macau,different_region,reference_region_error,https://www.dsec.gov.mo/getAttachment/6cb29f2f-524a-488f-aed3-4d7207bb109e/ECENPUB2021Y.aspx
+12450887,CN,Shuanglonghu,29.71617,106.60684,1159151327,CN,Chongqing,city,catalog:1159151327,CN,Chongqing,different_city,confirmed_parent_city,https://mzj.cq.gov.cn/zwgk_218/zfxxgkml/tzgg/202601/t20260119_15332641.html
+7843633,CN,Gaojing,31.32225,121.4751,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1793999,CN,Songnan,31.35043,121.48218,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+13527308,CN,Nossa Senhora de Fátima,22.20769,113.54831,1159149085,MO,Macau,country,catalog:1159149085,MO,Macau,different_region,reference_region_error,https://www.dsec.gov.mo/getAttachment/6cb29f2f-524a-488f-aed3-4d7207bb109e/ECENPUB2021Y.aspx
+1783903,CN,Zhujing,30.901,121.15966,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+1801969,CN,Luodian,31.41556,121.33444,1159151605,CN,Shanghai,city,catalog:1159151605,CN,Shanghai,different_city,confirmed_parent_city,https://mzj.sh.gov.cn/MZ_zhuzhan1539_0-2-8-1459/20260727/0534d80cdd8d4507ab8f9e3c0f7849c2.html
+2034754,CN,Shunyi,40.12175,116.64783,1159151595,CN,Beijing,city,catalog:1159151595,CN,Beijing,different_city,confirmed_parent_city,https://english.beijing.gov.cn/investinginbeijing/Start_Your_Business/focus_guide/thematic_guide/inv_IncreaseOfCapitals/202403/t20240313_3588702.html
+1280570,CN,Mengmao,24.00139,97.86499,gn:1308318,MM,Mu-se,country,catalog:gn:1308318,MM,Mu-se,different_region,unresolved_country_border,https://www.rl.gov.cn/Web/_F0_0_683EIWZA00FC7E658F874ADAB5.htm
+1816221,CN,Buhe,30.28757,112.22979,1159130147,CN,Jingzhou,city,catalog:1159130147,CN,Jingzhou,different_city,needs_local_boundary_or_parent_review,
+1807544,CN,Daxing,39.74025,116.32693,1159151595,CN,Beijing,city,catalog:1159151595,CN,Beijing,different_city,confirmed_parent_city,https://english.beijing.gov.cn/investinginbeijing/Start_Your_Business/focus_guide/thematic_guide/inv_IncreaseOfCapitals/202403/t20240313_3588702.html
+8403616,CN,Pailou,30.79641,108.3858,1159146887,CN,Wanzhou,city,catalog:1159146887,CN,Wanzhou,different_city,confirmed_parent_city,https://mzj.cq.gov.cn/zwgk_218/zfxxgkml/tzgg/202601/t20260119_15332641.html
+3827409,MX,Cuauhtémoc,19.44506,-99.14612,1159151587,MX,Mexico City,city,catalog:1159151587,MX,Mexico City,different_city,confirmed_parent_city,https://www.transparencia.cdmx.gob.mx/storage/app/uploads/public/679/bfe/ffc/679bfeffc4524894534738.pdf
+8469289,JP,Ōta,35.56126,139.71605,1159130361,JP,Kawasaki,city,catalog:1159151609,JP,Tokyo,different_city,confirmed_parent_city,https://www.english.metro.tokyo.lg.jp/municipalities-within-tokyo
+11209896,JP,Kotō,32.77856,130.74537,gn:1859937,JP,Kashima,city,catalog:gn:1859937,JP,Kashima,different_city,needs_local_boundary_or_parent_review,
+8469284,JP,Katsushika,35.73333,139.85,gn:8469284,JP,Katsushika-ku,right,catalog:1159151609,JP,Tokyo,different_city,confirmed_parent_city,https://www.english.metro.tokyo.lg.jp/municipalities-within-tokyo
+1852383,JP,Minato,34.2152,135.1501,1159141303,JP,Wakayama,city,catalog:1159141303,JP,Wakayama,different_city,needs_local_boundary_or_parent_review,
+8715035,JP,Nakano,35.70449,139.66946,gn:8715035,JP,Nakano City,right,catalog:1159151609,JP,Tokyo,different_city,confirmed_parent_city,https://www.english.metro.tokyo.lg.jp/municipalities-within-tokyo
+8469285,JP,Kita,35.75264,139.73348,gn:8469285,JP,Kita-ku,right,catalog:1159151609,JP,Tokyo,different_city,confirmed_parent_city,https://www.english.metro.tokyo.lg.jp/municipalities-within-tokyo
+1860704,JP,Kakogawachō-honmachi,34.76943,134.82905,gn:1851005,JP,Takasago,city,catalog:gn:1860704,JP,Kakogawa,right,corrected_alias_grade,
+13353696,JP,Minato City,35.6581,139.7515,1159151609,JP,Tokyo,city,catalog:1159151609,JP,Tokyo,different_city,confirmed_parent_city,https://www.english.metro.tokyo.lg.jp/municipalities-within-tokyo
+1857144,JP,Minamirinkan,35.49527,139.44279,gn:1848595,JP,Yamato,city,catalog:gn:1848595,JP,Yamato,different_city,needs_local_boundary_or_parent_review,
+1859383,JP,Kishiwada,34.46667,135.36667,gn:1860764,JP,Kaizuka,city,catalog:gn:1859383,JP,Kishiwada,right,corrected_alias_grade,
+1861107,JP,Izumi,34.48333,135.43333,gn:1861094,JP,Izumi-Ōtsu,city,catalog:gn:1861107,JP,Izumi,right,corrected_alias_grade,
+13353695,JP,Chūō,35.67004,139.77544,1159151609,JP,Tokyo,city,catalog:1159151609,JP,Tokyo,different_city,confirmed_parent_city,https://www.english.metro.tokyo.lg.jp/municipalities-within-tokyo
+2112312,JP,Katsuta,36.38333,140.53333,gn:8304033,JP,Hitachinaka,city,catalog:gn:8304033,JP,Hitachinaka,different_city,former_city_in_current_city,https://www.city.hitachinaka.lg.jp/1013328/1013330/index.html
+1859675,JP,Kawanishi,34.81667,135.41667,gn:1861785,JP,Ikeda,city,catalog:gn:1861785,JP,Ikeda,different_city,reference_point_outside_named_city,https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html
+1907301,JP,Shimotoda,35.815,139.6853,gn:1848902,JP,Warabi,city,catalog:gn:1850300,JP,Toda,right,corrected_alias_grade,
+6822128,JP,Ebina,35.38121,139.39651,gn:1853021,JP,Samukawa,city,catalog:gn:1853021,JP,Samukawa,different_city,reference_point_outside_named_city,https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html
+1859913,JP,Kashiwara,34.45,135.76667,gn:1850925,JP,Takatori,city,catalog:gn:1850925,JP,Takatori,different_city,needs_local_boundary_or_parent_review,
+6822159,JP,Fujimino,35.90196,139.52489,1159130365,JP,Kawagoe,city,catalog:1159130365,JP,Kawagoe,different_city,reference_point_outside_named_city,https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html
+1848254,JP,Yono,35.88333,139.63333,gn:1849187,JP,Saitama,city,catalog:gn:1849187,JP,Saitama,different_city,confirmed_parent_city,https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-N03-2026.html
+1850152,JP,Tokuyama,34.05,131.81667,gn:7393001,JP,Shunan,city,catalog:gn:7393001,JP,Shunan,different_city,former_city_in_current_city,https://www.city.shunan.lg.jp/soshiki/3/2104.html
+1861091,JP,Izumisano,34.41667,135.31667,gn:1851189,JP,Tajiri,city,catalog:gn:7391698,JP,Izumisano,right,corrected_alias_grade,
+261414,GR,Kallithéa,37.95,23.7,1159130685,GR,Piraeus,city,catalog:gn:261414,GR,Kallithea,right,corrected_alias_grade,
+2875376,DE,Ludwigshafen am Rhein,49.48121,8.44641,1159140549,DE,Mannheim,city,catalog:gn:2875376,DE,Ludwigshafen am Rhein,right,corrected_alias_grade,
+2646003,GB,Islington,51.53622,-0.10304,1159151577,GB,London,city,catalog:1159151577,GB,London,different_city,confirmed_parent_city,https://www.london.gov.uk/publications/annex-2-inner-and-outer-london-boroughs
+2634341,GB,City of Westminster,51.4975,-0.1357,1159151577,GB,London,city,catalog:1159151577,GB,London,different_city,confirmed_parent_city,https://www.london.gov.uk/publications/annex-2-inner-and-outer-london-boroughs
+2638671,GB,Salford,53.48771,-2.29042,1159149119,GB,Manchester,city,catalog:gn:2638671,GB,Salford,right,corrected_alias_grade,
+2641674,GB,Newcastle under Lyme,53,-2.23333,1159135323,GB,Stoke-on-Trent,city,catalog:gn:2641674,GB,Newcastle-under-Lyme,right,corrected_alias_grade,
+1610858,TH,Dusit,13.77706,100.51958,1159151509,TH,Bangkok,city,catalog:1159151509,TH,Bangkok,different_city,needs_local_boundary_or_parent_review,
+2264268,PT,Queluz,38.75657,-9.25451,gn:2262912,PT,Sintra,city,catalog:gn:2262912,PT,Sintra,different_city,needs_local_boundary_or_parent_review,
+101760,SA,Sulţānah,24.49258,39.58572,1159149443,SA,Medina,city,catalog:1159149443,SA,Medina,different_city,needs_local_boundary_or_parent_review,
+1732724,MY,Kampung Larkin Lama,1.5024,103.744,1159146479,MY,Johor Bahru,city,catalog:1159146479,MY,Johor Bahru,different_city,needs_local_boundary_or_parent_review,
+13118233,MY,Titiwangsa,3.17822,101.70312,1159151317,MY,Kuala Lumpur,city,catalog:1159151317,MY,Kuala Lumpur,different_city,needs_local_boundary_or_parent_review,
+11054399,MY,Bukit Bintang,3.14657,101.71023,1159151317,MY,Kuala Lumpur,city,catalog:1159151317,MY,Kuala Lumpur,different_city,needs_local_boundary_or_parent_review,
+1744763,MY,Sentul,3.18333,101.68333,1159151317,MY,Kuala Lumpur,city,catalog:1159151317,MY,Kuala Lumpur,different_city,needs_local_boundary_or_parent_review,
+1818953,HK,Sham Shui Po,22.33023,114.15945,1159151629,HK,Hong Kong,city,catalog:1159151629,HK,Hong Kong,different_city,confirmed_parent_city,https://www.had.gov.hk/en/18_districts/my_map.htm
+1819607,HK,Kowloon City,22.33047,114.19222,1159151629,HK,Hong Kong,city,catalog:1159151629,HK,Hong Kong,different_city,confirmed_parent_city,https://www.had.gov.hk/en/18_districts/my_map.htm
+1818379,HK,Wan Chai,22.28142,114.17258,1159151629,HK,Hong Kong,city,catalog:1159151629,HK,Hong Kong,different_city,confirmed_parent_city,https://www.had.gov.hk/en/18_districts/my_map.htm
+755330,PL,Wola,52.23477,20.96004,1159151299,PL,Warsaw,city,catalog:1159151299,PL,Warsaw,different_city,confirmed_parent_city,https://warszawa19115.pl/web/guest/-/urzad-dzielnicy-wola-m-st-warszawy

@@ -1,68 +1,62 @@
 import SwiftUI
 
+/// The existing full-screen map supplies a neutral Earth before permission.
+/// No fictional personal lights are drawn on the welcome screen.
 struct WelcomeView: View {
     let begin: () -> Void
     let showDemo: () -> Void
+    @Namespace private var welcomeFocus
+    @Environment(\.scenePhase) private var scenePhase
+    @FocusState private var focusedAction: Action?
+    private enum Action: Hashable { case connect, sample }
+
 
     var body: some View {
-        ZStack {
-            SpaceBackdrop()
-
-            HStack(spacing: 90) {
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.cyan.opacity(0.85), Color.blue.opacity(0.46), Color.black],
-                                center: .topLeading,
-                                startRadius: 20,
-                                endRadius: 290
-                            )
-                        )
-                        .frame(width: 460, height: 460)
-                        .shadow(color: .blue.opacity(0.45), radius: 80)
-
-                    ForEach(0..<7, id: \.self) { index in
-                        Circle()
-                            .fill(index == 0 ? Color.yellow : Color.cyan)
-                            .frame(width: index == 0 ? 24 : 14, height: index == 0 ? 24 : 14)
-                            .offset(
-                                x: cos(Double(index) * 1.37) * 175,
-                                y: sin(Double(index) * 1.71) * 150
-                            )
-                    }
+        VStack(alignment: .leading, spacing: 28) {
+            Spacer()
+            Text(AppLocalization.string("welcome.title", defaultValue: "See Your Photos on the Globe"))
+                .font(.system(size: 62, weight: .light))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(AppLocalization.string("welcome.message", defaultValue: "Photo Earth uses capture dates, locations, and camera information on this Apple TV to build your travel globe. You can exclude albums from the scan."))
+                .font(.system(size: 26))
+                .foregroundStyle(.white.opacity(0.8))
+                .lineSpacing(7)
+                .fixedSize(horizontal: false, vertical: true)
+            GlassEffectContainer(spacing: 22) {
+                VStack(alignment: .leading, spacing: 22) {
+                    Button(AppLocalization.string("welcome.connect", defaultValue: "Connect Photo Library"), action: begin)
+                        .focused($focusedAction, equals: .connect)
+                        .accessibilityIdentifier("welcome-connect")
+                    Button(AppLocalization.string("sample.view_first", defaultValue: "Explore a Sample Journey"), action: showDemo)
+                        .focused($focusedAction, equals: .sample)
+                        .accessibilityIdentifier("welcome-demo")
                 }
-                .accessibilityHidden(true)
-
-                VStack(alignment: .leading, spacing: 24) {
-                    Text("PHOTO EARTH")
-                        .font(.caption.weight(.semibold))
-                        .tracking(8)
-                        .foregroundStyle(.cyan)
-
-                    Text("你的旅程，\n落在地球上")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
-
-                    Text("读取照片中的地点与时间，在 Apple TV 上生成一颗只属于你的旅行星球。照片不会离开你的照片图库。")
-                        .font(.title3)
-                        .foregroundStyle(.white.opacity(0.68))
-                        .frame(maxWidth: 650, alignment: .leading)
-                        .lineSpacing(7)
-
-                    HStack(spacing: 24) {
-                        Button("连接照片图库", action: begin)
-                            .buttonStyle(.borderedProminent)
-                            .tint(.blue)
-
-                        Button("先看示例旅程", action: showDemo)
-                            .buttonStyle(.bordered)
-                    }
-                    .font(.title3.weight(.semibold))
-                    .padding(.top, 16)
-                }
+                .buttonStyle(.glass)
+                .font(.system(size: 25, weight: .medium))
             }
-            .padding(.horizontal, 120)
+            .padding(.top, 12)
+            Spacer()
+        }
+        .focusScope(welcomeFocus)
+        .defaultFocus($focusedAction, .connect, priority: .userInitiated)
+        .task(id: scenePhase) {
+            // The persistent map and the window may exist before an active
+            // welcome page. Set a real button target once this scene can focus.
+            guard scenePhase == .active else { return }
+            await Task.yield()
+            guard !Task.isCancelled, focusedAction == nil else { return }
+            focusedAction = .connect
+        }
+        .frame(maxWidth: 780, alignment: .leading)
+        .padding(.horizontal, 80).padding(.top, 60).padding(.bottom, 104)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background {
+            LinearGradient(stops: [.init(color: .black.opacity(0.86), location: 0),
+                                   .init(color: .black.opacity(0.65), location: 0.4),
+                                   .init(color: .clear, location: 0.82)],
+                           startPoint: .leading, endPoint: .trailing)
+                .ignoresSafeArea().allowsHitTesting(false)
         }
     }
 }

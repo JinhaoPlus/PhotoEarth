@@ -1,0 +1,13 @@
+$(SRCROOT)/PhotoEarth
+$(SRCROOT)/PhotoEarthTopShelf
+$(SRCROOT)/PhotoEarthTopShelfShared
+$(SRCROOT)/PhotoEarthTests
+$(SRCROOT)/PhotoEarthUITests
+$(SRCROOT)/PhotoEarth-Info.plist
+$(SRCROOT)/PhotoEarth-Debug.entitlements
+$(SRCROOT)/PhotoEarthTopShelf-Info.plist
+$(SRCROOT)/PhotoEarthTopShelf.entitlements
+$(SRCROOT)/PhotoEarth.xcodeproj/project.pbxproj
+$(SRCROOT)/PhotoEarth.xcodeproj/xcshareddata
+$(SRCROOT)/Scripts/release_gate_inputs.xcfilelist
+$(SRCROOT)/Scripts/release_gate.py
