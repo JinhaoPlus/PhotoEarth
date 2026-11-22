@@ -20,6 +20,7 @@
       <BuildableProductRunnable runnableDebuggingMode="0">
          <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="95F0D1B2304A56C100392F9A" BuildableName="PhotoEarth.app" BlueprintName="PhotoEarth" ReferencedContainer="container:PhotoEarth.xcodeproj" />
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference identifier="../PhotoEarthUITests/Purchases.storekit" />
    </LaunchAction>
    <ProfileAction buildConfiguration="Release">
       <BuildableProductRunnable runnableDebuggingMode="0">

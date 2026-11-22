@@ -48,7 +48,7 @@ struct CollectionPhotoWall: View {
                               openMapReview: { mapReviewOrigin = session.membership?.reviewOrigin },
                               canOpenMapReview: session.membership?.reviewOrigin != nil,
                               labelStates: model.placeLabelStates,
-                              resolvePlaceLabels: resolveLabels)
+                              resolvePlaceLabels: resolveLabels, analyticsLibrary: model.analyticsLibrary)
                 .opacity(slideshow == nil && mapReviewOrigin == nil ? 1 : 0)
                 .disabled(selectedPhoto != nil || slideshow != nil || mapReviewOrigin != nil)
                 .accessibilityHidden(selectedPhoto != nil || slideshow != nil || mapReviewOrigin != nil)
@@ -62,7 +62,6 @@ struct CollectionPhotoWall: View {
             if let photo = selectedPhoto {
                 PhotoDetailView(record: photo, placeLabel: photo.placeID.flatMap(placeLabel),
                                 initialImage: preview,
-                                labelState: photo.placeID.flatMap { model.placeLabelStates[$0] },
                                 resolvePlaceLabel: { await resolveLabels([photo.placeID].compactMap { $0 }) },
                                 records: session.records,
                                 hasMorePhotos: session.nextOffset != nil,

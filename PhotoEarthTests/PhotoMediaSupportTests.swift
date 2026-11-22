@@ -193,6 +193,65 @@ struct PhotoMediaSupportTests {
         model.releaseContent()
     }
 
+    @Test(arguments: [false, true])
+    func slideshowOriginalSoundWaitsForNativePlaybackAndRequiresAnAudioTrack(hasAudio: Bool) async throws {
+        let folder = temporaryDirectory()
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let movieURL = folder.appendingPathComponent("video.mov")
+        let duration = CMTime(seconds: 4, preferredTimescale: 600)
+        try await writeTestMovie(to: movieURL, duration: duration)
+
+        let movie = AVURLAsset(url: movieURL)
+        let composition = AVMutableComposition()
+        let videoTrack = try #require(try await movie.loadTracks(withMediaType: .video).first)
+        let destination = try #require(composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid))
+        try destination.insertTimeRange(try await videoTrack.load(.timeRange), of: videoTrack, at: .zero)
+        if hasAudio {
+            let audioURL = folder.appendingPathComponent("audio.caf")
+            try writeTestAudio(to: audioURL)
+            let audio = AVURLAsset(url: audioURL)
+            let track = try #require(try await audio.loadTracks(withMediaType: .audio).first)
+            let destination = try #require(composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid))
+            try destination.insertTimeRange(try await track.load(.timeRange), of: track, at: .zero)
+        }
+
+        let requester = ControlledMediaRequester()
+        let model = PhotoDetailPlaybackModel(requester: requester, isMuted: true)
+        defer { model.releaseContent() }
+        let video = record(id: "video-with-original-sound", kind: .video, duration: duration.seconds)
+        model.prepareForAutoplay(video)
+        let token = try #require(requester.token(for: video.id))
+        requester.succeedVideo(token, item: AVPlayerItem(asset: composition), duration: video.duration)
+        #expect(!model.isOriginalAudioReady)
+
+        model.toggle(video)
+        #expect(model.isPlaying)
+        #expect(!model.isOriginalAudioReady)
+
+        let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+        while !model.hasStartedPlayback, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        try #require(model.hasStartedPlayback)
+        #expect(model.isOriginalAudioReady == hasAudio)
+
+        model.pause()
+        #expect(!model.isOriginalAudioReady)
+    }
+
+    private func writeTestAudio(to url: URL) throws {
+        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1))
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 192_000))
+        let samples = try #require(buffer.floatChannelData?[0])
+        buffer.frameLength = buffer.frameCapacity
+        for frame in 0..<Int(buffer.frameLength) {
+            samples[frame] = 0.05 * sin(Float(frame) * 2 * .pi * 440 / 48_000)
+        }
+        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+        try file.write(from: buffer)
+    }
+
     private func record(
         id: String,
         kind: PhotoMediaKind,

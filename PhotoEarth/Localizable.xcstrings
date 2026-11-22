@@ -1,6 +1,1066 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "sidebar.anniversary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "On This Day"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那年今日"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "那年今日"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An diesem Tag"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tal día como hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce jour-là"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Accadde oggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過去のこの日"
+          }
+        }
+      }
+    },
+    "anniversary.empty" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No travel photos from this day in past years"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "往年这一天没有旅行照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "往年這一天沒有旅行照片"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Reisefotos von diesem Tag in früheren Jahren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay fotos de viajes de este día en años anteriores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune photo de voyage prise à cette date les années précédentes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessuna foto di viaggio di questo giorno negli anni passati"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "過去のこの日に撮影した旅行写真はありません"
+          }
+        }
+      }
+    },
+    "purchase.title" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your Travel Globe"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的旅行地球"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的旅行地球"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "旅の地球儀"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Reiseglobus"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre globe de voyages"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu globo de viajes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo globo di viaggio"
+          }
+        }
+      }
+    },
+    "purchase.trial" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start 7-Day Free Trial"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费试用 7 天"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費試用 7 天"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7日間無料で試す"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 Tage kostenlos testen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essayer gratuitement 7 jours"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar gratis 7 días"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova gratis per 7 giorni"
+          }
+        }
+      }
+    },
+    "purchase.buy" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock for %@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 买断完整版"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 買斷完整版"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@で完全版を購入"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für %@ freischalten"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Débloquer pour %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desbloquear por %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca a %@"
+          }
+        }
+      }
+    },
+    "purchase.full" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock Full Version"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "购买完整版"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購買完整版"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完全版を購入"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vollversion freischalten"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Débloquer la version complète"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desbloquear la versión completa"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sblocca la versione completa"
+          }
+        }
+      }
+    },
+    "purchase.owned" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full version unlocked"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已购买完整版"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已購買完整版"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完全版を購入済み"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vollversion freigeschaltet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version complète débloquée"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión completa desbloqueada"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versione completa sbloccata"
+          }
+        }
+      }
+    },
+    "purchase.restore" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore Purchases"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "恢复购买"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "回復購買"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入を復元"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käufe wiederherstellen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurer les achats"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurar compras"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina acquisti"
+          }
+        }
+      }
+    },
+    "purchase.expired" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your free trial has ended"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "七天试用已结束"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "七天試用已結束"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無料体験が終了しました"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deine Testphase ist beendet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre essai est terminé"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu prueba ha terminado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La prova è terminata"
+          }
+        }
+      }
+    },
+    "purchase.terms" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explore your photos for seven days. After that, a one-time purchase of %@ unlocks your globe, journeys and slideshows. No automatic charge."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免费体验 7 天。到期后，一次支付 %@ 即可继续浏览个人旅行地球、旅程和放映。不会自动扣费。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "免費體驗 7 天。到期後，支付 %@ 即可繼續瀏覽個人旅行地球、旅程與放映。費用只收一次，不會自動扣款。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7日間無料で体験できます。その後は%@の買い切りで、地球儀、旅、スライドショーを引き続き楽しめます。自動課金はありません。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sieben Tage kostenlos testen. Danach schaltest du Globus, Reisen und Diashows einmalig für %@ frei. Keine automatische Abbuchung."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essayez gratuitement pendant sept jours. Ensuite, un achat unique de %@ débloque votre globe, vos voyages et vos diaporamas. Aucun débit automatique."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba gratis durante siete días. Después, un pago único de %@ desbloquea tu globo, tus viajes y tus pases de fotos. Sin cobro automático."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova gratis per sette giorni. Poi un acquisto unico di %@ sblocca il globo, i viaggi e le presentazioni. Nessun addebito automatico."
+          }
+        }
+      }
+    },
+    "purchase.after" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock your personal globe, journeys and slideshows with one payment of %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次支付 %@，继续浏览个人旅行地球、旅程和放映。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一次支付 %@，繼續瀏覽個人旅行地球、旅程與放映。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@の買い切りで地球儀、旅、スライドショーを引き続き楽しめます。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schalte Globus, Reisen und Diashows einmalig für %@ frei."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retrouvez votre globe, vos voyages et vos diaporamas pour un paiement unique de %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un pago único de %@ desbloquea tu globo, tus viajes y tus pases de fotos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Con un acquisto unico di %@ sblocchi globo, viaggi e presentazioni."
+          }
+        }
+      }
+    },
+    "purchase.until" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trial ends %@."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试用将于 %@ 结束。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "試用將於 %@ 結束。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無料体験は%@までです。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Testphase endet am %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre essai se termine le %@."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu prueba termina el %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La prova termina il %@."
+          }
+        }
+      }
+    },
+    "purchase.verify" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your purchase"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "核实购买记录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "確認購買紀錄"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入状況の確認"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauf prüfen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier votre achat"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verificar tu compra"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica il tuo acquisto"
+          }
+        }
+      }
+    },
+    "purchase.verificationHelp" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restore your purchases to verify access."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请恢复购买，以核实你的使用权限。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請回復購買以確認使用權限。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入を復元して利用状況を確認してください。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stelle deine Käufe wieder her, um den Zugriff zu prüfen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaurez vos achats pour vérifier votre accès."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restaura tus compras para verificar el acceso."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ripristina gli acquisti per verificare l’accesso."
+          }
+        }
+      }
+    },
+    "purchase.unavailable" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Store pricing is unavailable. Try again or restore your purchases."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暂时无法获取商店价格。请重试或恢复购买。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "暫時無法取得商店價格。請再試一次或回復購買。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "価格を取得できません。再試行するか購入を復元してください。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preise sind nicht verfügbar. Versuche es erneut oder stelle Käufe wieder her."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarifs indisponibles. Réessayez ou restaurez vos achats."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Precios no disponibles. Reintenta o restaura tus compras."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prezzi non disponibili. Riprova o ripristina gli acquisti."
+          }
+        }
+      }
+    },
+    "purchase.pending" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for purchase approval."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待批准购买。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在等待購買核准。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購入の承認待ちです。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kauf wartet auf Genehmigung."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Achat en attente d’approbation."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compra pendiente de aprobación."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisto in attesa di approvazione."
+          }
+        }
+      }
+    },
+    "purchase.failed" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The App Store request could not be completed. Try again."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store 请求未完成，请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Store 要求未完成，請再試一次。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App Storeで処理できませんでした。もう一度お試しください。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Anfrage an den App Store ist fehlgeschlagen. Versuche es erneut."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La demande a échoué. Réessayez."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo completar la solicitud. Inténtalo de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Richiesta non riuscita. Riprova."
+          }
+        }
+      }
+    },
+    "purchase.noActive" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No active purchase was found for this account."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此账户没有可恢复的有效购买。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此帳號沒有可回復的有效購買。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このアカウントに有効な購入はありません。"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für diesen Account wurde kein aktiver Kauf gefunden."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun achat actif trouvé pour ce compte."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se encontraron compras activas para esta cuenta."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun acquisto attivo per questo account."
+          }
+        }
+      }
+    },
+    "settings.usage_analytics" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Usage Analytics"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共享使用统计"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分享使用統計"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutzungsstatistiken teilen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir estadísticas de uso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partager les statistiques d’utilisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condividi statistiche di utilizzo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用状況を共有"
+          }
+        }
+      }
+    },
+    "settings.usage_analytics_help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send PostHog an installation ID and actions such as opening a photo wall or starting a slideshow. Photos and locations stay private."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向 PostHog 发送安装标识，以及打开照片墙、开始放映等操作。照片和地点不会发送。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "向 PostHog 傳送安裝識別碼，以及開啟照片牆、開始播放幻燈片等操作。照片和地點不會傳送。"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendet eine Installations-ID und Aktionen wie das Öffnen einer Fotowand oder den Start einer Diashow an PostHog. Fotos und Orte bleiben privat."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía a PostHog un identificador de instalación y acciones como abrir un mural de fotos o iniciar una presentación. Las fotos y ubicaciones siguen siendo privadas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Transmet à PostHog un identifiant d’installation et des actions comme l’ouverture d’un mur de photos ou le lancement d’un diaporama. Vos photos et lieux restent privés."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia a PostHog un identificativo di installazione e azioni come l’apertura di una parete di foto o l’avvio di una presentazione. Foto e luoghi restano privati."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "インストール ID と、フォトウォールを開く、スライドショーを始めるなどの操作を PostHog に送信します。写真や位置情報は送信されません。"
+          }
+        }
+      }
+    },
     "settings.photos_and_scan" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -4714,55 +5774,55 @@
       }
     },
     "detail.playback_unavailable" : {
-      "comment" : "Playback recovery hint. Play/Pause names the physical Siri Remote button; More Actions names the persistent on-screen action.",
+      "comment" : "Playback recovery hint for the physical Siri Remote Play/Pause button.",
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wiedergabe nicht verfügbar. Drücke die Wiedergabe-/Pausetaste oder öffne „Weitere Aktionen“, um es erneut zu versuchen."
+            "value" : "Wiedergabe nicht verfügbar. Drücke die Wiedergabe-/Pausetaste, um es erneut zu versuchen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Motion unavailable · Press Play/Pause or open More Actions to retry"
+            "value" : "Motion unavailable · Press Play/Pause to retry"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reproducción no disponible. Pulsa Reproducir/Pausa o abre Más acciones para volver a intentarlo."
+            "value" : "Reproducción no disponible. Pulsa Reproducir/Pausa para volver a intentarlo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lecture indisponible. Appuyez sur Lecture/Pause ou ouvrez « Plus d’actions » pour réessayer."
+            "value" : "Lecture indisponible. Appuyez sur Lecture/Pause pour réessayer."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riproduzione non disponibile. Premi Riproduci/Pausa o apri Altre azioni per riprovare."
+            "value" : "Riproduzione non disponibile. Premi Riproduci/Pausa per riprovare."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "再生できません。再生／一時停止ボタンを押すか、「その他の操作」からもう一度お試しください"
+            "value" : "再生できません。再生／一時停止ボタンを押してもう一度お試しください"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "动态内容暂不可用 · 按播放/暂停按钮或打开“更多操作”重试"
+            "value" : "动态内容暂不可用 · 按播放/暂停按钮重试"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "動態內容暫時無法使用 · 按下播放/暫停按鈕或打開「更多操作」重試"
+            "value" : "動態內容暫時無法使用 · 按下播放/暫停按鈕重試"
           }
         }
       }
@@ -13808,49 +14868,102 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine Erd-Diashow ist beendet"
+            "value" : "Deine Diashow ist beendet"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your Earth Slideshow Is Complete"
+            "value" : "Your Slideshow Is Complete"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tu presentación de la Tierra ha terminado"
+            "value" : "Tu presentación ha terminado"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Votre diaporama terrestre est terminé"
+            "value" : "Votre diaporama est terminé"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "La tua presentazione della Terra è terminata"
+            "value" : "La tua presentazione è terminata"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球スライドショーが終了しました"
+            "value" : "スライドショーが終了しました"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的地球放映已结束"
+            "value" : "放映已结束"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "你的地球放映已結束"
+            "value" : "放映已結束"
+          }
+        }
+      }
+    },
+    "slideshow.current_journey" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reise %1$lld von %2$lld · %3$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trip %1$lld of %2$lld · %3$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaje %1$lld de %2$lld · %3$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyage %1$lld sur %2$lld · %3$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaggio %1$lld di %2$lld · %3$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%2$lld件中%1$lld件目の旅 · %3$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 段旅程，共 %2$lld 段 · %3$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "第 %1$lld 段旅程，共 %2$lld 段 · %3$@"
           }
         }
       }
@@ -14109,13 +15222,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球放映暂不可用"
+            "value" : "放映暂不可用"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球放映暫時無法使用"
+            "value" : "放映暫時無法使用"
           }
         }
       }
@@ -15398,49 +16511,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stelle die Internetverbindung wieder her und versuche es erneut oder gehe zurück, um die Diashow zu starten."
+            "value" : "Stelle die Internetverbindung wieder her und versuche es erneut oder drücke die Zurück-Taste."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reconnect and try again, or go back to start the slideshow."
+            "value" : "Reconnect and try again, or press Back."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vuelve a conectarte e inténtalo de nuevo, o vuelve atrás para iniciar la presentación."
+            "value" : "Vuelve a conectarte e inténtalo de nuevo, o pulsa Atrás."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reconnectez-vous et réessayez, ou revenez en arrière pour lancer le diaporama."
+            "value" : "Reconnectez-vous et réessayez, ou appuyez sur Retour."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riconnettiti e riprova, oppure torna indietro per avviare la presentazione."
+            "value" : "Riconnettiti e riprova, oppure premi Indietro."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ネットワークに接続して再試行するか、戻ってスライドショーを開始できます。"
+            "value" : "ネットワークに接続して再試行するか、戻るボタンを押してください。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "连接网络后重试，或返回并开始放映。"
+            "value" : "连接网络后重试，或按返回键。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "連線後再試，或返回並開始放映。"
+            "value" : "連線後再試，或按返回鍵。"
           }
         }
       }
@@ -15610,49 +16723,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Versuche es erneut oder gehe zurück, um die Diashow zu starten."
+            "value" : "Versuche es erneut oder drücke die Zurück-Taste."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Try again, or go back to start the slideshow."
+            "value" : "Try again, or press Back."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Inténtalo de nuevo o vuelve atrás para iniciar la presentación."
+            "value" : "Inténtalo de nuevo o pulsa Atrás."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Réessayez ou revenez en arrière pour lancer le diaporama."
+            "value" : "Réessayez ou appuyez sur Retour."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riprova oppure torna indietro per avviare la presentazione."
+            "value" : "Riprova oppure premi Indietro."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "再試行するか、戻ってスライドショーを開始できます。"
+            "value" : "再試行するか、戻るボタンを押してください。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重试，或返回并开始放映。"
+            "value" : "请重试，或按返回键。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "再試一次，或返回並開始放映。"
+            "value" : "請再試一次，或按返回鍵。"
           }
         }
       }
@@ -16784,13 +17897,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apple Music 暂时不可用，地球放映仍可在无配乐状态下继续。"
+            "value" : "Apple Music 暂时不可用，放映仍可在无配乐状态下继续。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apple Music 暫時無法使用，地球放映仍可在無配樂狀態下繼續。"
+            "value" : "Apple Music 暫時無法使用，放映仍可在無配樂狀態下繼續。"
           }
         }
       }
@@ -16844,6 +17957,59 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "下一段回憶"
+          }
+        }
+      }
+    },
+    "slideshow.next_journey" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächste Reise"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next Trip"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siguiente viaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyage suivant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaggio successivo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "次の旅へ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一段旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一段旅程"
           }
         }
       }
@@ -16960,49 +18126,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deine Erd-Diashow wird vorbereitet"
+            "value" : "Deine Diashow wird vorbereitet"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparing Your Earth Slideshow"
+            "value" : "Preparing Your Slideshow"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparando tu presentación de la Tierra"
+            "value" : "Preparando tu presentación"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Préparation de votre diaporama terrestre"
+            "value" : "Préparation de votre diaporama"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparazione della tua presentazione della Terra"
+            "value" : "Preparazione della tua presentazione"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球スライドショーを準備中"
+            "value" : "スライドショーを準備中"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在准备你的地球放映"
+            "value" : "正在准备放映"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在準備你的地球放映"
+            "value" : "正在準備放映"
           }
         }
       }
@@ -17780,49 +18946,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erd-Diashow"
+            "value" : "Diashow"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Earth Slideshow"
+            "value" : "Slideshow"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Presentación de la Tierra"
+            "value" : "Presentación"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diaporama terrestre"
+            "value" : "Diaporama"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Presentazione della Terra"
+            "value" : "Presentazione"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球スライドショー"
+            "value" : "スライドショー"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球放映"
+            "value" : "放映"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球放映"
+            "value" : "放映"
           }
         }
       }
@@ -18353,6 +19519,165 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暫未找到照片"
+          }
+        }
+      }
+    },
+    "wall.layout.mosaic" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mosaiklayout"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mosaic layout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diseño en mosaico"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disposition en mosaïque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Layout a mosaico"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "モザイク表示"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拼贴布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拼貼版面"
+          }
+        }
+      }
+    },
+    "wall.layout.original" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Originalformat"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original ratios"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proporciones originales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proportions d’origine"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proporzioni originali"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "元の縦横比"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原比例"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "原始比例"
+          }
+        }
+      }
+    },
+    "wall.layout.title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotowand-Layout"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo wall layout"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diseño del muro de fotos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disposition du mur de photos"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Layout della parete di foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォトウォールのレイアウト"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片墙布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片牆版面"
           }
         }
       }

@@ -9,16 +9,19 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var model: AppModel
+    @State private var reportedForeground = false
     @Environment(\.scenePhase) private var scenePhase
 
-    @MainActor
-    init(model: AppModel) {
-        _model = StateObject(wrappedValue: model)
-    }
+    @EnvironmentObject private var purchases: PurchaseStore
+    @Binding var incomingURL: URL?
+    let sampleOnly: Bool
+    let leaveSample: (() -> Void)?
 
-    @MainActor
-    init() {
-        _model = StateObject(wrappedValue: AppModel())
+    init(incomingURL: Binding<URL?> = .constant(nil), sampleOnly: Bool = false, leaveSample: (() -> Void)? = nil) {
+        _incomingURL = incomingURL
+        self.sampleOnly = sampleOnly
+        self.leaveSample = leaveSample
+        _model = StateObject(wrappedValue: AppModel(sampleOnly: sampleOnly))
     }
 
     private var globeAcceptsInput: Bool { model.phase == .globe || model.phase == .scanning || model.isExploringPublicGlobe }
@@ -51,6 +54,7 @@ struct ContentView: View {
                                 secondaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Journey"), secondaryAction: model.useSampleData)
                 } else {
                     WelcomeView(begin: { Task { await model.requestAccessAndScan() } }, showDemo: model.useSampleData)
+                        .onAppear { ProductAnalytics.shared.capture(.welcomePresented) }
                 }
             case .scanning:
                 EmptyView()
@@ -99,15 +103,33 @@ struct ContentView: View {
         })) { presentation in
             TravelScanScopeView(model: model, presentation: presentation)
         }
-        .onOpenURL { model.requestTopShelfURL($0) }
-        .task { await model.start() }
+        .environment(\.leavePurchaseSample, leaveSample)
+        .onChange(of: incomingURL, initial: true) { _, url in
+            guard let url, !sampleOnly else { return }
+            model.requestTopShelfURL(url)
+            incomingURL = nil
+        }
+        .task {
+            if sampleOnly { model.useSampleData() }
+            else { await model.start() }
+        }
+        .onDisappear {
+            if sampleOnly || !purchases.access.permitsLibrary { model.closeLibrarySession() }
+        }
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            if phase == .background { reportedForeground = false }
+            if phase == .active, !reportedForeground {
+                reportedForeground = true
+                ProductAnalytics.shared.capture(.foregrounded)
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
-            Task { await model.setSceneActive(phase == .active) }
+            if !sampleOnly { Task { await model.setSceneActive(phase == .active) } }
         }
         .preferredColorScheme(.dark)
     }
 }
 
 #Preview {
-    ContentView()
+    PurchaseGate()
 }

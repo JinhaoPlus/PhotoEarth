@@ -5,6 +5,8 @@ import Photos
 struct PhotoAssetImage: View {
     let assetID: String
     var contentMode: ContentMode = .fill
+    // A wall may crop the display while passing a full-composition preview to detail.
+    var displayContentMode: ContentMode?
     var targetSize = CGSize(width: 1_000, height: 700)
     var allowsRetry = false
     var isActive = true
@@ -54,7 +56,7 @@ struct PhotoAssetImage: View {
             } else if let image = currentImage ?? initialImage {
                 Image(uiImage: image)
                     .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                    .aspectRatio(contentMode: displayContentMode ?? contentMode)
             } else if usesSampleArtwork {
                 SamplePhotoArtwork(seed: assetID)
             } else if usesOriginalCover {

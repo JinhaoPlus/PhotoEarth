@@ -1,0 +1,45 @@
+{
+  "identifier": "5739ABCA",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0",
+      "familyShareable": false,
+      "internalID": "6837746457",
+      "localizations": [
+        {
+          "description": "Explore your travel globe for seven days.",
+          "displayName": "7-day Trial",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.doupi.PhotoEarth.PhotoEarth.trial7days",
+      "referenceName": "7-day Trial",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "6.99",
+      "familyShareable": false,
+      "internalID": "6837746604",
+      "localizations": [
+        {
+          "description": "Unlock your travel globe and slideshows for good.",
+          "displayName": "Full Unlock",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "com.doupi.PhotoEarth.PhotoEarth.lifetime",
+      "referenceName": "Full Unlock",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_locale": "en_US",
+    "_storefront": "USA"
+  },
+  "subscriptionGroups": [],
+  "version": {
+    "major": 4,
+    "minor": 0
+  }
+}

@@ -85,6 +85,7 @@ private struct PlaceCollectionGrid: View {
     @State private var isBelowPageTop = false
     @State private var isReturningToTop = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let columnSpacing: CGFloat = 28
     private let allPhotosFocusID = "library-country-photos"
     private let emptyFocusID = "library-empty"
     private let loadMoreFocusID = "library-load-more"
@@ -98,7 +99,7 @@ private struct PlaceCollectionGrid: View {
         let handlesBack = isActive && (isReturningToTop || (focusedID != nil && (isBelowPageTop || back != nil)))
         let contentKey = "\(isActive):\(model.index?.contentRevision ?? ""):\(model.coverRevision):" + presentation.membership
         GeometryReader { geometry in
-            let width = (geometry.size.width - 2 * FullScreenMapLayout.contentHorizontalInset - 3 * 36) / 4
+            let width = (geometry.size.width - 2 * FullScreenMapLayout.contentHorizontalInset - 3 * columnSpacing) / 4
             let focusIndex = focusedID.flatMap { presentation.positions[$0] }
             let focusRow = focusIndex.map { presentation.rowIndices[$0] } ?? 0
             // Four-column library cards need a slightly wider row buffer than
@@ -124,20 +125,29 @@ private struct PlaceCollectionGrid: View {
             )
 
             ScrollView {
-                VStack(alignment: .leading, spacing: 38) {
+                VStack(alignment: .leading, spacing: 30) {
                     if let allPhotos {
-                        VStack(alignment: .leading, spacing: 14) {
-                            Text(allPhotos.title).font(.system(size: 52, weight: .light))
-                                .accessibilityAddTraits(.isHeader)
-                            Text(AppLocalization.format("library.country.summary", defaultValue: "%1$@ · %2$@", allPhotos.subtitle, AppLocalization.photoCount(allPhotos.photoCount)))
-                                .font(.system(size: 26)).foregroundStyle(.white.opacity(0.65))
+                        HStack(alignment: .center, spacing: 32) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(allPhotos.title).font(.system(size: 52, weight: .light))
+                                    .accessibilityAddTraits(.isHeader)
+                                Text(AppLocalization.format("library.country.summary", defaultValue: "%1$@ · %2$@", allPhotos.subtitle, AppLocalization.photoCount(allPhotos.photoCount)))
+                                    .font(.system(size: 26)).foregroundStyle(.white.opacity(0.65))
+                            }
+                            Button(AppLocalization.string("library.all_photos", defaultValue: "View All Photos"), systemImage: "photo.on.rectangle") { open(allPhotos) }
+                                .labelStyle(PageActionLabelStyle())
+                                .buttonStyle(.glass)
+                                .fixedSize()
+                                .focused($focusedID, equals: allPhotosFocusID)
+                                .accessibilityIdentifier(allPhotosFocusID)
                         }
-                        Button(AppLocalization.string("library.all_photos", defaultValue: "View All Photos"), systemImage: "photo.on.rectangle") { open(allPhotos) }
-                            .buttonStyle(.glass)
-                            .focused($focusedID, equals: allPhotosFocusID)
-                            .accessibilityIdentifier(allPhotosFocusID)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .focusSection()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .focusSection()
+                        .onMoveCommand { direction in
+                            if direction == .down, let firstCity = presentation.cards.first {
+                                focusedID = firstCity.collection.id
+                            }
+                        }
                     }
 
                     if collections.isEmpty && allPhotos == nil {
@@ -329,7 +339,7 @@ private struct PlaceCollectionGrid: View {
 
     private struct Card {
         let collection: PlaceCollection
-        let title: String
+        let title: AttributedString
         let summary: String
         let accessibilitySummary: String?
         let usesScenicCover: Bool
@@ -411,7 +421,7 @@ private struct PlaceCollectionGrid: View {
         _ section: CollectionGridSection, presentation: Presentation, width: CGFloat,
         residentCollectionIDs: Set<String>, focusIndex: Int?, focusRow: Int
     ) -> some View {
-        VStack(alignment: .leading, spacing: section.monthTitle == nil ? 38 : 24) {
+        VStack(alignment: .leading, spacing: 18) {
             if let monthTitle = section.monthTitle {
                 Label(monthTitle, systemImage: "calendar")
                     .font(.system(size: 30, weight: .semibold))
@@ -420,7 +430,7 @@ private struct PlaceCollectionGrid: View {
                     .accessibilityAddTraits(.isHeader)
                     .accessibilityIdentifier("library-recent-month-title")
             }
-            VStack(alignment: .leading, spacing: 38) {
+            VStack(alignment: .leading, spacing: 30) {
                 ForEach(section.rowRanges, id: \.lowerBound) { row in
                     collectionRow(row, cards: presentation.cards, width: width,
                                   residentCollectionIDs: residentCollectionIDs, focusIndex: focusIndex,
@@ -438,7 +448,7 @@ private struct PlaceCollectionGrid: View {
         focusIndex: Int?,
         isFocusedRow: Bool
     ) -> some View {
-        HStack(alignment: .top, spacing: 36) {
+        HStack(alignment: .top, spacing: columnSpacing) {
             ForEach(row, id: \.self) { index in
                 let card = cards[index]
                 let id = card.collection.id
@@ -526,12 +536,12 @@ private struct PlaceCollectionGrid: View {
         .accessibilityIdentifier("library-collection-\(collection.id)")
     }
 
-    private func cardTitle(for collection: PlaceCollection) -> String {
+    private func cardTitle(for collection: PlaceCollection) -> AttributedString {
         if let place = collection.latestPlace,
            groupsVisitsByMonth || allPhotos?.scope == .country("unresolved") {
-            return PlaceDisplayLabel(place: place).compactName
+            return PlaceDisplayLabel(place: place).styledName(citySize: 29)
         }
-        return collection.title
+        return AttributedString(collection.title)
     }
 
     private func scenicKey(for card: Card) -> String {

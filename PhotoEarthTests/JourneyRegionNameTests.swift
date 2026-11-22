@@ -43,6 +43,6 @@ struct JourneyRegionNameTests {
         var newer = JourneyShelfItem(route: "new", title: "A", assetID: "2", photoProof: "2")
         newer.regionCode = "NE:CYN"
         let titles = JourneyShelfItem.displayTitles(in: [legacy, newer], language: "ja")
-        #expect(titles == ["old": "A · ソマリランド", "new": "A · 北キプロス"])
+        #expect(titles == ["old": "A ソマリランド", "new": "A 北キプロス"])
     }
 }

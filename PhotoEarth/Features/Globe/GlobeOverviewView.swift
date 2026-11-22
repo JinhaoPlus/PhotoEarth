@@ -150,7 +150,7 @@ struct GlobeOverviewView: View {
     }
 
     private var actions: some View {
-        HStack(spacing: 28) {
+        HStack(spacing: TVControlLayout.actionSpacing) {
             Button(action: enterGlobe) {
                 HStack(spacing: 14) {
                     Text(AppLocalization.string("home.explore_globe", defaultValue: "Explore the Globe"))
@@ -158,29 +158,20 @@ struct GlobeOverviewView: View {
                         .font(.system(size: 23, weight: .medium))
                 }
                 .font(.system(size: 27, weight: .medium))
-                .foregroundStyle(.black)
-                .padding(.horizontal, 12)
-                .frame(minHeight: 66)
+                .padding(.horizontal, 6)
+                .frame(minHeight: 52)
             }
-            .buttonStyle(.glassProminent)
-            .tint(.white)
+            .buttonStyle(.glass)
             .focused($focusedID, equals: entryFocusID)
             .id(entryFocusID)
             .accessibilityHint(AppLocalization.string("home.explore_hint", defaultValue: "Turn the globe with the remote, then press the clickpad center or touch surface to browse visible photos."))
             .accessibilityIdentifier("overview-explore-button")
 
             if let startSlideshow {
-                Button {
+                EarthSlideshowEntryButton {
                     content.focusChanged(slideshowFocusID)
                     startSlideshow()
-                } label: {
-                    Label(AppLocalization.string("slideshow.start", defaultValue: "Earth Slideshow"),
-                          systemImage: "play.fill")
-                        .font(.system(size: 25, weight: .medium))
-                        .padding(.horizontal, 10)
-                        .frame(minHeight: 66)
                 }
-                .buttonStyle(.glass)
                 .focused($focusedID, equals: slideshowFocusID)
                 .id(slideshowFocusID)
                 .accessibilityIdentifier("overview-slideshow")

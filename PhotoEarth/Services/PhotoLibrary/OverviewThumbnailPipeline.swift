@@ -251,6 +251,9 @@ extension OverviewImageRequesting {
 
     private func receive(_ delivery: OverviewImageDelivery, job: Job) {
         guard jobs[job.key]?.token == job.token, let entry = entries[job.key], demand[job.key] != nil else { return }
+        // Final pixels replace the in-flight reservation. A progressive preview
+        // still needs room alongside the pending final image.
+        if delivery.isFinal { finish(job) }
         entry.cloudConfirmed = entry.cloudConfirmed || delivery.needsNetwork
         if job.network, entry.cloudConfirmed { entry.setStatus(.cloud) }
         var accepted = delivery.image == nil
@@ -258,8 +261,6 @@ extension OverviewImageRequesting {
             let cost = Self.imageCost(image)
             let pixelLimit = job.reservation
             if cost <= pixelLimit {
-                // Reservation covers the returned image while it replaces the
-                // previous preview. Release before accounting the new reference.
                 let increment = max(0, cost - entry.cost)
                 evict(toFit: increment, keeping: job.key)
                 if accountedBytes + increment <= budget {
@@ -271,7 +272,6 @@ extension OverviewImageRequesting {
             }
         }
         guard delivery.isFinal else { return }
-        finish(job)
         if delivery.assetUnavailable {
             if !delivery.failed { entry.show(nil, cost: 0) }
             entry.unavailable = true; entry.setStatus(.unavailable)

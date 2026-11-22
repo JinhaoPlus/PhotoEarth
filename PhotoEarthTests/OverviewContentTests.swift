@@ -146,6 +146,47 @@ import UIKit
         #expect(heldBatches.last?[first.id] == nil)
     }
 
+    @Test func cachedShelfCoverSurvivesLeavingTheRequestWindowAndUnrelatedLibraryChanges() async throws {
+        let backend = OverviewTestRequester()
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 32, height: 32)).image { _ in }
+        backend.onRequest = { request, backend in backend.deliver(request, .init(image: image)) }
+        var heldForValidation: [String: String] = [:]
+        let model = OverviewContentModel(images: .init(requester: backend, automaticScheduling: false),
+            latestCovers: { _ in [:] }, savedCovers: { places, held in
+                heldForValidation.merge(held) { _, latest in latest }
+                return Dictionary(uniqueKeysWithValues: places.map { ($0.id, PhotoPreviewMetadata(assetID: "cover-" + $0.id)) })
+            }, scenicCover: { _, fallback in fallback })
+        defer { model.setActive(false) }
+        model.receive(index(count: 40))
+        model.setActive(true)
+        let item = model.shelves[0].items[0]
+        model.visibilityChanged(item.id, visible: true)
+        await wait { item.thumbnail?.image === image }
+        let cover = try #require(item.thumbnail)
+        model.visibilityChanged(item.id, visible: false)
+        model.focusChanged("place-fixture-14")
+        model.focusChanged("place-fixture-24")
+        #expect(item.thumbnail?.image === image)
+        model.invalidateImages(changed: ["unrelated"], removed: [])
+        model.scrollChanged(moving: true)
+        model.visibilityChanged(item.id, visible: true)
+        #expect(item.thumbnail === cover)
+        #expect(item.thumbnail?.image === image)
+        #expect(backend.requests.filter { $0.key == cover.key }.count == 1)
+
+        model.visibilityChanged(item.id, visible: false)
+        model.receive(index(count: 40, revision: 2))
+        await wait { heldForValidation[item.id] == cover.key.assetID }
+        model.images.memoryWarning()
+        #expect(cover.image == nil)
+        model.visibilityChanged(item.id, visible: true)
+        let reloaded = try #require(item.thumbnail)
+        #expect(reloaded.image === image)
+        #expect(backend.requests.filter { $0.key == cover.key }.count == 2)
+        model.invalidateImages(changed: [], removed: [cover.key.assetID])
+        #expect(reloaded.image == nil && item.thumbnail == nil)
+    }
+
     @Test func openingRowPreparesOnlyItsFinalCoversBeforeFocusArrives() async {
         var evaluated: [String] = []
         var replies: [String: CheckedContinuation<PhotoPreviewMetadata?, Never>] = [:]

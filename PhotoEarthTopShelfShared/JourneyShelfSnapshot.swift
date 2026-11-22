@@ -32,7 +32,7 @@ nonisolated struct JourneyShelfItem: Codable, Equatable, Sendable {
                 JourneyRegionNames.name(code: item.regionCode, fallback: item.period, locale: Locale(identifier: $0))
             }
             if groups[name, default: []].count > 1, let period = country ?? item.period, !period.isEmpty, period != name {
-                titles[item.route] = name + " · " + period
+                titles[item.route] = name + " " + period
             } else {
                 titles[item.route] = name
             }
@@ -151,6 +151,30 @@ nonisolated enum JourneyShelfKeychain {
         return [kSecClass as String: kSecClassGenericPassword, kSecAttrAccessGroup as String: group,
                 kSecAttrService as String: "PhotoEarth.JourneyShelf.v1", kSecAttrAccount as String: account,
                 kSecAttrSynchronizable as String: false]
+    }
+
+    static func setPurchaseAccess(until: Date?) {
+        guard var query = query(account: "purchase-access") else { return }
+        guard let until else {
+            SecItemDelete(query as CFDictionary)
+            return
+        }
+        let data = Data(String(until.timeIntervalSince1970).utf8)
+        let changes = [kSecValueData as String: data]
+        if SecItemUpdate(query as CFDictionary, changes as CFDictionary) == errSecItemNotFound {
+            query[kSecValueData as String] = data
+            query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+            SecItemAdd(query as CFDictionary, nil)
+        }
+    }
+
+    static var permitsPersonalShelf: Bool {
+        guard var query = query(account: "purchase-access") else { return false }
+        query[kSecReturnData as String] = true
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data, let stamp = Double(String(decoding: data, as: UTF8.self)) else { return false }
+        return Date.now.timeIntervalSince1970 < stamp
     }
 
     static func read() -> JourneyShelfSnapshot? {

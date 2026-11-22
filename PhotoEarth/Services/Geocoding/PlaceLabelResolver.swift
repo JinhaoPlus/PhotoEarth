@@ -41,11 +41,14 @@ nonisolated struct PlaceDisplayLabel: Equatable, Sendable {
             ? city.trimmingCharacters(in: .whitespacesAndNewlines)
             : AppLocalization.unknownPlace(near: displayCountry)
     }
-    var compactName: String {
-        let name = displayCity
+    var countryAfterCity: String? {
         guard hasCity, let country = displayCountry,
-              name.localizedCaseInsensitiveCompare(country) != .orderedSame else { return name }
-        return "\(name) · \(country)"
+              displayCity.localizedCaseInsensitiveCompare(country) != .orderedSame else { return nil }
+        return country
+    }
+    var compactName: String {
+        guard let country = countryAfterCity else { return displayCity }
+        return "\(displayCity) \(country)"
     }
     var displaySubtitle: String {
         hasCity ? (displayCountry ?? AppLocalization.unresolvedPlace) : AppLocalization.unresolvedPlace

@@ -42,7 +42,7 @@ class ContentProvider: TVTopShelfContentProvider {
         var recordReceipt = true
         defer { if recordReceipt { JourneyShelfKeychain.noteProviderResult(status, count: published, endDates: deliveredDates, readable: readablePosters) } }
 #endif
-        guard let snapshot = JourneyShelfKeychain.read(), snapshot.imageVersion == JourneyShelfSnapshot.currentImageVersion, snapshot.scanScope != nil else {
+        guard JourneyShelfKeychain.permitsPersonalShelf, let snapshot = JourneyShelfKeychain.read(), snapshot.imageVersion == JourneyShelfSnapshot.currentImageVersion, snapshot.scanScope != nil else {
 #if DEBUG
             switch PHPhotoLibrary.authorizationStatus(for: .readWrite) {
             case .notDetermined: status = "nil-photos-not-authorized"
@@ -160,6 +160,7 @@ class ContentProvider: TVTopShelfContentProvider {
 #endif
         let globeImage = privateImage ?? bundle.url(forResource: "EarthShelfGlobePreview", withExtension: "jpg")
             .flatMap { try? Data(contentsOf: $0) }.flatMap(JourneyShelfImageURL.globe(jpeg:))
+        guard JourneyShelfKeychain.permitsPersonalShelf else { return nil }
         return JourneyShelfLayout.content(globeTitle: globeTitle, globeImage: globeImage, journeys: items, readablePosterRoutes: Set(images.keys))
     }
 }

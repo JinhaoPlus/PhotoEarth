@@ -35,6 +35,23 @@ struct PlaceCollectionTests {
         #expect(PlaceCollection.recent(places).map(\.id) == ["c", "a", "b"])
     }
 
+    @Test func slideshowRecognizesLegacyRevisitsWithoutCombiningUnrelatedCities() {
+        let first = place("paris-1", city: "Paris", country: "France", date: 10)
+        var second = place("paris-2", city: "Paris", country: "France", date: 20)
+        let texas = place("paris-tx", city: "Paris", country: "United States", date: 30)
+        let unknownA = place("unknown-a", city: "", country: "France", date: 40)
+        let unknownB = place("unknown-b", city: "", country: "France", date: 50)
+        func chapter(_ visit: TravelPlace) -> EarthSlideshowChapter.ID { EarthSlideshowChapter(visit: visit).id }
+        #expect(chapter(first) == chapter(second))
+        #expect(chapter(first) != chapter(texas))
+        #expect(chapter(unknownA) != chapter(unknownB))
+
+        second.offlinePlaceID = "catalog-paris"
+        var translated = second
+        translated.name = "巴黎"
+        #expect(chapter(second) == chapter(translated))
+    }
+
     @Test func countriesAndCitiesFollowTheirNewestPhotoWithStableTies() throws {
         let places = [
             place("paris-old", city: "Paris", country: "France", date: 10),

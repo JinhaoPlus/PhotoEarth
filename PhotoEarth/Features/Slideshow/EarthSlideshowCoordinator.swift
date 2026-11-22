@@ -22,6 +22,7 @@ import Foundation
     @Published private(set) var navigationDirection = 1
     @Published private(set) var lastViewedAssetID: String?
     @Published private(set) var activeTransitionDuration: TimeInterval?
+    @Published private(set) var mediaRetryRevision = 0
     private(set) var presentationOrder = 0
 
     private struct Entry {
@@ -34,7 +35,7 @@ import Foundation
     private var observation: SlideshowObservation?
 #endif
     private var snapshot: (any SlideshowPageReading)?
-    private var openingCandidates: (@MainActor () -> [PhotoAssetRecord])?
+    private var pendingJourneyIndex: Int?
     private var makeSnapshot: SnapshotLoader?
     private var places: [TravelPlace]
     private var pages = SlideshowPageSequence(places: [])
@@ -43,11 +44,11 @@ import Foundation
     private let reduceMotion: Bool
     private var selected = Set<String>()
     private var viewed = Set<String>()
-    private var visitedPlaces = Set<String>()
+    private var visitedPlaces = Set<EarthSlideshowChapter.ID>()
     private var lastShownVisit: TravelPlace?
-    private var unavailable = Set<String>()
+    private var unavailable: [String: Int] = [:]
     private var retryingMedia = false
-    private var attemptedAutomaticMediaRetry = false
+    private var retriedAssetID: String?
     private var excluded = Set<String>()
     private var preparationTask: Task<Void, Never>?
     private var timerTask: Task<Void, Never>?
@@ -55,6 +56,13 @@ import Foundation
     private var scheduledAction: ScheduledAction?
     private var scheduledDeadline: Date?
     private var scheduledRemaining: TimeInterval = 0
+    private let analytics: ProductAnalytics
+    private let analyticsLibrary: JourneyEventContext.Library?
+    private var requestTime: ContinuousClock.Instant?
+    private var requestConsent: UInt64 = 0
+    private var didReportMusicPicker = false
+    private var soundtrack = JourneyEventContext.Music.none
+    private var didReportPlaybackStart = false
     private var suspended = false
     private var resumesAfterSuspension = false
 
@@ -63,18 +71,34 @@ import Foundation
     }
 
     init(scope: EarthSlideshowScope, places: [TravelPlace],
+         analyticsLibrary: JourneyEventContext.Library? = nil, analytics: ProductAnalytics? = nil,
          configuration: EarthSlideshowConfiguration = .standard, reduceMotion: Bool,
-         analyzer: PhotoSimilarityAnalyzer? = nil, openingCandidates: (@MainActor () -> [PhotoAssetRecord])? = nil,
+         analyzer: PhotoSimilarityAnalyzer? = nil,
          makeSnapshot: @escaping SnapshotLoader,
          cameraAction: @escaping CameraAction) {
+        self.analyticsLibrary = analyticsLibrary
+        self.analytics = analytics ?? .shared
         self.scope = scope
         self.places = places
         self.configuration = configuration
         self.reduceMotion = reduceMotion
         self.analyzer = analyzer ?? PhotoSimilarityAnalyzer()
         self.makeSnapshot = makeSnapshot
-        self.openingCandidates = openingCandidates
         self.cameraAction = cameraAction
+    }
+
+    private var currentJourneyIndex: Int? {
+        currentChapter.flatMap { pages.segmentIndex(forVisitID: $0.visit.id) }
+    }
+    var currentJourney: EarthSlideshowSegment? { currentJourneyIndex.map { pages.segments[$0] } }
+    var currentJourneyNumber: Int { currentJourneyIndex.map { $0 + 1 } ?? 0 }
+    var journeyCount: Int { pages.segments.count }
+    var canSkipToNextJourney: Bool {
+        switch phase {
+        case .earthIntro, .chapterTitle, .earthChapterBridge, .presentingItem, .transitioningItem:
+            return pendingJourneyIndex == nil && currentJourneyNumber > 0 && currentJourneyNumber < journeyCount
+        default: return false
+        }
     }
 
     var currentChapter: EarthSlideshowChapter? {
@@ -95,6 +119,16 @@ import Foundation
     var retainedCount: Int { entries.count }
 
     func start(waitingForConfirmation: Bool = false) {
+        endReport("restarted")
+        requestTime = .now
+        requestConsent = analytics.consentRevision
+        didReportPlaybackStart = false
+        didReportMusicPicker = false
+        analytics.capture(.slideshowRequested, value: scope.kind.rawValue, context: .init(library: analyticsLibrary))
+        prepareFromStart(waitingForConfirmation: waitingForConfirmation)
+    }
+
+    private func prepareFromStart(waitingForConfirmation: Bool = false) {
 #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("--slideshow-observe-media") {
             observation = try? SlideshowObservation()
@@ -109,9 +143,10 @@ import Foundation
         visitedPlaces.removeAll()
         unavailable.removeAll()
         analyzer.reset()
-        pages = SlideshowPageSequence(places: places)
+        pages = SlideshowPageSequence(places: places, journeys: snapshot?.journeys ?? [])
+        pendingJourneyIndex = nil
         retryingMedia = false
-        attemptedAutomaticMediaRetry = false
+        retriedAssetID = nil
         isPaused = false
         isBuffering = false
         resumesAfterSuspension = false
@@ -127,10 +162,14 @@ import Foundation
         fill()
     }
 
+    private var canPrepare: Bool {
+        !suspended && (!isPaused || pendingJourneyIndex != nil || (isBuffering && entries.isEmpty))
+    }
+
     /// Loading and selecting one page is one cancellable operation. The
     /// traversal commits its cursor only after the selected batch is accepted.
     private func fill() {
-        guard preparationTask == nil, !isPaused,
+        guard preparationTask == nil, canPrepare,
               phase != .cancelled, phase != .completed, phase != .ending,
               phase != .idle else { return }
         if case .failed = phase { return }
@@ -148,38 +187,22 @@ import Foundation
                         try await Task.sleep(for: .seconds(4))
                     }
 #endif
-                    async let loading = makeSnapshot()
-                    if entries.isEmpty, let openingCandidates {
-                        let candidates = openingCandidates().filter { !self.excluded.contains($0.id) }
-                        if let first = candidates.first, let visit = places.first(where: { $0.id == first.placeID }) {
-                            let selection = try await analyze(Array(candidates.filter { $0.placeID == visit.id }.prefix(3)), token: token)
-                            try Task.checkCancellation()
-                            guard generation == token else { return }
-                            let allowed = Set(openingCandidates().map(\.id))
-                            let eligible = selection.records.filter { allowed.contains($0.id) && !self.excluded.contains($0.id) }
-                            if !eligible.isEmpty {
-                                selection.commit()
-                                append(eligible, visit: visit)
-                            }
-                        }
-                    }
-                    let frozen = try await loading
+                    let frozen = try await makeSnapshot()
                     try Task.checkCancellation()
                     guard generation == token else { return }
                     let members = frozen.visitIDs()
                     places = (frozen.places ?? places).filter { members.contains($0.id) }
-                    pages = SlideshowPageSequence(places: places)
+                    pages = SlideshowPageSequence(places: places, journeys: frozen.journeys)
                     snapshot = frozen
                     self.makeSnapshot = nil
-                    self.openingCandidates = nil
                 }
                 guard let snapshot else { throw EarthSlideshowPlanError.unavailable }
-                while generation == token, !isPaused, isBuffering || entries.count - itemIndex <= 4,
+                while generation == token, canPrepare, isBuffering || entries.count - itemIndex <= 4,
                       let request = pages.begin() {
                     do {
                         let page = try await snapshot.page(request, limit: entries.isEmpty ? 3 : 8)
                         let candidates = page.records.filter { record in
-                            !self.excluded.contains(record.id) && (self.retryingMedia ? self.unavailable.contains(record.id) : !self.selected.contains(record.id))
+                            !self.excluded.contains(record.id) && (self.retryingMedia ? self.unavailable[record.id] != nil : !self.selected.contains(record.id))
                         }
                         let records: [PhotoAssetRecord]
                         var selection: PhotoSimilarityAnalyzer.Selection?
@@ -194,16 +217,20 @@ import Foundation
                         let eligible = records.filter { !self.excluded.contains($0.id) && !self.viewed.contains($0.id) }
                         selection?.commit()
                         pages.finish(request, next: page.next)
+                        let firstAdded = entries.count
                         append(eligible, visit: request.visit)
-                        if isBuffering, nextUnseenIndex != nil {
+                        if pendingJourneyIndex != nil, entries.indices.contains(firstAdded) {
+                            pendingJourneyIndex = nil
+                            showItem(at: firstAdded, manual: true)
+                        } else if pendingJourneyIndex == nil, isBuffering, nextUnseenIndex != nil {
                             isBuffering = false
                             advance(forward: true)
                         }
                     } catch is CancellationError { return }
-                    catch { pages.fail(request) }
+                    catch { if generation == token { pages.fail(request) } }
                     await Task.yield()
                 }
-                guard generation == token, !isPaused else { return }
+                guard generation == token, canPrepare else { return }
                 if entries.isEmpty || isBuffering {
                     handleEndOfSupply()
                 }
@@ -226,27 +253,38 @@ import Foundation
     private func append(_ records: [PhotoAssetRecord], visit: TravelPlace) {
         guard !records.isEmpty else { return }
         let startEmpty = entries.isEmpty
-        let preceding = entries.last.flatMap { $0.visit.id == visit.id ? $0.item.record : nil }
+        let preceding = entries.last?.item.record
         let context = [preceding].compactMap { $0 } + records
         let transitions = SlideshowTransitionDirector().transitions(for: context).suffix(records.count)
         for (record, transition) in zip(records, transitions) {
             selected.insert(record.id)
-            unavailable.remove(record.id)
+            unavailable.removeValue(forKey: record.id)
             entries.append(Entry(visit: visit, item: .init(record: record, transition: transition)))
         }
         preparation.readyCount += records.count
         preparation.stage = .ready
-        if startEmpty {
+        if startEmpty, pendingJourneyIndex == nil {
             itemIndex = 0
             isBuffering = false
-            if phase == .preparing {
+            if phase == .preparing, !didReportPlaybackStart {
                 beginOpeningWhenReady()
-            } else { presentCurrentItem() }
+            } else if let lastShownVisit {
+                transition(from: .init(visit: lastShownVisit), manual: isPaused)
+            } else {
+                presentCurrentItem()
+            }
         }
     }
 
-    func beginPlayback() {
+    func openedMusicPicker() {
+        guard !didReportMusicPicker, requestTime != nil, analytics.consentRevision == requestConsent else { return }
+        didReportMusicPicker = true
+        analytics.capture(.musicPickerOpened, context: .init(library: analyticsLibrary))
+    }
+
+    func beginPlayback(music: JourneyEventContext.Music = .none) {
         guard awaitsPlaybackConfirmation else { return }
+        soundtrack = music
         awaitsPlaybackConfirmation = false
         beginOpeningWhenReady()
     }
@@ -254,6 +292,13 @@ import Foundation
     private func beginOpeningWhenReady() {
         guard phase == .preparing, !awaitsPlaybackConfirmation, !isPaused,
               let visit = entries.first?.visit else { return }
+        if !didReportPlaybackStart {
+            if requestTime != nil, requestConsent == analytics.consentRevision {
+                analytics.capture(.slideshowStarted, value: scope.kind.rawValue,
+                                  context: .init(library: analyticsLibrary, music: soundtrack))
+            }
+            didReportPlaybackStart = true
+        }
         phase = .earthIntro
         cameraAction(.chapter(visit, isOpening: true), reduceMotion)
         schedule(.finishIntro, after: reduceMotion ? 0.8 : configuration.earthIntroDuration)
@@ -266,15 +311,16 @@ import Foundation
         case .exhausted:
             isBuffering = false
             if !unavailable.isEmpty {
-                if attemptedAutomaticMediaRetry {
-                    fail(EarthSlideshowPlanError.unavailable)
-                } else {
-                    attemptedAutomaticMediaRetry = true
-                    retry()
+                fail(EarthSlideshowPlanError.unavailable)
+            } else if let visit = lastShownVisit ?? currentChapter?.visit {
+                if pendingJourneyIndex != nil {
+                    isPaused = false
+                    pendingJourneyIndex = nil
                 }
+                beginEnding(with: visit)
+            } else {
+                fail(EarthSlideshowPlanError.empty)
             }
-            else if let visit = lastShownVisit ?? currentChapter?.visit { beginEnding(with: visit) }
-            else { fail(EarthSlideshowPlanError.empty) }
         }
     }
 
@@ -286,15 +332,16 @@ import Foundation
     }
 
     func retry() {
-        guard snapshot != nil else { start(); return }
+        guard snapshot != nil else { prepareFromStart(); return }
         invalidateProducer()
         if pages.state == .retryable { pages.retry() }
         else if !unavailable.isEmpty {
             retryingMedia = true
-            pages = SlideshowPageSequence(places: places)
-        } else { start(); return }
+            pages = SlideshowPageSequence(places: places, journeys: snapshot?.journeys ?? [])
+            if let target = pendingJourneyIndex { pages.start(atSegment: target) }
+        } else { prepareFromStart(); return }
         showsControls = false
-        isPaused = false
+        if pendingJourneyIndex == nil { isPaused = false }
         isBuffering = true
         phase = entries.isEmpty ? .preparing : .presentingItem
         fill()
@@ -321,6 +368,7 @@ import Foundation
             timerTask = nil
             scheduledDeadline = nil
             invalidateProducer()
+            if pendingJourneyIndex != nil { fill() }
         } else {
             if let action = scheduledAction { schedule(action, after: max(0.05, scheduledRemaining)) }
             else if phase == .preparing { beginOpeningWhenReady() }
@@ -332,14 +380,20 @@ import Foundation
     func suspend() {
         guard !suspended else { return }
         suspended = true
-        guard !isPaused else { return }
+        guard !isPaused else {
+            invalidateProducer()
+            return
+        }
         resumesAfterSuspension = true
         setPaused(true)
     }
 
     func resumeAfterSuspension() {
         suspended = false
-        guard resumesAfterSuspension else { return }
+        guard resumesAfterSuspension else {
+            fill()
+            return
+        }
         resumesAfterSuspension = false
         setPaused(false)
     }
@@ -360,9 +414,19 @@ import Foundation
         if scheduledAction == nil, !isBuffering { scheduleDwellIfReady() }
     }
 
-    func markCurrentItemUnavailable(_ assetID: String) {
-        guard currentItem?.id == assetID, !viewed.contains(assetID), !isPaused else { return }
-        unavailable.insert(assetID)
+    func markCurrentItemUnavailable(_ assetID: String, revision: Int) {
+        guard !suspended, !isPaused, pendingJourneyIndex == nil,
+              currentItem?.id == assetID, !viewed.contains(assetID),
+              revision == mediaRetryRevision else { return }
+        if retriedAssetID != assetID {
+            // Give a temporary failure a fresh PhotoKit request here. Rewinding
+            // from a later journey just to retry would break the itinerary.
+            retriedAssetID = assetID
+            mediaRetryRevision += 1
+            return
+        }
+        retriedAssetID = nil
+        unavailable[assetID] = currentJourneyIndex
         removeEntries([assetID])
     }
 
@@ -386,7 +450,7 @@ import Foundation
 
     func removeAssets(_ ids: Set<String>) {
         excluded.formUnion(ids)
-        unavailable.subtract(ids)
+        for id in ids { unavailable.removeValue(forKey: id) }
         if let lastViewedAssetID, ids.contains(lastViewedAssetID) { self.lastViewedAssetID = nil }
         removeEntries(ids)
     }
@@ -394,7 +458,7 @@ import Foundation
     private func removeEntries(_ ids: Set<String>) {
         guard !ids.isEmpty, let current = currentItem else { return }
         let oldIndex = itemIndex
-        let oldPlace = currentChapter?.id
+        let priorChapter = currentChapter
         let before = entries.prefix(oldIndex).filter { ids.contains($0.item.id) }.count
         entries.removeAll { ids.contains($0.item.id) }
         itemIndex = max(0, oldIndex - before)
@@ -405,7 +469,7 @@ import Foundation
             fill()
             return
         }
-        if entries.indices.contains(itemIndex) { transition(from: oldPlace, manual: false) }
+        if entries.indices.contains(itemIndex) { transition(from: priorChapter, manual: isPaused) }
         else {
             // Discard the historical window when its tail disappears. Returning
             // to a previous memory would replay a frame automatically.
@@ -426,7 +490,7 @@ import Foundation
     }
 
     func selectPausedItem(_ assetID: String) {
-        guard isPaused, selectionRecords.contains(where: { $0.id == assetID }),
+        guard isPaused, pendingJourneyIndex == nil, selectionRecords.contains(where: { $0.id == assetID }),
               let index = entries.firstIndex(where: { $0.item.id == assetID }),
               index != itemIndex || (phase != .presentingItem && phase != .transitioningItem) else { return }
         cancelTimer()
@@ -434,12 +498,39 @@ import Foundation
         showItem(at: index, manual: true)
     }
 
+    func skipToNextJourney() {
+        guard canSkipToNextJourney, let currentJourneyIndex else { return }
+        let target = currentJourneyIndex + 1
+        cancelTimer()
+        navigationDirection = 1
+        unavailable = unavailable.filter { $0.value >= target }
+        let following = entries.index(after: itemIndex)
+        let next = entries.indices.dropFirst(following).first { index in
+            guard let segment = pages.segmentIndex(forVisitID: entries[index].visit.id) else { return false }
+            return segment >= target
+        }
+        // A previous-photo press after the jump returns to the photo the
+        // viewer left, even when several skipped frames were prefetched.
+        entries.removeSubrange(following..<(next ?? entries.endIndex))
+        if next != nil {
+            showItem(at: following, manual: true)
+        } else {
+            invalidateProducer()
+            pages.start(atSegment: target)
+            pendingJourneyIndex = target
+            retryingMedia = false
+            isBuffering = true
+            phase = .presentingItem
+        }
+        fill()
+    }
+
     private var nextUnseenIndex: Int? {
         entries.indices.dropFirst(itemIndex + 1).first { !viewed.contains(entries[$0].item.id) }
     }
 
     private func advance(forward: Bool, manual: Bool = false) {
-        guard currentItem != nil else { return }
+        guard currentItem != nil, pendingJourneyIndex == nil else { return }
         let next = forward && !manual ? nextUnseenIndex ?? entries.count : itemIndex + (forward ? 1 : -1)
         guard next >= 0 else { return }
         cancelTimer()
@@ -457,7 +548,8 @@ import Foundation
     }
 
     private func showItem(at next: Int, manual: Bool) {
-        let oldPlace = currentChapter?.id
+        let priorChapter = currentChapter
+        retriedAssetID = nil
         isBuffering = false
         itemIndex = next
         if itemIndex > 32 {
@@ -465,19 +557,22 @@ import Foundation
             entries.removeFirst(drop)
             itemIndex -= drop
         }
-        transition(from: oldPlace, manual: manual)
+        transition(from: priorChapter, manual: manual)
     }
 
-    private func transition(from oldPlace: String?, manual: Bool) {
+    private func transition(from previous: EarthSlideshowChapter?, manual: Bool) {
         guard let chapter = currentChapter, let item = currentItem else { return }
         presentationOrder += 1
         if manual && isPaused {
             presentCurrentItem()
-        } else if oldPlace != chapter.id {
+        } else if previous?.id != chapter.id && scope.kind != .city {
             cameraAction(.chapter(chapter.visit, isOpening: false), reduceMotion)
             phase = .earthChapterBridge
             schedule(.finishChapterBridge, after: reduceMotion ? 0.7 : configuration.earthBridgeDuration)
-        } else if reduceMotion {
+        } else if previous.flatMap({ pages.segmentIndex(forVisitID: $0.visit.id) }) != currentJourneyIndex {
+            phase = .chapterTitle
+            schedule(.finishChapterTitle, after: configuration.chapterTitleDuration)
+        } else if reduceMotion && item.transition.kind != .dateReveal {
             presentCurrentItem()
         } else {
             let duration = manual ? min(0.48, item.transition.duration) : item.transition.duration
@@ -504,17 +599,29 @@ import Foundation
         case .finishChapterTitle, .finishItemTransition: presentCurrentItem()
         case .advanceItem: advance(forward: true)
         case .finishEnding:
+            endReport("completed")
             phase = .completed
             showsControls = true
         }
     }
 
+    private func endReport(_ result: String) {
+        guard let start = requestTime else { return }
+        requestTime = nil
+        guard requestConsent == analytics.consentRevision else { return }
+        analytics.capture(.slideshowFinished, value: result,
+                          context: .init(library: analyticsLibrary, scope: scope.kind, music: soundtrack,
+                                         elapsed: .init(start.duration(to: .now))))
+    }
+
     func cancel() {
+        if case .failed = phase { endReport("failed") }
+        else { endReport(didReportPlaybackStart ? "closed_after_start" : "closed_before_start") }
         invalidateProducer()
         cancelTimer()
         snapshot = nil
         makeSnapshot = nil
-        openingCandidates = nil
+        pendingJourneyIndex = nil
         entries = []
         analyzer.reset()
         isBuffering = false

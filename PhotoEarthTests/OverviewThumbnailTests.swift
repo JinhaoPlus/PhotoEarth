@@ -244,6 +244,21 @@ import UIKit
         #expect(rig.backend.requests.filter { $0.key == dock }.count == 1)
     }
 
+    @Test func acceptingFinalImageUsesItsReservationWithoutEvictingThePreviousCover() {
+        let image = makeImage(width: 64)
+        let bytes = image.cgImage!.bytesPerRow * image.cgImage!.height
+        var configuration = OverviewThumbnailPipeline.Configuration()
+        configuration.memoryLimit = key(1).requestKey().reservation + bytes
+        let rig = Rig(configuration: configuration)
+        rig.backend.onRequest = { request, backend in backend.deliver(request, .init(image: image)) }
+        let previous = rig.pipeline.thumbnail(for: key(0))
+        rig.pipeline.update([key(0): 1], moving: false)
+        rig.pipeline.update([key(1): 1], moving: false)
+        #expect(rig.pipeline.thumbnail(for: key(1)).image === image)
+        #expect(previous.image === image)
+        #expect(rig.pipeline.metrics.peakAccountedBytes <= configuration.memoryLimit)
+    }
+
     @Test func oversizedDeliveryIsNotKeptAndRetriesAtSmallerSize() {
         let rig = Rig()
         rig.pipeline.update([key(0): 0], moving: false)

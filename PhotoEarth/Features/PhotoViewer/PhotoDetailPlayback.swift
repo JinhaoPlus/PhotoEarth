@@ -273,8 +273,9 @@ final class PhotoDetailPlaybackModel: ObservableObject {
     @Published private(set) var preparedAssetID: String?
     @Published private(set) var hasStartedPlayback = false
     @Published private(set) var didFinishPlayback = false
+    @Published private(set) var isOriginalAudioReady = false
 
-    var isMuted: Bool {
+    @Published var isMuted: Bool {
         didSet { player?.isMuted = isMuted }
     }
 
@@ -285,6 +286,7 @@ final class PhotoDetailPlaybackModel: ObservableObject {
     private var liveCommandGeneration: UInt64 = 0
     private var timeObserver: Any?
     private var playbackStatusObserver: NSKeyValueObservation?
+    private var playbackTracksObserver: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
     private var failureObserver: NSObjectProtocol?
     private weak var observedPlayer: AVPlayer?
@@ -409,17 +411,20 @@ final class PhotoDetailPlaybackModel: ObservableObject {
             liveCommand = LivePhotoPlaybackCommand(action: .stop, generation: liveCommandGeneration)
         }
         isPlaying = false
+        isOriginalAudioReady = false
     }
 
     func livePhotoPlaybackDidBegin() {
         guard livePhoto != nil else { return }
         isPlaying = true
         hasStartedPlayback = true
+        isOriginalAudioReady = true
     }
 
     func livePhotoPlaybackDidEnd() {
         guard livePhoto != nil, isPlaying else { return }
         isPlaying = false
+        isOriginalAudioReady = false
         didFinishPlayback = true
     }
 
@@ -553,12 +558,19 @@ final class PhotoDetailPlaybackModel: ObservableObject {
         let playerID = ObjectIdentifier(player)
         let playbackStatusRelay = MainActorPlaybackRelay<Void> { [weak self] in
             guard let self, let currentPlayer = self.player,
-                  ObjectIdentifier(currentPlayer) == playerID, self.isPlaying,
-                  !self.hasStartedPlayback else { return }
-            self.hasStartedPlayback = true
+                  ObjectIdentifier(currentPlayer) == playerID else { return }
+            let isRendering = self.isPlaying && currentPlayer.timeControlStatus == .playing
+            let hasSound = isRendering && currentPlayer.currentItem?.tracks.contains {
+                $0.isEnabled && $0.assetTrack?.mediaType == .audio
+            } == true
+            if self.isOriginalAudioReady != hasSound { self.isOriginalAudioReady = hasSound }
+            if isRendering, !self.hasStartedPlayback { self.hasStartedPlayback = true }
         }
-        playbackStatusObserver = player.observe(\.timeControlStatus) { player, _ in
-            if player.timeControlStatus == .playing { playbackStatusRelay.send(()) }
+        playbackStatusObserver = player.observe(\.timeControlStatus) { _, _ in
+            playbackStatusRelay.send(())
+        }
+        playbackTracksObserver = item.observe(\.tracks) { _, _ in
+            playbackStatusRelay.send(())
         }
         let timeRelay = MainActorPlaybackRelay<CMTime> { [weak self] time in
             guard let self, let currentPlayer = self.player,
@@ -576,6 +588,7 @@ final class PhotoDetailPlaybackModel: ObservableObject {
                   ObjectIdentifier(currentPlayer) == playerID else { return }
             let finishedWhilePlaying = self.isPlaying
             self.isPlaying = false
+            self.isOriginalAudioReady = false
             self.currentTime = self.duration
             if finishedWhilePlaying { self.didFinishPlayback = true }
         }
@@ -590,6 +603,7 @@ final class PhotoDetailPlaybackModel: ObservableObject {
             guard let self, let currentPlayer = self.player,
                   ObjectIdentifier(currentPlayer) == playerID else { return }
             self.isPlaying = false
+            self.isOriginalAudioReady = false
             self.hasFailed = true
         }
         failureObserver = NotificationCenter.default.addObserver(
@@ -660,6 +674,8 @@ final class PhotoDetailPlaybackModel: ObservableObject {
     private func removePlayerObservers() {
         playbackStatusObserver?.invalidate()
         playbackStatusObserver = nil
+        playbackTracksObserver?.invalidate()
+        playbackTracksObserver = nil
         if let timeObserver, let observedPlayer { observedPlayer.removeTimeObserver(timeObserver) }
         timeObserver = nil
         observedPlayer = nil

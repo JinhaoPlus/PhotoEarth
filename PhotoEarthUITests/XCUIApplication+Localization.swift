@@ -12,7 +12,7 @@ extension XCUIApplication {
     }
 
     @MainActor func openSidebarDestination(_ identifier: String) {
-        let ids = ["tab-home", "tab-recent", "tab-countries", "tab-settings"]
+        let ids = ["tab-home", "tab-recent", "tab-countries", "tab-anniversary", "tab-settings"]
         func focusedIndex() -> Int? {
             ids.firstIndex { id in
                 let cell = cells.containing(.button, identifier: id).firstMatch
@@ -38,6 +38,7 @@ extension XCUIApplication {
     }
 
     func useTestLanguage(_ language: String, locale: String) {
+        launchEnvironment["PHOTOEARTH_UI_OWNED_FIXTURE"] = "1"
         launchArguments.append(contentsOf: [
             "-AppleLanguages", "(\(language))",
             "-AppleLocale", locale,

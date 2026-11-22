@@ -2,23 +2,23 @@
 
 ## 子功能
 
-- 固定集合墙和冻结当前画面墙按范围分页，标题与总数固定在滚动区外。照片按原比例排列，图片区可继续加载，详情可用左右键跨页浏览。
-- 详情可查看媒体类型、拍摄时间、地点、GPS、尺寸、收藏或视频时长。真实 GPS 可用于左下角小地球，地址有当前资产的 Photos 缓存时显示。
-- Live Photo 与视频先显示封面。中键、Play/Pause 或右下角播放控件可主动播放和暂停。iCloud 媒体加载显示进度，可取消或重试。
+- 固定集合墙和冻结当前画面墙按范围分页，标题与总数固定在滚动区外。标题栏右侧以方格、横竖照片两个图标切换拼贴与原比例，默认拼贴，本机记住选择。图片区可继续加载，详情可用左右键跨页浏览。
+- 详情左下角小地球旁直接显示拍摄时间和地点名称，拍摄时间旁的实心爱心表示已收藏。优先显示当前照片已有的 Photos 地址，其次显示离线城市或地区名。
+- Live Photo 与视频先显示封面。右下角显示播放／暂停按钮；也可聚焦照片按中键，或按遥控器 Play/Pause。iCloud 媒体加载显示进度，可取消或重试。
 
 ## 用户怎么进入
 
 - 从首页城市探索、「滚动地球」或地图回看按中键。也可点最近到访卡、国家页的整个国家入口、城市卡或 Top Shelf 城市海报。各入口的成员范围见[功能地图](README.md#入口相似照片范围各有定义)。
-- 在照片墙选一张照片进入详情。选择「更多操作」或向上打开控制层，查看信息、小地球和上一张／下一张。选小地球后进入临时探索，Back 回到该照片的纯观看画面。
-- 详情有操作层时按 Back 收起；纯观看时 Back 返回墙上最后实际观看的照片。已向下滚动的墙按 Back 先回墙首，再按一次回来源。
+- 在照片墙选一张照片进入详情。左右键翻页，向下聚焦显示拍摄区域的小地球，中键进入拍摄地的临时探索。可播放照片从小地球向右聚焦播放按钮。Back 回到原照片。
+- 在详情按 Back 返回墙上最后实际观看的照片。已向下滚动的墙按 Back 先回墙首，再按一次回来源。
 
 ## 用 XCTest 怎么验
 
 | 场景 | 看到什么才算通过 |
 | --- | --- |
-| 使用混合横竖比例或有多页的照片墙，从第 48 张看至第 49 张，再反向浏览并退出。 | 图片顺序和比例保持，跨页出现正确的照片，返回把 Focus 放在最后实际观看的照片。 [ContinuousPhotoViewingTests](../../PhotoEarthUITests/ContinuousPhotoViewingTests.swift) · [OriginalPhotoRatioUITests](../../PhotoEarthUITests/OriginalPhotoRatioUITests.swift) |
+| 使用混合横竖比例或有多页的照片墙，从第 48 张看至第 49 张，再反向浏览并退出。 | 两种布局顺序一致，原比例模式保留构图，跨页出现正确的照片，返回把 Focus 放在最后实际观看的照片。 [ContinuousPhotoViewingTests](../../PhotoEarthUITests/ContinuousPhotoViewingTests.swift) · [OriginalPhotoRatioUITests](../../PhotoEarthUITests/OriginalPhotoRatioUITests.swift) |
 | 从当前画面墙和国家分类墙分别进入某张照片的小地球。 | 新探索以该照片真实位置为锚点。退出新探索时恢复来源照片；再次按 Back 回到原墙，原分类和照片位置保持。 [PhotoGlobeNavigationTests](../../PhotoEarthUITests/PhotoGlobeNavigationTests.swift) |
-| 打开 Live Photo 或视频详情，检查常驻播放入口，再播放、换片或离开。 | 打开详情先见封面。明确播放后才请求动态资源，换片或退出释放先前播放，迟到结果不能替换当前素材。 [ContinuousPhotoViewingTests](../../PhotoEarthUITests/ContinuousPhotoViewingTests.swift) · [PhotoMediaSupportTests](../../PhotoEarthTests/PhotoMediaSupportTests.swift) |
+| 打开 Live Photo 或视频详情，用遥控器中键或 Play/Pause 触发播放，再换片或离开。 | 打开详情先见封面。明确播放后才请求动态资源，换片或退出释放先前播放，迟到结果不能替换当前素材。 [ContinuousPhotoViewingTests](../../PhotoEarthUITests/ContinuousPhotoViewingTests.swift) · [PhotoMediaSupportTests](../../PhotoEarthTests/PhotoMediaSupportTests.swift) |
 
 ## 容易验错的地方
 

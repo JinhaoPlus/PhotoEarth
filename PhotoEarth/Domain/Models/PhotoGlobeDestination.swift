@@ -19,6 +19,10 @@ nonisolated struct PhotoGlobeDestination: Equatable {
         GlobeCameraState(center: coordinate, distance: GlobeCameraState.regionalDistance).mapConstrained()
     }
 
+    var detailPreviewCamera: GlobeCameraState {
+        GlobeCameraState(center: coordinate, distance: 5_000_000).mapConstrained()
+    }
+
     var previewCamera: GlobeCameraState {
         // Center the real photo, including at high latitude. Moving this view
         // toward the equator can push MapKit's annotation outside the miniature.

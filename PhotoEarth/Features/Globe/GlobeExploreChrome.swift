@@ -267,7 +267,6 @@ private struct MapZoomControlPanelContent: View {
     let reduceTransparency: Bool
     @FocusState private var focusedControl: ZoomButtonFocusTarget?
     @Namespace private var dockFocusScope
-    @Namespace private var styleSelection
     @Environment(\.resetFocus) private var resetFocus
 
     var body: some View {
@@ -298,8 +297,8 @@ private struct MapZoomControlPanelContent: View {
             .font(.system(size: 23, weight: .regular))
             .shadow(color: .black.opacity(0.8), radius: 6, y: 2)
 
-            GlassEffectContainer(spacing: 20) {
-                HStack(spacing: 20) {
+            GlassEffectContainer(spacing: TVControlLayout.toolbarSpacing) {
+                HStack(spacing: TVControlLayout.toolbarSpacing) {
                     control(AppLocalization.string("globe.zoom.out", defaultValue: "Zoom Out"), symbol: "minus.magnifyingglass", value: .zoomOut,
                             identifier: "\(identifierPrefix)-zoom-out", action: zoomOut)
                     control(AppLocalization.string("globe.zoom.in", defaultValue: "Zoom In"), symbol: "plus.magnifyingglass", value: .zoomIn,
@@ -313,7 +312,7 @@ private struct MapZoomControlPanelContent: View {
                         styleSwitch(mapStyle)
                     }
                 }
-                .padding(16)
+                .padding(10)
                 .floatingSurface(in: Capsule())
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("\(identifierPrefix)-zoom-dock")
@@ -356,21 +355,12 @@ private struct MapZoomControlPanelContent: View {
     private func styleSwitch(_ style: PhotoMapStyle) -> some View {
         let isFocused = focusedControl == .mapStyle
         return Button(action: toggleStyle) {
-            HStack(spacing: 0) {
-                styleSegment(.satellite, selected: style == .satellite, focused: isFocused)
-                styleSegment(.standard, selected: style == .standard, focused: isFocused)
+            TwoOptionControlLabel(secondSelected: style == .standard, focused: isFocused,
+                                  segmentSize: CGSize(width: 128, height: 60)) {
+                Label(PhotoMapStyle.satellite.title, systemImage: "globe.americas.fill")
+            } second: {
+                Label(PhotoMapStyle.standard.title, systemImage: "map.fill")
             }
-            .padding(6)
-            .background {
-                Capsule().fill(reduceTransparency ? Color(white: 0.08) : .black.opacity(0.22))
-            }
-            .overlay {
-                Capsule().strokeBorder(.white.opacity(isFocused ? 0.95 : 0.16), lineWidth: isFocused ? 2 : 1)
-            }
-            .shadow(color: .cyan.opacity(isFocused && !reduceTransparency ? 0.20 : 0), radius: 14)
-            .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isFocused)
-            .animation(reduceMotion ? nil : .smooth(duration: 0.24), value: style)
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
@@ -379,25 +369,6 @@ private struct MapZoomControlPanelContent: View {
         .accessibilityValue(style.title)
         .accessibilityHint(AppLocalization.string("review.style.hint", defaultValue: "Switch between map and satellite views"))
         .accessibilityIdentifier("\(identifierPrefix)-style")
-    }
-
-    private func styleSegment(_ style: PhotoMapStyle, selected: Bool, focused: Bool) -> some View {
-        Label(style.title, systemImage: style == .satellite ? "globe.americas.fill" : "map.fill")
-            .font(.system(size: 23, weight: selected ? .semibold : .medium))
-            .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .frame(width: 128, height: 60)
-            .foregroundStyle(selected ? Color(white: 0.10) : .white.opacity(focused ? 0.82 : 0.62))
-            .background {
-                if selected {
-                    let pill = Capsule().fill(reduceTransparency ? .white : .white.opacity(focused ? 0.96 : 0.82))
-                    if reduceMotion {
-                        pill
-                    } else {
-                        pill.matchedGeometryEffect(id: "map-style-selection", in: styleSelection)
-                    }
-                }
-            }
     }
 
     private func control(

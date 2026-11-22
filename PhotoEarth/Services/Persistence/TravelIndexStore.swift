@@ -2960,8 +2960,31 @@ extension SQLiteTravelIndexStore {
     func slideshowSnapshot(for places: [TravelPlace]?, excluding: Set<String>) throws -> IndexedSlideshowSnapshot {
         guard readConnection != nil else { throw TravelIndexStoreError.invalidSnapshot }
         try detachWallForSlideshow()
-        let visits = try places ?? placeSummariesForReading()
-        return IndexedSlideshowSnapshot(reader: self, places: visits,
+        var visits = try places ?? placeSummariesForReading()
+        if !excluding.isEmpty {
+            let removed = try withDatabase(create: false) { db in
+                try prepareSelectedPlaces(Array(excluding), table: "slideshow_excluded", database: db)
+                let stmt = try prepare(db, """
+                    SELECT place_id, COUNT(*) FROM photos
+                    WHERE id IN (SELECT id FROM slideshow_excluded) AND \(transitPredicate())
+                    GROUP BY place_id
+                    """)
+                defer { sqlite3_finalize(stmt) }
+                var counts: [String: Int] = [:]
+                while true {
+                    try Task.checkCancellation()
+                    let status = sqlite3_step(stmt)
+                    if status == SQLITE_DONE { return counts }
+                    guard status == SQLITE_ROW else { throw databaseError(db) }
+                    if let id = textColumn(stmt, at: 0) { counts[id] = Int(sqlite3_column_int64(stmt, 1)) }
+                }
+            }
+            // The pinned wall may still include a whole visit removed since
+            // it opened. Such a visit cannot contribute a playable chapter.
+            visits = visits.filter { $0.photoCount > (removed[$0.id] ?? 0) }
+        }
+        let journeys = try withDatabase(create: false) { try readJourneys($0) }
+        return IndexedSlideshowSnapshot(reader: self, journeys: journeys, places: visits,
             members: Set(visits.map(\.id)), excluding: excluding)
     }
 
@@ -2998,6 +3021,71 @@ extension SQLiteTravelIndexStore {
                 guard status == SQLITE_ROW else { throw databaseError(db) }
                 if rows.count == size, let last = rows.last { return .init(records: rows, next: .init(last)) }
                 rows.append(try photoRecord(from: stmt, database: db))
+            }
+        }
+    }
+}
+
+extension SQLiteTravelIndexStore {
+    /// One indexed half-open range per anniversary, in the television's time zone.
+    /// Only the cover is decoded until the user opens a year.
+    func anniversaryDays(in ranges: [Range<Date>], excluding: Set<String>) throws -> [AnniversaryDay] {
+        try withDatabase(create: false) { db in
+            if !excluding.isEmpty { try prepareSelectedPlaces(Array(excluding), table: "anniversary_excluded", database: db) }
+            return try ranges.compactMap { range in
+                let page = try anniversaryRows(in: range, excluding: excluding, offset: 0, limit: 1, withCount: true, db: db)
+                return page.records.first.map { AnniversaryDay(range: range, cover: $0, count: page.count) }
+            }
+        }
+    }
+
+    func anniversaryPage(in range: Range<Date>, excluding: Set<String>, offset: Int) throws -> PhotoQueryPage {
+        try withDatabase(create: false) { db in
+            if !excluding.isEmpty { try prepareSelectedPlaces(Array(excluding), table: "anniversary_excluded", database: db) }
+            let size = PhotoWallPageSelection.pageSize
+            let rows = try anniversaryRows(in: range, excluding: excluding, offset: offset, limit: size + 1, withCount: false, db: db).records
+            return PhotoQueryPage(records: Array(rows.prefix(size)), nextOffset: rows.count > size ? offset + size : nil)
+        }
+    }
+
+    private func anniversaryRows(in range: Range<Date>, excluding: Set<String>, offset: Int, limit: Int,
+                                 withCount: Bool, db: OpaquePointer) throws -> (records: [PhotoAssetRecord], count: Int) {
+        try Task.checkCancellation()
+        let predicate = """
+            creation_date >= ?1 AND creation_date < ?2 AND \(transitPredicate())
+            \(excluding.isEmpty ? "" : "AND id NOT IN (SELECT id FROM anniversary_excluded)")
+            """
+        sqlite3_progress_handler(db, 1000, { _ in Task.isCancelled ? 1 : 0 }, nil)
+        defer { sqlite3_progress_handler(db, 0, nil, nil) }
+        func datedStatement(_ sql: String) throws -> OpaquePointer {
+            let stmt = try prepare(db, sql)
+            sqlite3_bind_double(stmt, 1, range.lowerBound.timeIntervalSince1970)
+            sqlite3_bind_double(stmt, 2, range.upperBound.timeIntervalSince1970)
+            return stmt
+        }
+        var count = 0
+        if withCount {
+            let stmt = try datedStatement("SELECT COUNT(*) FROM photos WHERE " + predicate)
+            defer { sqlite3_finalize(stmt) }
+            guard sqlite3_step(stmt) == SQLITE_ROW else { throw databaseError(db) }
+            count = Int(sqlite3_column_int64(stmt, 0))
+            if count == 0 { return ([], 0) }
+        }
+        let stmt = try datedStatement("""
+            SELECT id,latitude,longitude,creation_date,pixel_width,pixel_height,favorite,place_id,
+                   media_kind,duration,altitude,horizontal_accuracy,vertical_accuracy
+            FROM photos WHERE \(predicate) ORDER BY creation_date DESC, id ASC LIMIT ?3 OFFSET ?4
+            """)
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_int64(stmt, 3, Int64(limit))
+        sqlite3_bind_int64(stmt, 4, Int64(offset))
+        var rows: [PhotoAssetRecord] = []
+        while true {
+            try Task.checkCancellation()
+            switch sqlite3_step(stmt) {
+            case SQLITE_ROW: rows.append(try photoRecord(from: stmt, database: db))
+            case SQLITE_DONE: return (rows, count)
+            default: throw databaseError(db)
             }
         }
     }

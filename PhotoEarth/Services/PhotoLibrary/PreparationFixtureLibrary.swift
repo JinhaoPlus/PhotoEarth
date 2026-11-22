@@ -10,6 +10,27 @@ nonisolated final class PreparationFixtureLibrary: PhotoLibraryUpdating, Sendabl
         let pass = source.first { $0.placeID == "sample-tokyo" && !$0.isFavorite }!
         return ProcessInfo.processInfo.arguments.contains("--transit-only-fixture") ? [pass] : stay + [pass]
     }
+    static func anniversaryRecords(empty: Bool) -> [PhotoAssetRecord] {
+        let calendar = Calendar(identifier: .gregorian)
+        let today = calendar.startOfDay(for: .now)
+        let earliest = calendar.date(byAdding: .year, value: -12, to: today)!
+        let matches = AnniversaryDay.pastDays(on: today, since: earliest, calendar: calendar)
+        let latest = matches[0].lowerBound
+        let older = matches[1].lowerBound
+        let previous = calendar.date(byAdding: .day, value: -1, to: latest)!
+        let groups = [("sample-paris", latest, 52), ("sample-tokyo", older, 3),
+                      ("sample-rio", previous, 2), ("sample-istanbul", today, 2)]
+        let coordinate = GeoCoordinate(latitude: 48.8566, longitude: 2.3522)
+        return groups.flatMap { prefix, date, count in
+            let base = empty ? calendar.date(byAdding: .day, value: 2, to: date)! : date
+            return (1...count).map { number in
+                PhotoAssetRecord(id: "\(prefix)-\(number)", coordinate: coordinate,
+                                 creationDate: base.addingTimeInterval(3600 + Double(number)), pixelWidth: 1600,
+                                 pixelHeight: 1000, isFavorite: true)
+            }
+        }
+    }
+
     let records: [PhotoAssetRecord]
     private let authorization: FixtureAuthorization
 

@@ -279,23 +279,9 @@ final class PhotoSimilarityAnalyzer {
             }
         }
         try Task.checkCancellation()
-        // Rank the selection itself, including distinct frames. Keep the
-        // deterministic temporal order for otherwise equally rated memories.
-        batch.sort { a, b in
-            prefers(a, over: b)
-        }
-        // Preserve quality order within each kind while letting a distinct
-        // Live Photo or movie into long runs of one media kind.
-        var ranked = batch
-        batch.removeAll(keepingCapacity: true)
-        var lastKinds = Array(recent.suffix(2).map(\.record.mediaKind))
-        while !ranked.isEmpty {
-            let index = lastKinds.count == 2 && lastKinds[0] == lastKinds[1]
-                ? ranked.firstIndex { $0.record.mediaKind != lastKinds[1] } ?? 0 : 0
-            let next = ranked.remove(at: index)
-            batch.append(next)
-            lastKinds = Array((lastKinds + [next.record.mediaKind]).suffix(2))
-        }
+        // Ranking chooses the representative of a similar burst. Keep distinct
+        // memories, including movies and favorites, on their original timeline.
+        batch.sort { SlideshowOrdering.recordComesFirst($0.record, $1.record) }
         return Selection(records: batch.map(\.record)) { [weak self, batch] in
             self?.remember(batch)
         }

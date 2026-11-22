@@ -38,7 +38,7 @@ struct MessageView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 800)
-                HStack(spacing: 24) {
+                HStack(spacing: TVControlLayout.actionSpacing) {
                     Button(primaryTitle, action: primaryAction)
                         .buttonStyle(.borderedProminent)
                     if let secondaryTitle, let secondaryAction {

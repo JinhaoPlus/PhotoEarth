@@ -1,0 +1,4 @@
+// PhotoEarth public ingestion settings. A blank token disables collection.
+POSTHOG_PROJECT_TOKEN = phc_oJsekrd6NMAWnnMTu2kCehYTgofLEn63bYURx9Ez8jHj
+// Use https:/$()/us.i.posthog.com or https:/$()/eu.i.posthog.com (xcconfig escapes //).
+POSTHOG_HOST = https:/$()/us.i.posthog.com

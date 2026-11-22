@@ -237,7 +237,6 @@ struct MapReviewView: View {
                     }
                     if let photo = selectedPhoto {
                         PhotoDetailView(record: photo, placeLabel: photo.placeID.flatMap(placeLabel), initialImage: selectedPreview,
-                            labelState: photo.placeID.flatMap { app.placeLabelStates[$0] },
                             resolvePlaceLabel: { await resolveLabels([photo.placeID].compactMap { $0 }) },
                             records: session.records, hasMorePhotos: session.nextOffset != nil, isLoadingMorePhotos: session.isLoading,
                             pagingError: session.pageError, loadMorePhotos: loadMore,
@@ -251,6 +250,7 @@ struct MapReviewView: View {
         }
         .ignoresSafeArea().background(slideshow == nil ? Color.black : Color.clear)
         .accessibilityElement(children: .contain).accessibilityIdentifier("map-review")
+        .onAppear { ProductAnalytics.shared.capture(.mapReviewOpened, context: .init(library: app.analyticsLibrary)) }
         .task {
             frozenPlaces = PhotoWallPlaces((try? await reader?.placeSummariesForReading()) ?? app.index?.places ?? [])
             let grid = MapReviewGrid.world(around: origin.reference.longitude)
@@ -296,7 +296,7 @@ struct MapReviewView: View {
             loadMore: loadMore, close: closeWall, isActive: active, selectedPhotoID: $wallFocusID,
             errorMessage: session.pageError, canRetry: hasCurrentWallSnapshot, totalPhotoCount: session.total,
             countErrorMessage: countError, retryPhotoCount: countRetry, startSlideshow: startSlideshow,
-            labelStates: app.placeLabelStates, resolvePlaceLabels: resolveLabels
+            labelStates: app.placeLabelStates, resolvePlaceLabels: resolveLabels, analyticsLibrary: app.analyticsLibrary
         )
         .opacity(slideshow == nil ? 1 : 0)
         .disabled(!active)
@@ -334,6 +334,7 @@ struct MapReviewView: View {
         // The native map is frozen, so an in-flight exact count can finish.
         if session.snapshot?.isCurrent() != true { camera.publishGrid() }
         showsWall = true; wallFocusID = nil
+        ProductAnalytics.shared.capture(.wallOpened, value: "currentView", context: .init(library: app.analyticsLibrary, entry: .mapReview))
         if session.snapshot?.isCurrent() == true { session.page(app: app, reader: reader, at: 0) }
         else { _ = snapshot } // The settled snapshot task will load this frozen view.
     }

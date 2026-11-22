@@ -92,7 +92,7 @@ struct JourneyShelfFormatTests {
         let c = JourneyShelfItem(route: "c", title: "Kyoto", assetID: "3", photoProof: "", period: "Feb 8")
         let d = JourneyShelfItem(route: "d", title: "Mar 3", assetID: "4", photoProof: "", period: "Mar 3")
         let e = JourneyShelfItem(route: "e", title: "Mar 3", assetID: "5", photoProof: "", period: "Mar 3")
-        #expect(JourneyShelfItem.displayTitles(in: [a,b,c]) == ["a": "Tokyo · Jan 9–12", "b": "Tokyo · Oct 3–5", "c": "Kyoto"])
+        #expect(JourneyShelfItem.displayTitles(in: [a,b,c]) == ["a": "Tokyo Jan 9–12", "b": "Tokyo Oct 3–5", "c": "Kyoto"])
         #expect(JourneyShelfItem.displayTitles(in: [a,c])["a"] == "Tokyo")
         #expect(JourneyShelfItem.displayTitles(in: [d,e])["d"] == "Mar 3")
         #expect(a.title == "Tokyo")

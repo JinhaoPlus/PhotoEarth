@@ -3,9 +3,9 @@ import XCTest
 final class ContinuousPhotoViewingTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
-    @MainActor func testPlayableMediaHasImmediateBottomTrailingPlaybackControl() throws {
+    @MainActor func testPlayableMediaSupportsVisibleButtonAndRemote() throws {
         let app = XCUIApplication()
-        app.launchArguments = ["--demo", "--photo-ratio-fixture", "--playback-control-fixture"]
+        app.launchArguments = ["--demo", "--photo-ratio-fixture", "--playback-control-fixture", "-photoEarth.mosaicPhotoWall", "NO"]
         app.useTestLanguage("en", locale: "en_US")
         app.launch()
         app.enterHomeContent()
@@ -17,37 +17,47 @@ final class ContinuousPhotoViewingTests: XCTestCase {
         XCTAssertTrue(focus(livePhotoCard))
         XCTAssertTrue(livePhotoCard.label.contains("Live Photo"), "The card must keep its accessible media type")
         XCTAssertFalse(app.staticTexts["Live Photo"].exists, "The visible wall badge must be icon-only")
-        attach(app, "Photo wall — Live Photo icon-only badge")
+        attach(app, "Live Photo with inline date — landscape")
+        XCUIRemote.shared.press(.right)
+        XCUIRemote.shared.press(.right)
+        let portrait = app.buttons["viewport-photo-sample-ratio-portrait-58"]
+        XCTAssertTrue(focus(portrait))
+        XCTAssertTrue(portrait.label.contains("Live Photo"))
+        attach(app, "Live Photo with inline date — narrow portrait")
+        XCUIRemote.shared.press(.left)
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(focus(livePhotoCard))
         XCUIRemote.shared.press(.select)
 
         let media = app.descendants(matching: .any)["photo-detail-image"].firstMatch
         XCTAssertTrue(media.waitForExistence(timeout: 5))
-        let playback = app.buttons["photo-detail-playback"]
-        XCTAssertTrue(playback.waitForExistence(timeout: 3), "Playback must be visible before the detail controls are opened")
-        let showControls = app.buttons["photo-detail-show-controls"]
-        XCTAssertTrue(showControls.waitForExistence(timeout: 3), "More Actions must remain visible in the pure viewing state")
-        XCTAssertGreaterThan(showControls.frame.midX, app.frame.width / 2)
-        XCTAssertLessThan(showControls.frame.midY, app.frame.height / 2)
-        let immediateActionFocus = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
-            media.hasFocus || playback.hasFocus
-        }, object: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [immediateActionFocus], timeout: 5), .completed)
-        XCTAssertFalse(app.buttons["photo-information-toggle"].exists)
-        XCTAssertFalse(app.staticTexts["Live Photo"].exists, "The lower-left Live Photo badge must be icon-only")
-        XCTAssertGreaterThan(playback.frame.midX, app.frame.width / 2)
-        XCTAssertGreaterThan(playback.frame.midY, app.frame.height / 2)
-        attach(app, "Live Photo — immediate playback control and icon-only badge")
+        XCTAssertTrue(focus(media))
+        XCTAssertFalse(app.buttons["photo-detail-show-controls"].exists)
+        let playButton = app.buttons["photo-detail-playback"]
+        XCTAssertTrue(playButton.exists)
+        XCTAssertFalse(app.staticTexts["Live Photo"].exists)
+        XCTAssertTrue(app.staticTexts["photo-detail-capture-time"].exists)
 
+        let globe = app.buttons["photo-location-globe"]
+        XCUIRemote.shared.press(.down)
+        XCTAssertTrue(focus(globe))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(focus(playButton))
+        attach(app, "Photo detail with regional preview and focused playback button")
         XCUIRemote.shared.press(.select)
-        let retryReady = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "Try Motion Again"), object: playback)
-        XCTAssertEqual(XCTWaiter.wait(for: [retryReady], timeout: 5), .completed,
-                       "One Select press on the initial playback focus must start the playback request")
-
+        let error = app.descendants(matching: .any)["photo-detail-motion-error"].firstMatch
+        XCTAssertTrue(error.waitForExistence(timeout: 5), "The fixture has no motion resource")
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(focus(globe))
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(focus(media))
         XCUIRemote.shared.press(.right)
         let videoPosition = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "Video 2"), object: media)
         XCTAssertEqual(XCTWaiter.wait(for: [videoPosition], timeout: 5), .completed)
-        XCTAssertTrue(playback.exists, "The same immediate control must remain available for video")
-        attach(app, "Video — immediate bottom-trailing playback control")
+        XCTAssertFalse(error.exists)
+        XCTAssertTrue(playButton.exists)
+        XCUIRemote.shared.press(.playPause)
+        XCTAssertTrue(error.waitForExistence(timeout: 5))
     }
 
     @MainActor func testContinuousViewingCrossesPageBoundaryAndReturnsToLastPhoto() throws {
@@ -64,10 +74,13 @@ final class ContinuousPhotoViewingTests: XCTestCase {
         XCUIRemote.shared.press(.select)
         let photo = app.descendants(matching: .any)["photo-detail-image"].firstMatch
         XCTAssertTrue(focus(photo))
-        let showControls = app.buttons["photo-detail-show-controls"]
-        XCTAssertTrue(showControls.waitForExistence(timeout: 3), "Static photos must expose More Actions without a hidden gesture")
+        XCTAssertFalse(app.buttons["photo-detail-show-controls"].exists)
         XCTAssertFalse(app.buttons["photo-information-toggle"].exists)
-        XCTAssertFalse(app.buttons["photo-location-globe"].exists)
+        XCTAssertTrue(app.buttons["photo-location-globe"].exists)
+        XCTAssertFalse(app.buttons["photo-detail-playback"].exists)
+        let captureTime = app.staticTexts["photo-detail-capture-time"]
+        XCTAssertTrue(captureTime.exists)
+        let initialTime = captureTime.label
         assertPosition(1, photo: photo)
         for position in 2...49 {
             XCUIRemote.shared.press(.right)
@@ -83,23 +96,10 @@ final class ContinuousPhotoViewingTests: XCTestCase {
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(focus(photo))
         assertPosition(48, photo: photo)
-        XCUIRemote.shared.press(.select)
-        let info = app.buttons["photo-information-toggle"]
-        XCTAssertTrue(focus(info))
-        XCTAssertTrue(app.buttons["photo-location-globe"].exists)
-        attach(app, "Continuous detail — explicitly requested controls")
-        // Longer than the passive introductory hint: a focused operation may
-        // never vanish because of a timer.
-        let remainsFocused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasFocus == false"), object: info)
-        remainsFocused.isInverted = true
-        XCTAssertEqual(XCTWaiter.wait(for: [remainsFocused], timeout: 5), .completed)
-        XCUIRemote.shared.press(.select)
-        XCTAssertTrue(app.staticTexts["Captured"].waitForExistence(timeout: 3))
-        attach(app, "Continuous detail — information and optional location map")
+        XCTAssertNotEqual(captureTime.label, initialTime)
+        XCTAssertTrue(app.staticTexts["photo-detail-location-name"].exists)
         XCUIRemote.shared.press(.menu)
-        XCTAssertTrue(focus(photo))
-        XCTAssertTrue(showControls.waitForExistence(timeout: 3))
-        XCTAssertFalse(app.buttons["photo-location-globe"].exists)
+        XCTAssertTrue(focus(app.buttons["viewport-photo-sample-ratio-portrait-13"]))
     }
 
     @MainActor private func assertPosition(_ position: Int, photo: XCUIElement) {

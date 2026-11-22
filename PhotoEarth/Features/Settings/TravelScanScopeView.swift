@@ -8,21 +8,25 @@ struct TravelScanScopeView: View {
     @State private var counts: [TravelScanDecision: Int] = [:]
     @State private var fetchedAlbums = false
     @State private var saveTask: Task<Void, Never>?
+    @FocusState private var saveFocused: Bool
+    @Environment(\.resetFocus) private var resetFocus
     @Namespace private var scopeFocus
     @State private var failure: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text(AppLocalization.string("scan.scope.title", defaultValue: "Scan Scope")).font(.title2)
-            Text(AppLocalization.string("scan.scope.subtitle", defaultValue: "Exclude albums from your globe and slideshow. Photos in these albums stay hidden even when they also belong to another album."))
-                .font(.caption).foregroundStyle(.secondary)
-            HStack {
+            HStack(spacing: TVControlLayout.actionSpacing) {
+                Text(AppLocalization.string("scan.scope.title", defaultValue: "Scan Scope")).font(.title2)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                if saveTask != nil { ProgressView() }
                 Button(presentation.startsFirstScan ? AppLocalization.string("scan.scope.start", defaultValue: "Start Scan") : AppLocalization.string("scan.scope.save", defaultValue: "Save Scope"), action: save)
-                    .prefersDefaultFocus(true, in: scopeFocus)
+                    .focused($saveFocused)
                     .accessibilityValue(Text(AppLocalization.format("scan.scope.selected_count", defaultValue: "Excluded albums: %@", AppLocalization.number(preferences.excludedAlbums.count))))
                     .accessibilityIdentifier("scan-scope-save")
-                if saveTask != nil { ProgressView() }
             }
+            Text(AppLocalization.string("scan.scope.subtitle", defaultValue: "Exclude albums from your globe and slideshow. Photos in these albums stay hidden even when they also belong to another album."))
+                .font(.caption).foregroundStyle(.secondary)
             if let failure { Text(failure).foregroundStyle(.secondary) }
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 16) {
@@ -34,11 +38,11 @@ struct TravelScanScopeView: View {
                             if excluded { preferences.excludedAlbums.remove(album.id) }
                             else { preferences.excludedAlbums.insert(album.id) }
                         } label: {
-                            HStack(spacing: 18) {
+                            HStack(spacing: 14) {
                                 Image(systemName: excluded ? "checkmark.circle.fill" : "circle")
-                                Text(album.title)
+                                Text(album.title).lineLimit(2)
                                 Spacer()
-                                Text(AppLocalization.number(album.count)).foregroundStyle(.secondary)
+                                Text(AppLocalization.number(album.count)).monospacedDigit().foregroundStyle(.secondary).fixedSize()
                             }
                             .padding(.horizontal, 12)
                             .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
@@ -74,7 +78,13 @@ struct TravelScanScopeView: View {
             }
             .disabled(saveTask != nil)
         }
+        .defaultFocus($saveFocused, true, priority: .userInitiated)
         .focusScope(scopeFocus)
+        .task {
+            await Task.yield()
+            resetFocus(in: scopeFocus)
+            saveFocused = true
+        }
         .padding(56)
         .frame(width: 1240, height: 840)
         .onExitCommand {

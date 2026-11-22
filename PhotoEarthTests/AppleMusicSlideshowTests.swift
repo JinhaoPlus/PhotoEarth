@@ -157,7 +157,7 @@ struct AppleMusicSlideshowTests {
             originalAudioActive: true,
             sceneActive: true
         )
-        try await waitUntil { !controller.isActuallyPlaying }
+        #expect(!controller.isActuallyPlaying)
 
         controller.updatePlaybackContext(
             slideshowPaused: false,

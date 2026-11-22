@@ -11,6 +11,36 @@ final class OverviewScrollingUITests: XCTestCase {
         try scrollFixture(slowImages: true)
     }
 
+    @MainActor func testLoadedCityCoverIsStillDisplayedAfterReversingAcrossShelves() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--home-scroll-fixture", "--home-performance"]
+        app.useSimplifiedChineseTestLanguage()
+        app.launch()
+        app.enterHomeContent()
+        for row in 0...1 {
+            XCUIRemote.shared.press(.down)
+            XCTAssertTrue(waitForRow(row, app: app))
+        }
+        let focused = app.buttons.matching(NSPredicate(format: "hasFocus == true")).firstMatch
+        let card = app.buttons[focused.identifier]
+        let loaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "照片已加载"), object: card)
+        XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 10), .completed)
+        for row in 2...4 {
+            XCUIRemote.shared.press(.down)
+            XCTAssertTrue(waitForRow(row, app: app))
+        }
+        for row in stride(from: 3, through: 1, by: -1) {
+            XCUIRemote.shared.press(.up)
+            XCTAssertTrue(waitForRow(row, app: app))
+        }
+        XCTAssertTrue(card.hasFocus)
+        XCTAssertEqual(card.value as? String, "照片已加载")
+        let screenshot = XCTAttachment(screenshot: card.screenshot())
+        screenshot.name = "City cover after scrolling back"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+    }
+
     @MainActor func testBackFromExpandedShelvesStaysAtThePageTop() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--home-scroll-fixture", "--home-performance"]

@@ -10,6 +10,10 @@
     return [object valueForKey:key];
 }
 
++ (BOOL)modificationDate:(NSDate *)original matches:(NSDate *)current {
+    return original == current || [original isEqual:current];
+}
+
 + (NSString *)addressFromProperties:(NSObject *)properties {
     @try {
         id valid = [self read:properties key:@"reverseLocationDataIsValid"];
@@ -63,7 +67,7 @@
             // A location edit or deletion during the read must not publish an old name.
             PHAsset *current = [PHAsset fetchAssetsWithLocalIdentifiers:@[identifier] options:nil].firstObject;
             if (![self asset:current matchesLatitude:latitude longitude:longitude]
-                || ![original.modificationDate isEqual:current.modificationDate]) return nil;
+                || ![self modificationDate:original.modificationDate matches:current.modificationDate]) return nil;
             return address;
         } @catch (NSException *exception) {
             return nil;

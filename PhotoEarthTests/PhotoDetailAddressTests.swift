@@ -26,6 +26,16 @@ struct PhotoDetailAddressTests {
         }
         #expect(PECachedPhotoAddress.validatedText(from: NSObject()) == nil)
     }
+
+    @Test func anAbsentModificationDateIsStableOnlyIfBothReadsAgree() {
+        let before = Date(timeIntervalSince1970: 100)
+        let after = Date(timeIntervalSince1970: 200)
+        #expect(PECachedPhotoAddress.modificationDate(nil, matches: nil))
+        #expect(PECachedPhotoAddress.modificationDate(before, matches: before))
+        #expect(!PECachedPhotoAddress.modificationDate(before, matches: after))
+        #expect(!PECachedPhotoAddress.modificationDate(nil, matches: before))
+        #expect(!PECachedPhotoAddress.modificationDate(before, matches: nil))
+    }
 }
 
 

@@ -4,20 +4,22 @@
 
 - 在线配乐可按分类开播，也可指定起播曲目。目录支持本机缓存与重试，音乐按需串流。在线服务暂不可用时，照片仍可放映。
 - Apple Music 入口可连接账户。有目录播放能力时可从最近播放、资料库播放列表或搜索结果选择音乐。首次系统授权由用户主动进入 Apple Music 来源触发。
-- 两个来源共用上一首、播放／暂停和下一首。开播前可以更换或关闭本场配乐，取消选曲时保留上一次的选择。退出放映会清空音频队列。
+- 开播前和放映中都可以更换或关闭本场配乐，取消选曲时保留上一次的选择。音乐面板提供上一首、播放／暂停和下一首。退出放映会清空音频队列。
 
 ## 用户怎么进入
 
 - 在放映开场页打开「选择配乐」，切换「在线配乐」或「Apple Music」。有本场配乐时再次打开会落在相应来源。
-- 在线配乐可直接选分类，或向右进入曲目选一首。Apple Music 按界面连接后选歌。用页头关闭本场配乐，或按遥控器 Back 保留原配乐并返回开场页。放映中从底部控制栏向上进入右上角音乐面板。
+- 纯画面中按一次上键，显示完整控制层并聚焦右上角的更换配乐图标。无配乐时聚焦「选择配乐」。打开选曲页时停在当前画面，返回后恢复原播放或暂停状态。
+- 在线配乐可直接选分类，或向右进入曲目选一首。Apple Music 按界面连接后选歌。用页头关闭本场配乐，或按遥控器 Back 保留原配乐并返回。
 
 ## 用 XCTest 和真实音源怎么验
 
 | 场景 | 看到什么才算通过 |
 | --- | --- |
 | 首次断网打开在线配乐，重试并返回。另走有目录缓存的路径。 | 冷启动给出重试或返回入口，缓存路径可显示分类并提示播放仍需网络；照片可以继续。 [EarthSlideshowUITests](../../PhotoEarthUITests/EarthSlideshowUITests.swift) · [目录实现](../../PhotoEarth/Features/Slideshow/OnlineSlideshowMusic.swift) |
-| 开场选在线分类或指定歌曲，确认开播后切歌、暂停。 | 歌名和当前来源正确，音乐控制随播放状态更新。 [EarthSlideshowUITests](../../PhotoEarthUITests/EarthSlideshowUITests.swift) |
-| 正在浏览其他来源或准备曲目时按 Back。 | 保留原配乐，焦点恢复到开场页的配乐入口。 [EarthSlideshowUITests](../../PhotoEarthUITests/EarthSlideshowUITests.swift) |
+| 开场选在线分类或指定歌曲，从纯画面按一次上键。 | 焦点直达更换配乐，已有配乐时显示完整音乐面板并可单独暂停音乐。再次选曲时标记使用中的来源和曲目。 [EarthSlideshowUITests](../../PhotoEarthUITests/EarthSlideshowUITests.swift) |
+| 开启原声后播放带音轨和无音轨的视频，再试 Live Photo。 | 带音轨的视频实际开始播放或 Live Photo 收到开播回调才让配乐暂停。无音轨和视频缓冲期间保持配乐，切走或结束后续播。用真实素材和电视扬声器确认听感。 [PhotoMediaSupportTests](../../PhotoEarthTests/PhotoMediaSupportTests.swift) · [AppleMusicSlideshowTests](../../PhotoEarthTests/AppleMusicSlideshowTests.swift) |
+| 放映中换配乐，再试播放中和暂停时返回。 | 更新选曲或保留原配乐，画面、播放状态与配乐入口焦点恢复。 [EarthSlideshowUITests](../../PhotoEarthUITests/EarthSlideshowUITests.swift) |
 | 首次放映先打开在线配乐，再主动进 Apple Music；用签名真机验证账户与音频。 | 前两步保持未请求 Apple Music，主动连接才出现授权。具备目录播放能力时实际出声，退出后 App 的配乐停止。 [PrivateLibrarySlideshowUITests](../../PhotoEarthUITests/PrivateLibrarySlideshowUITests.swift) · [AppleMusicSlideshowTests](../../PhotoEarthTests/AppleMusicSlideshowTests.swift) |
 
 ## 容易验错的地方

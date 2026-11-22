@@ -16,6 +16,8 @@ struct PhotoGlobeDestinationTests {
         #expect(destination.camera.distance == GlobeCameraState.regionalDistance)
         #expect(destination.marker.coverAssetID == nil)
         #expect(destination.previewCamera.center == photo.coordinate)
+        #expect(destination.detailPreviewCamera.center == photo.coordinate)
+        #expect(destination.detailPreviewCamera.distance < destination.previewCamera.distance)
         #expect(PhotoGlobeDestination(record: record(latitude: .nan, longitude: 0)) == nil)
         #expect(PhotoGlobeDestination(record: record(latitude: 20, longitude: 181)) == nil)
     }
@@ -36,11 +38,11 @@ struct PhotoGlobeDestinationTests {
     @Test(arguments: [0.0, 35, 64, 83, -34, -83]) @MainActor
     func stationaryMiniatureProjectsTheActualPhotoInsideItsBounds(latitude: Double) async throws {
         let destination = try #require(PhotoGlobeDestination(record: record(latitude: latitude, longitude: 179)))
-        let map = MKMapView(frame: CGRect(x: 0, y: 0, width: 320, height: 252))
+        let map = MKMapView(frame: CGRect(x: 0, y: 0, width: 208, height: 152))
         map.preferredConfiguration = MKImageryMapConfiguration(elevationStyle: .realistic)
         map.insetsLayoutMarginsFromSafeArea = false
         map.layoutMargins = UIEdgeInsets(top: 16, left: 20, bottom: 16, right: 20)
-        let camera = destination.previewCamera
+        let camera = destination.detailPreviewCamera
         map.setCamera(MKMapCamera(lookingAtCenter: CLLocationCoordinate2D(latitude: camera.center.latitude,
                                                                           longitude: camera.center.longitude),
                                  fromDistance: camera.distance, pitch: camera.presentationPitch, heading: 0), animated: false)
@@ -54,7 +56,7 @@ struct PhotoGlobeDestinationTests {
 
     @Test @MainActor func miniatureShowsOneLightAtNativePhotoProjectionWithoutMapInput() async throws {
         let destination = try #require(PhotoGlobeDestination(record: record(latitude: 64, longitude: -22)))
-        let controller = UIHostingController(rootView: PhotoLocationGlobe(destination: destination, placeTitle: "示例地点", open: {}))
+        let controller = UIHostingController(rootView: PhotoLocationGlobe(destination: destination, placeTitle: nil, open: {}))
         let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 360, height: 400))
         window.rootViewController = controller
         window.isHidden = false
@@ -69,6 +71,8 @@ struct PhotoGlobeDestinationTests {
         let map = preview.mapView
         #expect(!map.isUserInteractionEnabled && !map.showsUserLocation)
         #expect(map.annotations.isEmpty)
+        #expect(map.transform.a < 1 && map.transform.a == map.transform.d)
+        #expect(map.frame.equalTo(preview.bounds))
         let marker = preview.locationLight
         #expect(marker.image?.size.width == 64)
         #expect(marker.alpha == 1 && !marker.isHidden)

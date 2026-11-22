@@ -47,13 +47,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "仅当你为地球放映选择背景音乐时，Photo Earth 才会访问 Apple Music。"
+            "value" : "仅当你为放映选择背景音乐时，Photo Earth 才会访问 Apple Music。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "僅當你為地球放映選擇背景音樂時，Photo Earth 才會存取 Apple Music。"
+            "value" : "僅當你為放映選擇背景音樂時，Photo Earth 才會存取 Apple Music。"
           }
         }
       }

@@ -15,6 +15,10 @@ struct PhotoEarthApp: App {
     }
 #endif
 
+    init() {
+        ProductAnalytics.shared.capture(.appOpened)
+    }
+
     var body: some Scene {
         WindowGroup {
 #if DEBUG && !targetEnvironment(simulator)
@@ -25,10 +29,10 @@ struct PhotoEarthApp: App {
                 // run requires the normal host to publish through its real AppModel.
                 Color.black
             } else {
-                DeviceRecordingHost(content: ContentView())
+                DeviceRecordingHost(content: PurchaseGate())
             }
 #else
-            ContentView()
+            PurchaseGate()
 #endif
         }
     }

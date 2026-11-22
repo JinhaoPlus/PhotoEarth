@@ -1,55 +1,31 @@
 import MapKit
 import SwiftUI
 
-/// A quiet, stationary MapKit preview, alive only while this detail is visible.
-/// The full-screen destination continues to use the existing main map.
+/// The detail button owns focus and hit testing; its geographic preview is decorative.
 struct PhotoLocationGlobe: View {
     let destination: PhotoGlobeDestination
     let placeTitle: String?
-    var showsPlaceTitle = true
+    var isFocused = false
     let open: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @FocusState private var isFocused: Bool
 
     var body: some View {
         Button(action: open) {
-            VStack(alignment: .leading, spacing: 0) {
-                PhotoLocationMap(destination: destination)
-                    .frame(width: 320, height: 252)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                HStack(spacing: 14) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text(AppLocalization.string("detail.explore_from_here", defaultValue: "Explore Earth from Here"))
-                            .font(.system(size: 23, weight: .medium))
-                        if showsPlaceTitle, let placeTitle {
-                            Text(placeTitle)
-                                .font(.system(size: 20))
-                                .foregroundStyle(.white.opacity(0.7))
-                                .lineLimit(2)
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    Image(systemName: "arrow.up.left.and.arrow.down.right")
-                        .font(.system(size: 21, weight: .medium))
+            PhotoLocationMap(destination: destination, style: .detail)
+                .frame(width: 208, height: 152)
+                .floatingSurface(in: RoundedRectangle(cornerRadius: 24))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .strokeBorder(.white.opacity(isFocused ? 0.95 : 0.2), lineWidth: isFocused ? 3 : 1)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 16)
-            }
-            .frame(width: 320)
-            .floatingSurface(in: RoundedRectangle(cornerRadius: 24))
-            .clipShape(RoundedRectangle(cornerRadius: 24))
-            .overlay {
-                RoundedRectangle(cornerRadius: 24)
-                    .strokeBorder(.white.opacity(isFocused ? 0.95 : 0.2), lineWidth: isFocused ? 3 : 1)
-            }
-            .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
-            .shadow(color: .black.opacity(0.65), radius: 24, y: 10)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isFocused)
+                .contentShape(RoundedRectangle(cornerRadius: 24))
+                .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
+                .shadow(color: .black.opacity(0.65), radius: 24, y: 10)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isFocused)
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
-        .focused($isFocused)
         .accessibilityLabel(placeTitle.map {
             AppLocalization.format("detail.explore_accessibility", defaultValue: "Explore Earth from this memory's location, %@", $0)
         } ?? AppLocalization.string("detail.explore_from_here", defaultValue: "Explore Earth from Here"))
@@ -60,7 +36,10 @@ struct PhotoLocationGlobe: View {
 
 struct PhotoLocationMap: UIViewRepresentable {
     let destination: PhotoGlobeDestination
-    func makeUIView(context: Context) -> PhotoLocationMapView { PhotoLocationMapView() }
+    enum Style { case detail, slideshow }
+    let style: Style
+
+    func makeUIView(context: Context) -> PhotoLocationMapView { PhotoLocationMapView(style: style) }
     func updateUIView(_ view: PhotoLocationMapView, context: Context) { view.configure(destination) }
     static func dismantleUIView(_ view: PhotoLocationMapView, coordinator: ()) { view.mapView.delegate = nil }
 }
@@ -75,8 +54,11 @@ final class PhotoLocationMapView: UIView, MKMapViewDelegate {
     private var appliedDestination: PhotoGlobeDestination?
     private var appliedSize = CGSize.zero
 
-    override init(frame: CGRect) {
-        super.init(frame: frame)
+    private let style: PhotoLocationMap.Style
+
+    init(style: PhotoLocationMap.Style) {
+        self.style = style
+        super.init(frame: .zero)
         backgroundColor = .black
         clipsToBounds = true
         isUserInteractionEnabled = false
@@ -106,12 +88,17 @@ final class PhotoLocationMapView: UIView, MKMapViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        mapView.frame = bounds
         guard bounds.width > 0, bounds.height > 0, let destination else { return }
+        // Fit the whole native map, including its attribution, into the detail button.
+        // The GPS light is a sibling and keeps its normal size.
+        let scale: CGFloat = style == .detail ? 0.8 : 1
+        mapView.transform = CGAffineTransform(scaleX: scale, y: scale)
+        mapView.bounds = CGRect(origin: .zero, size: CGSize(width: bounds.width / scale, height: bounds.height / scale))
+        mapView.center = CGPoint(x: bounds.midX, y: bounds.midY)
         if appliedDestination != destination || appliedSize != bounds.size {
             appliedDestination = destination
             appliedSize = bounds.size
-            let camera = destination.previewCamera
+            let camera = style == .detail ? destination.detailPreviewCamera : destination.previewCamera
             mapView.setCamera(MKMapCamera(lookingAtCenter: CLLocationCoordinate2D(latitude: camera.center.latitude,
                                                                                 longitude: camera.center.longitude),
                                          fromDistance: camera.distance, pitch: camera.presentationPitch, heading: 0), animated: false)

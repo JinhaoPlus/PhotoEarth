@@ -23,8 +23,8 @@ struct WelcomeView: View {
                 .foregroundStyle(.white.opacity(0.8))
                 .lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
-            GlassEffectContainer(spacing: 22) {
-                VStack(alignment: .leading, spacing: 22) {
+            GlassEffectContainer(spacing: TVControlLayout.actionSpacing) {
+                VStack(alignment: .leading, spacing: TVControlLayout.actionSpacing) {
                     Button(AppLocalization.string("welcome.connect", defaultValue: "Connect Photo Library"), action: begin)
                         .focused($focusedAction, equals: .connect)
                         .accessibilityIdentifier("welcome-connect")

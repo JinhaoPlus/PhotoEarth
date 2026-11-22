@@ -1,5 +1,18 @@
 import SwiftUI
 
+extension PlaceDisplayLabel {
+    func styledName(citySize: CGFloat) -> AttributedString {
+        var title = AttributedString(displayCity)
+        if let country = countryAfterCity {
+            var suffix = AttributedString(" \(country)")
+            suffix.font = .system(size: (citySize * 0.76).rounded(), weight: .regular)
+            suffix.foregroundColor = Color(white: 0.73)
+            title.append(suffix)
+        }
+        return title
+    }
+}
+
 /// The arrival row uses the proportions of a tvOS Home Screen icon.
 /// City shelves below the fold retain their square covers.
 struct PlaceCard: View {
@@ -98,7 +111,7 @@ struct PlaceCard: View {
     }
 
     private var caption: some View {
-        Text(label.compactName)
+        Text(label.styledName(citySize: 27))
             .font(.system(size: 27, weight: .medium))
             .lineLimit(1)
             .minimumScaleFactor(0.85)

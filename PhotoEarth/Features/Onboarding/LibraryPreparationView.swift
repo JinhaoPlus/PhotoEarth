@@ -33,7 +33,9 @@ struct LibraryPreparationView: View {
                         .accessibilityIdentifier("preparation-ready")
                 }
                 if let place = model.recentlyPreparedPlace, PlaceDisplayLabel(place: place).isComplete {
-                    Text(AppLocalization.format("preparation.recent_place", defaultValue: "Just added · %@", PlaceDisplayLabel(place: place).compactName))
+                    let name = PlaceDisplayLabel(place: place).styledName(citySize: 32)
+                    Text(AttributedString(localized: "preparation.recent_place", defaultValue: "Just added · \(name)",
+                                          locale: AppLocalization.locale))
                         .font(.system(size: 32, weight: .light))
                         .transition(.opacity)
                 }
@@ -67,8 +69,8 @@ struct LibraryPreparationView: View {
             .floatingSurface(in: RoundedRectangle(cornerRadius: 26))
             .padding(.bottom, 28)
 
-            GlassEffectContainer(spacing: 24) {
-                HStack(spacing: 26) {
+            GlassEffectContainer(spacing: TVControlLayout.actionSpacing) {
+                HStack(spacing: TVControlLayout.actionSpacing) {
                     if model.phase == .scanning && model.canBrowsePreparedLibrary {
                         Button(AppLocalization.string("preparation.browse_now", defaultValue: "Explore Now"), action: model.closePreparation)
                             .focused($focus, equals: .browse)

@@ -47,8 +47,8 @@ struct SlideshowMusicSourceView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            HStack(spacing: 24) {
+        VStack(alignment: .leading, spacing: 22) {
+            HStack(spacing: TVControlLayout.actionSpacing) {
                 sourceSwitch
                 Spacer()
                 clearMusicButton
@@ -80,8 +80,8 @@ struct SlideshowMusicSourceView: View {
                 }
             }
         }
-        .padding(.horizontal, 74)
-        .padding(.vertical, 48)
+        .padding(.horizontal, 54)
+        .padding(.vertical, 38)
         .frame(width: 1580, height: 840, alignment: .topLeading)
         .defaultFocus($pickerFocus, source == .online ? onlineFocus : nil)
         .task(id: pendingSelection?.track.id) { await selectPendingTrack() }
@@ -192,11 +192,11 @@ struct SlideshowMusicSourceView: View {
             Text(offline
                 ? AppLocalization.string(
                     "slideshow.music.online.offline_help",
-                    defaultValue: "Reconnect and try again, or go back to start the slideshow."
+                    defaultValue: "Reconnect and try again, or press Back."
                 )
                 : AppLocalization.string(
                     "slideshow.music.online.retry_help",
-                    defaultValue: "Try again, or go back to start the slideshow."
+                    defaultValue: "Try again, or press Back."
                 )
             )
             .font(.system(size: 23))
@@ -270,7 +270,7 @@ struct SlideshowMusicSourceView: View {
 
     private func catalogBrowser(_ playlists: [OnlineSlideshowPlaylist]) -> some View {
         let active = playlists.first { $0.id == browsedPlaylistID } ?? playlists.first
-        return HStack(alignment: .top, spacing: 28) {
+        return HStack(alignment: .top, spacing: 20) {
             ScrollView {
                 LazyVStack(spacing: 4) {
                     ForEach(playlists) { playlist in

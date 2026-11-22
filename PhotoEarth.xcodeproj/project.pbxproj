@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EA0700000000000000000001 /* PostHog in Frameworks */ = {isa = PBXBuildFile; productRef = EA0700000000000000000002 /* PostHog */; };
         6CE0F0770000000000000010 /* WorldCityAtlas.swift in Top Shelf Sources */ = {isa = PBXBuildFile; fileRef = 6CE0F077000000000000000F; };
         6CE0F077000000000000000C /* PhotoEarthTopShelf.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 6CE0F0770000000000000002; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -42,6 +43,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		EA0700000000000000000004 /* Analytics.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Analytics.xcconfig; sourceTree = "<group>"; };
         6CE0F077000000000000000F /* WorldCityAtlas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoEarth/Services/Geocoding/WorldCityAtlas.swift; sourceTree = SOURCE_ROOT; };
 		95F0D1B3304A56C100392F9A /* PhotoEarth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoEarth.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		95F0D1C2304A56C200392F9A /* PhotoEarthTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PhotoEarthTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -74,6 +76,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA0700000000000000000001 /* PostHog in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -98,6 +101,7 @@
 		95F0D1AA304A56C100392F9A = {
 			isa = PBXGroup;
 			children = (
+				EA0700000000000000000004 /* Analytics.xcconfig */,
 				95F0D1B5304A56C100392F9A /* PhotoEarth */,
                 6CE0F0770000000000000003,
                 6CE0F0770000000000000004,
@@ -142,6 +146,7 @@
 			);
 			name = PhotoEarth;
 			packageProductDependencies = (
+				EA0700000000000000000002 /* PostHog */,
 			);
 			productName = PhotoEarth;
 			productReference = 95F0D1B3304A56C100392F9A /* PhotoEarth.app */;
@@ -249,6 +254,9 @@
 			);
 			mainGroup = 95F0D1AA304A56C100392F9A;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EA0700000000000000000003 /* posthog-ios */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 95F0D1B4304A56C100392F9A /* Products */;
 			projectDirPath = "";
@@ -465,6 +473,7 @@
 		};
 		95F0D1D7304A56C200392F9A /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EA0700000000000000000004 /* Analytics.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -499,6 +508,7 @@
 		};
 		95F0D1D8304A56C200392F9A /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EA0700000000000000000004 /* Analytics.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -697,6 +707,22 @@
 		};
         6CE0F0770000000000000008 = {isa = XCConfigurationList; buildConfigurations = (6CE0F0770000000000000009, 6CE0F077000000000000000A, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		EA0700000000000000000003 /* posthog-ios */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/PostHog/posthog-ios.git";
+			requirement = {kind = exactVersion; version = 3.79.0; };
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		EA0700000000000000000002 /* PostHog */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = EA0700000000000000000003 /* posthog-ios */;
+			productName = PostHog;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 95F0D1AB304A56C100392F9A /* Project object */;
 }

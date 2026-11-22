@@ -311,7 +311,7 @@ final class SlideshowMusicController: ObservableObject {
                 selectionTask = nil
                 preparingAppleDriver = nil
                 isPreparingSelection = false
-                schedulePlaybackReconciliation()
+                pauseForOriginalAudioOrScheduleReconciliation()
             }
         }
         return await withTaskCancellationHandler {
@@ -325,7 +325,7 @@ final class SlideshowMusicController: ObservableObject {
         guard selectedChoice != nil, queue != nil else { return }
         wantsMusicPlayback.toggle()
         playbackError = nil
-        schedulePlaybackReconciliation()
+        pauseForOriginalAudioOrScheduleReconciliation()
     }
 
     func skipToNext() async {
@@ -370,7 +370,7 @@ final class SlideshowMusicController: ObservableObject {
         self.presentationActive = presentationActive
         self.originalAudioActive = originalAudioActive
         self.sceneActive = sceneActive
-        schedulePlaybackReconciliation()
+        pauseForOriginalAudioOrScheduleReconciliation()
     }
 
     func clearMusic() {
@@ -422,7 +422,7 @@ final class SlideshowMusicController: ObservableObject {
             guard session == token, readAuthorization() == .authorized, !Task.isCancelled else { return }
             accessState = canPlay ? .available : .notSubscribed
             if canPlay {
-                schedulePlaybackReconciliation()
+                pauseForOriginalAudioOrScheduleReconciliation()
             } else {
                 haltForAccessLoss()
             }
@@ -448,7 +448,7 @@ final class SlideshowMusicController: ObservableObject {
                 }
                 accessState = canPlay ? .available : .notSubscribed
                 if canPlay {
-                    schedulePlaybackReconciliation()
+                    pauseForOriginalAudioOrScheduleReconciliation()
                 } else {
                     haltForAccessLoss()
                 }
@@ -500,8 +500,13 @@ final class SlideshowMusicController: ObservableObject {
         clearMusic()
     }
 
-    private func schedulePlaybackReconciliation() {
+    private func pauseForOriginalAudioOrScheduleReconciliation() {
         reconciliationTask?.cancel()
+        if originalAudioActive, let queue, preparingAppleDriver !== queue {
+            reconciliationTask = nil
+            apply(queue.pause())
+            return
+        }
         reconciliationTask = Task { @MainActor [weak self] in
             await self?.reconcilePlayback()
         }

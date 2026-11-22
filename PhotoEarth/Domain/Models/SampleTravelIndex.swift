@@ -2,6 +2,46 @@ import Foundation
 
 enum SampleTravelIndex {
 #if DEBUG
+    /// Two fictional trips, including a return to Tokyo within the newer trip.
+    /// Distinct stock frames identify the stops in end-to-end playback tests.
+    static func makeSlideshowJourneyFixture() -> TravelIndexSnapshot {
+        let tokyo = GeoCoordinate(latitude: 35.6762, longitude: 139.6503)
+        let kyoto = GeoCoordinate(latitude: 35.0116, longitude: 135.7681)
+        let osaka = GeoCoordinate(latitude: 34.6937, longitude: 135.5023)
+        let calendar = Calendar(identifier: .gregorian)
+        let stops = [
+            ("tokyo-arrival", "Tokyo", tokyo, 2025, 4, 2, "sample-tokyo"),
+            ("kyoto", "Kyoto", kyoto, 2025, 4, 5, "sample-paris"),
+            ("tokyo-return", "Tokyo", tokyo, 2025, 4, 8, "sample-rio"),
+            ("osaka", "Osaka", osaka, 2023, 11, 3, "sample-istanbul"),
+            ("tokyo-older", "Tokyo", tokyo, 2023, 11, 6, "sample-sydney"),
+        ]
+        var places: [TravelPlace] = []
+        var photos: [PhotoAssetRecord] = []
+        for (id, city, coordinate, year, month, day, image) in stops {
+            let date = calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
+            let label = try? JourneyPlaceCatalog.shared.label(coordinate, locale: AppLocalization.locale)
+            let count = JourneyVisitThreshold.defaultValue
+            for ordinal in 1...count {
+                let assetID = "\(image)-\(ordinal)"
+                let size = SamplePhotoResource.pixelDimensions(for: assetID)
+                photos.append(PhotoAssetRecord(id: assetID, coordinate: coordinate,
+                    creationDate: date.addingTimeInterval(Double(ordinal)), pixelWidth: size?.width ?? 1600,
+                    pixelHeight: size?.height ?? 1000, isFavorite: false, placeID: id))
+            }
+            places.append(TravelPlace(id: id, name: label?.city ?? city, country: label?.country ?? "Japan",
+                regionCode: "JP", offlinePlaceID: city, coordinate: coordinate, startDate: date,
+                endDate: date.addingTimeInterval(Double(count)), photoCount: count, coverAssetID: "\(image)-1"))
+        }
+        let journeys = [Array(places.prefix(3)), Array(places.suffix(2))].map { visits in
+            TravelJourney(id: "sample-trip-\(visits[0].id)", title: "", startDate: visits[0].startDate,
+                          endDate: visits[visits.count - 1].endDate, placeIDs: visits.map(\.id))
+        }
+        return TravelIndexSnapshot(index: TravelIndex(schemaVersion: TravelIndex.currentSchemaVersion,
+            generatedAt: places[2].endDate, sourcePhotoCount: photos.count, locatedPhotoCount: photos.count,
+            places: places, journeys: journeys), photos: photos)
+    }
+
     /// Fictional coordinates/dates and credited stock images for map-review UI tests.
     static func makeMapReviewFixture() -> TravelIndexSnapshot {
         let date = Date(timeIntervalSince1970: 1_750_000_000)
@@ -118,7 +158,7 @@ enum SampleTravelIndex {
             let date = Date(timeIntervalSince1970: 1_750_000_000 - Double(number) * 86_400)
             for ordinal in 1...60 {
                 let pattern = patterns[(number + ordinal) % patterns.count]
-                let mediaKind: PhotoMediaKind = if includesPlaybackSamples, number == 0, ordinal == 60 {
+                let mediaKind: PhotoMediaKind = if includesPlaybackSamples, number == 0, ordinal == 60 || ordinal == 58 {
                     .livePhoto
                 } else if includesPlaybackSamples, number == 0, ordinal == 59 {
                     .video

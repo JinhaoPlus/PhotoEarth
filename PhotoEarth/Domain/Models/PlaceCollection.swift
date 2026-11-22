@@ -137,12 +137,12 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
     /// labels collapse duplicate cards without a metadata refresh reordering
     /// the shelf under the current focus.
     static func homeCityRepresentatives(inRecencyOrder places: [TravelPlace], minimumVisitItems: Int = 1) -> [TravelPlace] {
-        var seen = Set<HomeDestinationKey>()
+        var seen = Set<CityIdentity>()
         return places.filter { place in
             guard JourneyVisitThreshold.includes(place, minimum: minimumVisitItems) else { return false }
             let label = PlaceDisplayLabel(place: place)
             guard label.isComplete else { return true }
-            return seen.insert(.city(country: countryKey(place), name: cityKey(place))).inserted
+            return seen.insert(cityIdentity(for: place)).inserted
         }
     }
 
@@ -245,7 +245,15 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
         return lhsDate == rhsDate ? lhs.id < rhs.id : lhsDate > rhsDate
     }
 
-    private enum HomeDestinationKey: Hashable {
-        case city(country: String, name: String)
+    enum CityIdentity: Hashable, Sendable {
+        case catalog(String)
+        case named(country: String, city: String)
+        case unresolvedVisit(String)
+    }
+
+    static func cityIdentity(for visit: TravelPlace) -> CityIdentity {
+        if let id = visit.offlinePlaceID { return .catalog(id) }
+        guard PlaceDisplayLabel(place: visit).isComplete else { return .unresolvedVisit(visit.id) }
+        return .named(country: countryKey(visit), city: cityKey(visit))
     }
 }

@@ -100,7 +100,7 @@ struct AppleMusicSelectionView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         } else {
             ScrollView(.vertical) {
-                LazyVStack(alignment: .leading, spacing: 32) {
+                LazyVStack(alignment: .leading, spacing: 24) {
                     if searchTerm.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         musicSection(
                             title: AppLocalization.string(
@@ -173,11 +173,11 @@ struct AppleMusicSelectionView: View {
         sectionID: String
     ) -> some View {
         if !choices.isEmpty {
-            VStack(alignment: .leading, spacing: 15) {
+            VStack(alignment: .leading, spacing: 10) {
                 Text(title)
                     .font(.system(size: 25, weight: .semibold))
                 ScrollView(.horizontal) {
-                    LazyHStack(spacing: 30) {
+                    LazyHStack(spacing: TVControlLayout.actionSpacing) {
                         ForEach(choices) { choice in
                             let focusID = "\(sectionID):\(choice.id)"
                             Button {
@@ -192,11 +192,12 @@ struct AppleMusicSelectionView: View {
                             .focused($focusedChoiceID, equals: focusID)
                             .disabled(pendingChoice != nil)
                             .accessibilityLabel(choiceAccessibilityLabel(choice))
+                            .accessibilityAddTraits(controller.selectedChoice?.id == choice.id ? .isSelected : [])
                             .accessibilityIdentifier("slideshow-music-choice-\(focusID)")
                         }
                     }
                     .padding(.horizontal, 18)
-                    .padding(.vertical, 20)
+                    .padding(.vertical, 12)
                 }
                 .contentMargins(.horizontal, -18, for: .scrollContent)
                 .scrollClipDisabled()
@@ -233,11 +234,12 @@ struct AppleMusicSelectionView: View {
 private struct SlideshowMusicChoiceCard: View {
     let choice: SlideshowMusicChoice
     let isSelected: Bool
+    private let artworkSide: CGFloat = 206
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             artwork
-                .frame(width: 218, height: 218)
+                .frame(width: artworkSide, height: artworkSide)
                 .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay(alignment: .bottomTrailing) {
                     if isSelected {
@@ -256,8 +258,8 @@ private struct SlideshowMusicChoiceCard: View {
                 .foregroundStyle(.white.opacity(0.58))
                 .lineLimit(1)
         }
-        .frame(width: 218, alignment: .leading)
-        .padding(14)
+        .frame(width: artworkSide, alignment: .leading)
+        .padding(10)
         .background(.white.opacity(0.075), in: RoundedRectangle(cornerRadius: 24))
         .overlay {
             RoundedRectangle(cornerRadius: 24)
@@ -332,13 +334,18 @@ private struct SlideshowMusicCardButtonStyle: ButtonStyle {
     fileprivate struct Body: View {
         let configuration: Configuration
         @Environment(\.isFocused) private var isFocused
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
         var body: some View {
             configuration.label
-                .scaleEffect(isFocused ? 1.045 : 1)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 24)
+                        .strokeBorder(.white.opacity(isFocused ? 0.9 : 0), lineWidth: 2)
+                }
+                .scaleEffect(isFocused && !reduceMotion ? 1.035 : 1)
                 .brightness(isFocused ? 0.1 : 0)
                 .shadow(color: .black.opacity(isFocused ? 0.5 : 0.24), radius: isFocused ? 22 : 10, y: 9)
-                .animation(.easeOut(duration: 0.16), value: isFocused)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isFocused)
                 .opacity(configuration.isPressed ? 0.8 : 1)
         }
     }

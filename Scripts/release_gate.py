@@ -18,6 +18,8 @@ RECEIPT = GATE / "passed.json"
 SETTINGS = ("MARKETING_VERSION", "CURRENT_PROJECT_VERSION", "PRODUCT_BUNDLE_IDENTIFIER",
             "XCODE_PRODUCT_BUILD_VERSION", "CONFIGURATION")
 UI = (
+    "PurchaseFlowUITests/testClaimTrialExpireBuyRestoreAndRefund",
+    "PurchaseFlowUITests/testTrialExpiresWhileTheAppStaysOpen",
     "LibraryPreparationUITests/testNeutralWelcomeHasNativeFocusAndOpensExplicitSample",
     "LibraryPreparationUITests/testFirstScanCompletesIntoSameGlobeAndSettingsReusesPage",
     "SidebarNavigationTests/testNativeSidebarDestinationsAndCollectionReturn",

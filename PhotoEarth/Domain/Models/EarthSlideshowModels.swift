@@ -43,7 +43,7 @@ nonisolated struct EarthSlideshowItem: Identifiable, Hashable, Sendable {
 nonisolated struct EarthSlideshowChapter: Identifiable, Hashable, Sendable {
     let visit: TravelPlace
 
-    var id: String { visit.offlinePlaceID ?? visit.id }
+    var id: PlaceCollection.CityIdentity { PlaceCollection.cityIdentity(for: visit) }
 }
 
 nonisolated struct EarthSlideshowConfiguration: Hashable, Sendable {

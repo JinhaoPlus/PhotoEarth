@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 import Testing
 @testable import PhotoEarth
@@ -19,6 +20,34 @@ struct PhotoRowLayoutTests {
         }
         layout.append([items[0], items[143]], width: 1_760)
         #expect(layout.itemPositions.count == 144)
+    }
+
+    @Test func partialMosaicPagesFillExistingBandsWithoutMovingPhotos() {
+        let items = (0..<61).map { PhotoRowLayout.Item(id: "photo-\($0)", aspectRatio: 1.5) }
+        var layout = PhotoRowLayout.Accumulator()
+        var frames: [String: CGRect] = [:]
+        for item in items {
+            layout.append([item], width: 1_680, mosaic: true)
+            for (rowIndex, row) in layout.rows.enumerated() {
+                for (offset, photo) in row.items.enumerated() {
+                    let frame = row.frames[offset]
+                    if let previous = frames[photo.id] { #expect(frame == previous) }
+                    #expect(layout.rowPositions[photo.id] == rowIndex)
+                    #expect(frame.width == frame.height)
+                    #expect(frame.maxX <= 1_680.001)
+                    #expect(frame.maxY <= row.height)
+                    #expect(!row.frames.prefix(offset).contains { $0.intersects(frame) })
+                    frames[photo.id] = frame
+                }
+            }
+        }
+        var singlePage = PhotoRowLayout.Accumulator()
+        singlePage.append(items, width: 1_680, mosaic: true)
+        #expect(layout.rows == singlePage.rows)
+        #expect(layout.rows.flatMap(\.items) == items)
+        #expect(items.enumerated().allSatisfy { layout.itemPositions[$1.id] == $0 })
+        #expect(abs(layout.rows[0].frames[0].width - (2 * layout.rows[0].frames[1].width + PhotoRowLayout.mosaicGap)) < 0.001)
+        #expect(layout.rows[2].frames[3].width == layout.rows[0].frames[0].width)
     }
 
     @Test func portraitLandscapeSquareAndPanoramaKeepTheirRatioAndReadingOrder() {

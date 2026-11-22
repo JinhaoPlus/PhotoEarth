@@ -65,20 +65,10 @@ final class PhotoEarthUITests: XCTestCase {
         let viewing = app.descendants(matching: .any)["photo-detail-image"].firstMatch
         XCTAssertTrue(viewing.waitForExistence(timeout: 5))
         XCTAssertTrue(waitForFocus(viewing))
-        XCUIRemote.shared.press(.select)
-
-        let information = app.buttons["photo-information-toggle"]
-        XCTAssertTrue(information.waitForExistence(timeout: 5))
-        XCTAssertTrue(waitForFocus(information))
-        XCUIRemote.shared.press(.select)
-        XCTAssertTrue(app.staticTexts["拍摄时间"].waitForExistence(timeout: 3))
-        attachScreenshot(app, name: "Photo detail — readable information panel")
-
-        XCTAssertFalse(app.buttons["photo-detail-back"].exists)
-        XCTAssertFalse(app.buttons["photo-detail-hide-controls"].exists)
-        XCUIRemote.shared.press(.menu)
-        XCTAssertTrue(waitForFocus(viewing))
-        XCTAssertFalse(information.exists)
+        XCTAssertTrue(app.staticTexts["photo-detail-capture-time"].exists)
+        XCTAssertTrue(app.staticTexts["photo-detail-location-name"].exists)
+        XCTAssertTrue(app.buttons["photo-location-globe"].exists)
+        attachScreenshot(app, name: "Photo detail — inline time and location")
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(app.staticTexts["photo-wall-title"].waitForExistence(timeout: 5))
         XCTAssertTrue(waitForFocus(firstPhoto), "Return restores the photo that opened the detail")

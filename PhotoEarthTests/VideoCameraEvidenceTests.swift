@@ -50,32 +50,10 @@ struct VideoCameraEvidenceTests {
         ]
         for (name, metadata, expected) in samples {
             let url = dir.appendingPathComponent(name + ".mov")
-            try await writeMovie(to: url, metadata: metadata)
+            try await writeTestMovie(to: url, metadata: metadata)
             let result = await CameraEvidenceReader.videoEvidence(in: AVURLAsset(url: url))
             #expect(result == expected)
         }
-    }
-
-    private func writeMovie(to url: URL, metadata: [AVMetadataItem]) async throws {
-        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
-        writer.metadata = metadata
-        let settings: [String: Any] = [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 64]
-        let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
-        let bufferInput = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: nil)
-        writer.add(input)
-        guard writer.startWriting() else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
-        writer.startSession(atSourceTime: .zero)
-        var pixels: CVPixelBuffer?
-        let status = CVPixelBufferCreate(kCFAllocatorDefault, 64, 64, kCVPixelFormatType_32BGRA,
-            [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &pixels)
-        guard status == kCVReturnSuccess, let pixels, bufferInput.append(pixels, withPresentationTime: .zero) else {
-            writer.cancelWriting()
-            throw CocoaError(.fileWriteUnknown)
-        }
-        writer.endSession(atSourceTime: CMTime(value: 1, timescale: 30))
-        input.markAsFinished()
-        await writer.finishWriting()
-        guard writer.status == .completed else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
     }
 
     @Test(arguments: [true, false])
@@ -116,4 +94,27 @@ struct VideoCameraEvidenceTests {
         #expect(try await reopened.pending().isEmpty)
         #expect(try await reopened.counts() == [.eligible: 2, .noCamera: 2, .excludedAlbum: 1])
     }
+}
+
+func writeTestMovie(to url: URL, duration: CMTime = CMTime(value: 1, timescale: 30),
+                    metadata: [AVMetadataItem] = []) async throws {
+    let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
+    writer.metadata = metadata
+    let settings: [String: Any] = [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 64]
+    let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
+    let bufferInput = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: nil)
+    writer.add(input)
+    guard writer.startWriting() else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+    writer.startSession(atSourceTime: .zero)
+    var pixels: CVPixelBuffer?
+    let status = CVPixelBufferCreate(kCFAllocatorDefault, 64, 64, kCVPixelFormatType_32BGRA,
+        [kCVPixelBufferIOSurfacePropertiesKey: [:]] as CFDictionary, &pixels)
+    guard status == kCVReturnSuccess, let pixels, bufferInput.append(pixels, withPresentationTime: .zero) else {
+        writer.cancelWriting()
+        throw CocoaError(.fileWriteUnknown)
+    }
+    writer.endSession(atSourceTime: duration)
+    input.markAsFinished()
+    await writer.finishWriting()
+    guard writer.status == .completed else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
 }

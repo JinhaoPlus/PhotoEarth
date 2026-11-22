@@ -26,6 +26,8 @@ struct ViewportPhotoWall: View {
     var labelStates: [String: PlaceLabelLoadState] = [:]
     var resolvePlaceLabels: ([String]) async -> Void = { _ in }
     var onInteraction: () -> Void = {}
+    var analyticsLibrary: JourneyEventContext.Library?
+    @State private var analyticsVisit = PhotoWallAnalyticsVisit()
 
     private var labelPlaceIDs: [String] {
         guard isActive, showsPhotoPlaceNames else { return [] }
@@ -41,6 +43,7 @@ struct ViewportPhotoWall: View {
     @FocusState private var focusedPhotoID: String?
     @FocusState private var isContinuationFocused: Bool
     @FocusState private var isStatusFocused: Bool
+    @FocusState private var isLayoutSwitchFocused: Bool
     @State private var layout = PhotoRowLayout.Accumulator()
     @State private var dateTexts: [String] = []
 
@@ -49,6 +52,8 @@ struct ViewportPhotoWall: View {
               records[position].id == id else { return nil }
         return records[position]
     }
+    @AppStorage("photoEarth.mosaicPhotoWall") private var usesMosaic = true
+    @State private var preparedMosaic = false
     @State private var layoutWidth: Double = 0
     @State private var preparedCount = 0
     @State private var lastPreparedID: String?
@@ -69,6 +74,8 @@ struct ViewportPhotoWall: View {
         GeometryReader { geometry in
             wall(width: geometry.size.width - 2 * FullScreenMapLayout.contentHorizontalInset)
         }
+        .onAppear { analyticsVisit.begin(library: analyticsLibrary, analytics: .shared) }
+        .onDisappear { analyticsVisit.end(analytics: .shared) }
     }
 
     private func wall(width: CGFloat) -> some View {
@@ -159,7 +166,12 @@ struct ViewportPhotoWall: View {
                 focusedPhotoID = nil
             }
         }
-        .onChange(of: records, initial: true) { _, _ in updateRows(width: width) }
+        .onChange(of: records, initial: true) { _, _ in updateRows(width: width, recordsChanged: true) }
+        .onChange(of: usesMosaic) { _, _ in
+            updateRows(width: width)
+            restorationTargetID = selectedPhotoID
+            restoreFocus()
+        }
         .onChange(of: width) { _, width in updateRows(width: width) }
         .onChange(of: rows.first?.id) { _, firstID in
             if firstID == nil { isReturningToTop = false }
@@ -172,12 +184,24 @@ struct ViewportPhotoWall: View {
     }
 
     private var photoRows: some View {
-        LazyVStack(alignment: .leading, spacing: 36) {
+        LazyVStack(alignment: .leading, spacing: preparedMosaic ? PhotoRowLayout.mosaicGap : 36) {
             ForEach(rows) { row in
-                HStack(alignment: .top, spacing: 36) {
-                    ForEach(Array(row.items.enumerated()), id: \.element.id) { position, item in
-                        if let photo = record(for: item.id), let index = layout.itemPositions[item.id], dateTexts.indices.contains(index) {
-                            photoButton(photo, dateText: dateTexts[index], width: row.widths[position], height: row.height)
+                Group {
+                    if preparedMosaic {
+                        ZStack(alignment: .topLeading) {
+                            ForEach(Array(row.items.enumerated()), id: \.element.id) { position, item in
+                                let frame = row.frames[position]
+                                tile(for: item, frame: frame)
+                                    .offset(x: frame.minX, y: frame.minY)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .frame(height: row.height, alignment: .top)
+                    } else {
+                        HStack(alignment: .top, spacing: 36) {
+                            ForEach(Array(row.items.enumerated()), id: \.element.id) { position, item in
+                                tile(for: item, frame: row.frames[position])
+                            }
                         }
                     }
                 }
@@ -185,6 +209,10 @@ struct ViewportPhotoWall: View {
                 // Keep the leading clearance in the first scroll target.
                 // Native Focus may align this target while restoring a page.
                 .padding(.top, row.id == rows.first?.id ? 12 : 0)
+                // A vertical scroll target must share the viewport's horizontal
+                // bounds. Include the TV margins inside each target so restoring
+                // a row cannot align its inset leading edge with the screen edge.
+                .padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
                 .id(row.id)
                 .focusSection()
                 .onAppear {
@@ -195,7 +223,6 @@ struct ViewportPhotoWall: View {
             }
         }
         .scrollTargetLayout()
-        .padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
         .padding(.bottom, 38)
         .focusSection()
     }
@@ -232,7 +259,7 @@ struct ViewportPhotoWall: View {
     }
 
     private var header: some View {
-        HStack {
+        HStack(spacing: TVControlLayout.actionSpacing) {
             VStack(alignment: .leading, spacing: 10) {
                 Text(title)
                     .font(.system(size: 42, weight: .semibold))
@@ -251,8 +278,7 @@ struct ViewportPhotoWall: View {
             if countErrorMessage != nil, let retryPhotoCount {
                 Button(action: retryPhotoCount) {
                     Label(AppLocalization.string("wall.count.retry", defaultValue: "Recount Photos"), systemImage: "arrow.clockwise")
-                        .font(.system(size: 23, weight: .medium))
-                        .padding(.horizontal, 12).frame(minHeight: 66)
+                        .labelStyle(PageActionLabelStyle())
                 }
                 .buttonStyle(.glass)
                 .accessibilityIdentifier("photo-wall-retry-count")
@@ -260,30 +286,37 @@ struct ViewportPhotoWall: View {
             if let openMapReview {
                 Button(action: openMapReview) {
                     Label(AppLocalization.string("review.title", defaultValue: "Map Review"), systemImage: "map")
-                        .font(.system(size: 23, weight: .medium))
-                        .padding(.horizontal, 12).frame(minHeight: 66)
+                        .labelStyle(PageActionLabelStyle())
                 }
                 .buttonStyle(.glass)
                 .disabled(!canOpenMapReview)
                 .accessibilityIdentifier("photo-wall-map-review")
             }
-            if startSlideshow != nil {
-                Button {
-                    startSlideshow?()
-                } label: {
-                    Label(
-                        AppLocalization.string("slideshow.start", defaultValue: "Earth Slideshow"),
-                        systemImage: "play.rectangle.fill"
-                    )
-                    .font(.system(size: 23, weight: .medium))
-                    .padding(.horizontal, 12)
-                    .frame(minHeight: 66)
+            if let startSlideshow {
+                EarthSlideshowEntryButton(minimumHeight: 82, action: startSlideshow)
+                    .disabled(!slideshowAvailable)
+                    .accessibilityIdentifier("photo-wall-slideshow")
+            }
+            if !records.isEmpty {
+                Button { usesMosaic.toggle() } label: {
+                    TwoOptionControlLabel(secondSelected: !usesMosaic, focused: isLayoutSwitchFocused,
+                                          segmentSize: CGSize(width: 70, height: 70)) {
+                        Image(systemName: "square.grid.2x2.fill")
+                    } second: {
+                        HStack(spacing: 3) {
+                            RoundedRectangle(cornerRadius: 2).frame(width: 9, height: 20)
+                            RoundedRectangle(cornerRadius: 2).frame(width: 18, height: 13)
+                        }
+                    }
                 }
-                .buttonStyle(.glassProminent)
-                .tint(.cyan.opacity(0.72))
-                .disabled(!slideshowAvailable)
-                .accessibilityIdentifier("photo-wall-slideshow")
-
+                .buttonStyle(QuietPhotoButtonStyle())
+                .focusEffectDisabled()
+                .focused($isLayoutSwitchFocused)
+                .accessibilityLabel(AppLocalization.string("wall.layout.title", defaultValue: "Photo wall layout"))
+                .accessibilityValue(usesMosaic
+                    ? AppLocalization.string("wall.layout.mosaic", defaultValue: "Mosaic layout")
+                    : AppLocalization.string("wall.layout.original", defaultValue: "Original ratios"))
+                .accessibilityIdentifier("photo-wall-switch-layout")
             }
         }
         // Treat the fixed header as one destination spanning the content
@@ -320,11 +353,19 @@ struct ViewportPhotoWall: View {
         startSlideshow != nil && totalPhotoCount != 0 && !records.isEmpty
     }
 
+    @ViewBuilder
+    private func tile(for item: PhotoRowLayout.Item, frame: CGRect) -> some View {
+        if let photo = record(for: item.id), let index = layout.itemPositions[item.id], dateTexts.indices.contains(index) {
+            photoButton(photo, dateText: dateTexts[index], width: frame.width, height: frame.height)
+        }
+    }
+
     private func photoButton(_ record: PhotoAssetRecord, dateText: String, width: Double, height: Double) -> some View {
         ViewportPhotoCell(record: record, dateText: dateText,
                                  placeName: showsPhotoPlaceNames ? placeName(for: record) : nil,
-                          isFocused: focusedPhotoID == record.id, isActive: isActive, width: width, height: height) { preview in
+                          isFocused: focusedPhotoID == record.id, isActive: isActive, isMosaic: preparedMosaic, width: width, height: height) { preview in
             selectedPhotoID = record.id
+            analyticsVisit.openedDetail()
             selectPhoto(record, preview)
         }
         .focused($focusedPhotoID, equals: record.id)
@@ -443,21 +484,25 @@ struct ViewportPhotoWall: View {
         }
     }
 
-    private func updateRows(width: Double) {
+    private func updateRows(width: Double, recordsChanged: Bool = false) {
         guard width > 0 else { return }
-        let isAppend = abs(layoutWidth - width) < 1 && records.count > preparedCount &&
+        let isAppend = preparedMosaic == usesMosaic && abs(layoutWidth - width) < 1 && records.count > preparedCount &&
             (preparedCount == 0 || records[preparedCount - 1].id == lastPreparedID)
         if !isAppend {
             // Width changes, edits and removals can alter an existing row.
             // Normal page appends leave all previous geometry untouched.
             layout = PhotoRowLayout.Accumulator()
-            dateTexts = []
             preparedCount = 0
         }
         let appended = records.dropFirst(preparedCount)
         let items = appended.map { PhotoRowLayout.Item(id: $0.id, aspectRatio: PhotoPreviewMetadata($0).aspectRatio) }
-        dateTexts.append(contentsOf: appended.map { AppLocalization.shortDate($0.creationDate) })
-        layout.append(items, width: width, spacing: 36)
+        if isAppend {
+            dateTexts.append(contentsOf: appended.map { AppLocalization.shortDate($0.creationDate) })
+        } else if recordsChanged || dateTexts.count != records.count {
+            dateTexts = records.map { AppLocalization.shortDate($0.creationDate) }
+        }
+        layout.append(items, width: width, spacing: 36, mosaic: usesMosaic)
+        preparedMosaic = usesMosaic
         layoutWidth = width
         preparedCount = records.count
         lastPreparedID = records.last?.id
@@ -472,6 +517,7 @@ private struct ViewportPhotoCell: View {
     let placeName: String?
     let isFocused: Bool
     let isActive: Bool
+    let isMosaic: Bool
     let width: Double
     let height: Double
     let selectPhoto: (UIImage?) -> Void
@@ -484,55 +530,11 @@ private struct ViewportPhotoCell: View {
         Button {
             selectPhoto(preview)
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                PhotoAssetImage(assetID: record.id, contentMode: .fit,
-                                targetSize: PhotoImageSizing.wallTargetSize(pixelWidth: record.pixelWidth,
-                                                                          pixelHeight: record.pixelHeight,
-                                                                          cardSize: CGSize(width: width, height: height),
-                                                                          displayScale: displayScale,
-                                                                          isFocused: usesFocusedResolution),
-                                isActive: isActive,
-                                priority: isFocused ? .focus : .visible,
-                                onImageChange: { preview = $0 })
-                    .frame(width: width, height: height)
-                    .background(.black)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(.white.opacity(isFocused ? 0.95 : 0.14), lineWidth: isFocused ? 3 : 1)
-                    }
-                    .overlay(alignment: .bottomLeading) {
-                        if record.mediaKind.isPlayable {
-                            mediaBadge
-                            .padding(12)
-                        }
-                    }
-                HStack(alignment: .firstTextBaseline) {
-                    if let placeName {
-                        Text(placeName)
-                            .font(.system(size: 27, weight: .medium))
-                            .lineLimit(1)
-                    } else {
-                        Text(dateText)
-                            .font(.system(size: 23))
-                            .lineLimit(1)
-                            .foregroundStyle(.white.opacity(isFocused ? 0.85 : 0.65))
-                    }
-                    Spacer(minLength: 0)
-                    if record.isFavorite { Image(systemName: "heart.fill").font(.system(size: 23)).foregroundStyle(.pink) }
-                }
-                if placeName != nil {
-                    Text(dateText)
-                        .font(.system(size: 23))
-                        .lineLimit(1)
-                        .foregroundStyle(.white.opacity(isFocused ? 0.85 : 0.65))
-                }
+            if isMosaic {
+                mosaicTile
+            } else {
+                originalTile
             }
-            .frame(width: width)
-            .foregroundStyle(.white)
-            .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
-            .shadow(color: .black.opacity(isFocused ? 0.5 : 0), radius: 16, y: 10)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isFocused)
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
@@ -548,6 +550,112 @@ private struct ViewportPhotoCell: View {
         }
         .onChange(of: isActive) { _, active in if !active { releasePreview() } }
         .onDisappear { releasePreview() }
+    }
+
+    private var image: some View {
+        PhotoAssetImage(assetID: record.id, contentMode: .fit, displayContentMode: isMosaic ? .fill : .fit,
+                        targetSize: PhotoImageSizing.wallTargetSize(pixelWidth: record.pixelWidth,
+                                                                   pixelHeight: record.pixelHeight,
+                                                                   cardSize: CGSize(width: width, height: height),
+                                                                   displayScale: displayScale,
+                                                                   isFocused: usesFocusedResolution),
+                        isActive: isActive,
+                        priority: isFocused ? .focus : .visible,
+                        onImageChange: { preview = $0 })
+            .frame(width: width, height: height)
+            .background(.black)
+    }
+
+    private var originalTile: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            image
+                .overlay(alignment: .bottomLeading) { photoCaption }
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(.white.opacity(isFocused ? 0.95 : 0.14), lineWidth: isFocused ? 3 : 1)
+                }
+                .overlay(alignment: .bottomLeading) {
+                    if record.mediaKind == .video { mediaBadge.padding(12) }
+                }
+            if placeName != nil || record.isFavorite {
+                HStack(alignment: .firstTextBaseline) {
+                    if let placeName {
+                        Text(placeName)
+                            .font(.system(size: 27, weight: .medium))
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    if record.isFavorite { Image(systemName: "heart.fill").font(.system(size: 23)).foregroundStyle(.pink) }
+                }
+            }
+        }
+        .frame(width: width)
+        .foregroundStyle(.white)
+        .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
+        .shadow(color: .black.opacity(isFocused ? 0.5 : 0), radius: 16, y: 10)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isFocused)
+    }
+
+    private var mosaicTile: some View {
+        Rectangle()
+            .fill(.black)
+            .frame(width: width, height: height)
+            .overlay { image.accessibilityHidden(true) }
+            .clipped()
+            .contentShape(Rectangle())
+            .overlay(alignment: .bottomLeading) { photoCaption }
+            .overlay(alignment: .topLeading) {
+                if record.isFavorite {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .shadow(radius: 2)
+                        .padding(12)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if record.mediaKind.isPlayable { mediaBadge.padding(10) }
+            }
+            .foregroundStyle(.white)
+            .clipShape(RoundedRectangle(cornerRadius: 4))
+            .overlay {
+                if isFocused {
+                    RoundedRectangle(cornerRadius: 4)
+                        .strokeBorder(.white, lineWidth: 5)
+                }
+            }
+    }
+
+    @ViewBuilder private var photoCaption: some View {
+        let inlineLiveBadge = !isMosaic && record.mediaKind == .livePhoto
+        if isFocused || inlineLiveBadge {
+            VStack(alignment: .leading, spacing: 3) {
+                if isMosaic, let placeName {
+                    Text(placeName).font(.system(size: 26, weight: .semibold))
+                }
+                HStack(spacing: 6) {
+                    if inlineLiveBadge { mediaBadge.fixedSize() }
+                    if isFocused {
+                        Text(dateText)
+                            .font(.system(size: 21, weight: .medium))
+                            .minimumScaleFactor(inlineLiveBadge ? 0.65 : 0.75)
+                            .allowsTightening(true)
+                    }
+                }
+            }
+            .lineLimit(1)
+            .padding(.leading, inlineLiveBadge ? 12 : 14)
+            .padding(.trailing, isMosaic && record.mediaKind.isPlayable ? 108 : 14)
+            .padding(.bottom, !isMosaic && record.mediaKind == .video ? 56 : 12)
+            .padding(.top, 32)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                if isFocused {
+                    LinearGradient(colors: [.clear, .black.opacity(0.82)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+            }
+        }
     }
 
     private func releasePreview() {

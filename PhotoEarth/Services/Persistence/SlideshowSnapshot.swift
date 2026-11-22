@@ -3,12 +3,14 @@ import SQLite3
 
 nonisolated protocol SlideshowPageReading: Sendable {
     var places: [TravelPlace]? { get }
+    var journeys: [TravelJourney] { get }
     func visitIDs() -> Set<String>
     func page(_ request: SlideshowPageSequence.Request, limit: Int) async throws -> SlideshowSnapshot.Page
 }
 
 nonisolated struct IndexedSlideshowSnapshot: SlideshowPageReading {
     let reader: SQLiteTravelIndexStore
+    let journeys: [TravelJourney]
     let places: [TravelPlace]?
     let members: Set<String>
     let excluding: Set<String>
@@ -21,6 +23,47 @@ nonisolated struct IndexedSlideshowSnapshot: SlideshowPageReading {
     }
 }
 
+/// Keep reading in capture order from the wall's index version. The frozen
+/// native projection, including the far side of the globe, decides visibility.
+nonisolated struct ViewportSlideshowSnapshot: SlideshowPageReading {
+    let source: any SlideshowPageReading
+    let viewport: PhotoViewportSnapshot
+    let members: Set<String>
+    var places: [TravelPlace]? { source.places }
+    var journeys: [TravelJourney] { source.journeys }
+    func visitIDs() -> Set<String> { members }
+
+    @MainActor func page(_ request: SlideshowPageSequence.Request, limit: Int) async throws -> SlideshowSnapshot.Page {
+        guard members.contains(request.visit.id) else { return .init(records: [], next: nil) }
+        let size = max(1, min(limit, 48))
+        var read = request
+        var visible: [PhotoAssetRecord] = []
+        var slice = ContinuousClock.now
+        repeat {
+            let page = try await source.page(read, limit: 48)
+            try Task.checkCancellation()
+            guard viewport.isCurrent() else { throw PhotoWallSelectionError.changedViewport }
+            for (index, record) in page.records.enumerated() {
+                if slice.duration(to: .now) >= .milliseconds(3) {
+                    await Task.yield()
+                    try Task.checkCancellation()
+                    guard viewport.isCurrent() else { throw PhotoWallSelectionError.changedViewport }
+                    slice = .now
+                }
+                if viewport.containsForPhotoWall(record.coordinate) {
+                    visible.append(record)
+                    if visible.count == size {
+                        let hasMore = index < page.records.count - 1 || page.next != nil
+                        return .init(records: visible, next: hasMore ? .init(record) : nil)
+                    }
+                }
+            }
+            read.after = page.next
+        } while read.after != nil
+        return .init(records: visible, next: nil)
+    }
+}
+
 /// A private temporary SQLite file owned by this show. Closing the handle
 /// removes the file. The main index can advance while playback reads it.
 nonisolated final class SlideshowSnapshot: SlideshowPageReading, @unchecked Sendable {
@@ -28,13 +71,15 @@ nonisolated final class SlideshowSnapshot: SlideshowPageReading, @unchecked Send
         let records: [PhotoAssetRecord]
         let next: SlideshowPageSequence.Cursor?
     }
+    let journeys: [TravelJourney]
     let places: [TravelPlace]?
     private let db: OpaquePointer
     private let lock = NSLock()
     private var visits = Set<String>()
     private let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
-    init(places: [TravelPlace]? = nil) throws {
+    init(places: [TravelPlace]? = nil, journeys: [TravelJourney] = []) throws {
+        self.journeys = journeys
         self.places = places
         var handle: OpaquePointer?
         guard sqlite3_open("", &handle) == SQLITE_OK, let handle else {

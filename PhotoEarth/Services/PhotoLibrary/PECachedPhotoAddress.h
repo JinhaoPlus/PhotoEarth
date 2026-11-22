@@ -5,4 +5,6 @@
                                   latitude:(double)latitude longitude:(double)longitude
     NS_SWIFT_NAME(read(identifier:latitude:longitude:));
 + (nullable NSString *)addressFromProperties:(nonnull NSObject *)properties NS_SWIFT_NAME(validatedText(from:));
++ (BOOL)modificationDate:(nullable NSDate *)original matches:(nullable NSDate *)current
+    NS_SWIFT_NAME(modificationDate(_:matches:));
 @end

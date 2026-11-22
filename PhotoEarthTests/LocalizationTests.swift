@@ -94,7 +94,7 @@ struct LocalizationTests {
         verify("state.off", simplified: "已关闭", traditional: "已關閉")
         verify("ready.title", simplified: "你的旅行地球已准备好", traditional: "你的旅行地球已準備好")
         verify("generation.failed", simplified: "未能生成旅行地球", traditional: "無法建立旅行地球")
-        verify("slideshow.failed", simplified: "地球放映暂不可用", traditional: "地球放映暫時無法使用")
+        verify("slideshow.failed", simplified: "放映暂不可用", traditional: "放映暫時無法使用")
     }
 
     @Test(arguments: [
@@ -138,7 +138,7 @@ struct LocalizationTests {
 
     @Test func compactPlaceCaptionShowsEachKnownNameOnce() {
         #expect(PlaceDisplayLabel(city: "Singapore", country: "Singapore").compactName == "Singapore")
-        #expect(PlaceDisplayLabel(city: " Tokyo ", country: "Japan").compactName == "Tokyo · Japan")
+        #expect(PlaceDisplayLabel(city: " Tokyo ", country: "Japan").compactName == "Tokyo Japan")
         #expect(PlaceDisplayLabel(city: "Tokyo", country: nil).compactName == "Tokyo")
         #expect(PlaceDisplayLabel(city: "", country: "Japan").compactName == AppLocalization.unknownPlace(near: "Japan"))
     }
@@ -335,14 +335,14 @@ struct LocalizationTests {
     }
 
     @Test(arguments: [
-        ("en", "Earth Slideshow", "Return to Photo Wall"),
-        ("ja", "地球スライドショー", "フォトウォールに戻る"),
-        ("de", "Erd-Diashow", "Zurück zur Fotowand"),
-        ("fr", "Diaporama terrestre", "Retour au mur de photos"),
-        ("es", "Presentación de la Tierra", "Volver al muro de fotos"),
-        ("it", "Presentazione della Terra", "Torna alla parete di foto"),
-        ("zh-Hans", "地球放映", "返回照片墙"),
-        ("zh-Hant", "地球放映", "返回照片牆"),
+        ("en", "Slideshow", "Return to Photo Wall"),
+        ("ja", "スライドショー", "フォトウォールに戻る"),
+        ("de", "Diashow", "Zurück zur Fotowand"),
+        ("fr", "Diaporama", "Retour au mur de photos"),
+        ("es", "Presentación", "Volver al muro de fotos"),
+        ("it", "Presentazione", "Torna alla parete di foto"),
+        ("zh-Hans", "放映", "返回照片墙"),
+        ("zh-Hant", "放映", "返回照片牆"),
     ])
     func slideshowEntryAndExitExistInEverySupportedLanguage(
         localeID: String,
@@ -352,7 +352,7 @@ struct LocalizationTests {
         let locale = Locale(identifier: localeID)
         #expect(AppLocalization.string(
             "slideshow.start",
-            defaultValue: "Earth Slideshow",
+            defaultValue: "Slideshow",
             locale: locale
         ) == start)
         #expect(AppLocalization.string(

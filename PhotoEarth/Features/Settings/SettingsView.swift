@@ -1,8 +1,16 @@
 import SwiftUI
 
+extension EnvironmentValues {
+    @Entry var leavePurchaseSample: (() -> Void)? = nil
+}
+
 struct SettingsView: View {
+    @EnvironmentObject private var purchases: PurchaseStore
+    @Environment(\.leavePurchaseSample) private var leavePurchaseSample
+    @State private var showingPurchase = false
     private enum FocusedControl: Hashable { case update, complete, rebuild, journeyMinimum }
     @ObservedObject var model: AppModel
+    @ObservedObject private var analytics = ProductAnalytics.shared
     @FocusState private var focusedControl: FocusedControl?
     @State private var returnScanAction: FocusedControl?
     @State private var showsScanDetails = false
@@ -14,14 +22,31 @@ struct SettingsView: View {
 
     var body: some View {
         ScrollView {
-            HStack(alignment: .top, spacing: 80) {
+            HStack(alignment: .top, spacing: 56) {
                 photoSettings
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .focusSection()
 
-                VStack(alignment: .leading, spacing: 38) {
+                VStack(alignment: .leading, spacing: 32) {
                     homeScreenSettings
                     globeSettings
+                    if case .trial(let end) = purchases.access {
+                        VStack(alignment: .leading, spacing: 15) {
+                            caption(AppLocalization.format("purchase.until", defaultValue: "Trial ends %@.", end.formatted(date: .long, time: .shortened)))
+                            Button(String(localized: "purchase.full")) { showingPurchase = true }
+                                .buttonStyle(.glass).accessibilityIdentifier("settings-purchase")
+                        }
+                    } else if purchases.access == .unlocked {
+                        caption(String(localized: "purchase.owned"))
+                    }
+                    if analytics.isConfigured {
+                        VStack(alignment: .leading, spacing: 20) {
+                            settingSwitch(AppLocalization.string("settings.usage_analytics", defaultValue: "Share Usage Analytics"),
+                                          isOn: Binding(get: { analytics.enabled }, set: analytics.setEnabled),
+                                          identifier: "settings-usage-analytics")
+                            caption(AppLocalization.string("settings.usage_analytics_help", defaultValue: "Send PostHog an installation ID and actions such as opening a photo wall or starting a slideshow. Photos and locations stay private."))
+                        }
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
                 .focusSection()
@@ -33,6 +58,7 @@ struct SettingsView: View {
         .background(Color(red: 0.012, green: 0.022, blue: 0.037).ignoresSafeArea())
         .accessibilityIdentifier("app-settings")
         .sheet(isPresented: $showsJourneyMinimum, onDismiss: { focusedControl = .journeyMinimum }) { journeyMinimumEditor }
+        .sheet(isPresented: $showingPurchase) { PurchaseOffers(store: purchases) }
         .task(id: model.isPreparationPresented) {
             guard !model.isPreparationPresented, let action = returnScanAction else { return }
             do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
@@ -67,6 +93,7 @@ struct SettingsView: View {
                    ? AppLocalization.string("settings.connect_photos", defaultValue: "Connect My Photos")
                    : AppLocalization.string("settings.update", defaultValue: "Update Photos & Places"),
                    systemImage: model.isUsingSampleData ? "photo.on.rectangle" : "arrow.clockwise") {
+                if let leavePurchaseSample { leavePurchaseSample(); return }
                 returnScanAction = .update
                 Task { await model.updateLibrary() }
             }
@@ -143,7 +170,7 @@ struct SettingsView: View {
         return VStack(alignment: .leading, spacing: 32) {
             Text(journeyMinimumTitle).font(.system(size: 52, weight: .light))
             caption(AppLocalization.string("journey.minimum.note", defaultValue: "Choose how many photos or videos with a location a visit needs to appear in Recently Visited, on the app’s Home screen, and in Top Shelf. Enter a number from 1 to 1,000."))
-            HStack(spacing: 20) {
+            HStack(spacing: TVControlLayout.actionSpacing) {
                 ForEach(JourneyVisitThreshold.presets, id: \.self) { count in
                     Button(AppLocalization.number(count)) { journeyMinimumText = String(count) }
                         .buttonStyle(.glass)
@@ -220,9 +247,15 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 20) {
             heading(AppLocalization.string("settings.globe_controls", defaultValue: "Globe Controls"))
             settingSwitch(AppLocalization.string("settings.show_hints", defaultValue: "Show Globe Control Hints"),
-                          isOn: $showsGlobeHints, identifier: "settings-globe-hints")
+                          isOn: Binding(get: { showsGlobeHints }, set: { enabled in
+                              showsGlobeHints = enabled
+                              ProductAnalytics.shared.capture(.settingsChanged, value: "globe_hints")
+                          }), identifier: "settings-globe-hints")
             settingSwitch(AppLocalization.string("settings.wait_for_globe", defaultValue: "Wait for Globe Imagery (Experimental)"),
-                          isOn: $waitsForInitialGlobeRender, identifier: "settings-wait-for-globe")
+                          isOn: Binding(get: { waitsForInitialGlobeRender }, set: { enabled in
+                              waitsForInitialGlobeRender = enabled
+                              ProductAnalytics.shared.capture(.settingsChanged, value: "globe_imagery")
+                          }), identifier: "settings-wait-for-globe")
         }
     }
 

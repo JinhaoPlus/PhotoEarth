@@ -46,7 +46,6 @@ import Observation
     @ObservationIgnored private var visible: Set<String> = []
     @ObservationIgnored private var focusID: String?
     @ObservationIgnored private var direction = 1
-    @ObservationIgnored private var imageItemIDs: Set<String> = []
     @ObservationIgnored private var moving = false
     @ObservationIgnored private var active = false
     @ObservationIgnored private var lastIndexDate: String?
@@ -94,7 +93,7 @@ import Observation
             resetScenicWork()
             preparation?.cancel(); preparation = nil; generation = UUID(); lastIndexDate = nil; pendingIndex = nil
             labelTasks.values.forEach { $0.cancel() }; labelTasks = [:]
-            allPlaces = []; source = []; items = []; lookup = [:]; visible = []; imageItemIDs = []; restoredFocusID = nil
+            allPlaces = []; source = []; items = []; lookup = [:]; visible = []; restoredFocusID = nil
             presentationYears = [:]
             nearestRecentCoordinate = nil
             hasPendingCovers = false
@@ -204,6 +203,7 @@ import Observation
         if !value {
             scenicTasks.values.forEach { $0.cancel() }; scenicTasks = [:]
             items.forEach {
+                $0.thumbnail = nil
                 $0.scenicPrepared = false
                 $0.displayedBeforeRefresh = nil
                 if savedCovers != nil { $0.coverPrepared = false; $0.latestAssetID = nil }
@@ -212,8 +212,6 @@ import Observation
             preparation?.cancel(); preparation = nil; generation = UUID()
             labelTasks.values.forEach { $0.cancel() }; labelTasks = [:]
             images.update([:], moving: false)
-            for id in imageItemIDs { lookup[id]?.thumbnail = nil }
-            imageItemIDs = []
         } else {
             if let pendingIndex { self.pendingIndex = nil; applyStructure(pendingIndex) }
             prepareMore(); updateImages()
@@ -224,10 +222,12 @@ import Observation
         let unchanged = item.place.coordinate == place.coordinate && item.place.endDate == place.endDate
             && item.place.photoCount == place.photoCount && item.place.coverAssetID == place.coverAssetID
         item.place = place; item.coverPrepared = false
-        // Recheck identical counts without blanking an unchanged cover. Edits
-        // and removals invalidate separately through PhotoAssetChangeNotice.
+        // A new index can change membership even with identical summary counts.
+        // Ask the store to validate the displayed cover, including cached shelves.
         if savedCovers != nil {
-            if visible.contains(item.id), let asset = item.latestAssetID { item.displayedBeforeRefresh = asset }
+            if let asset = item.latestAssetID, visible.contains(item.id) || item.thumbnail?.image != nil {
+                item.displayedBeforeRefresh = asset
+            }
             item.latestAssetID = nil
             item.thumbnail = nil
         }
@@ -394,9 +394,8 @@ import Observation
         let visiblePositions = Set(visible.compactMap { positions["place-\($0)"] })
         let resident = OverviewImageWindow.residentIndices(nearby: window, visible: visiblePositions,
                                                           focused: focusPosition)
-        let nextIDs = Set(resident.map { items[$0].id })
-        for id in imageItemIDs.subtracting(nextIDs) { lookup[id]?.thumbnail = nil }
-        imageItemIDs = nextIDs
+        // The window limits requests. Cards keep observing their last thumbnail
+        // until the cache evicts its pixels or the underlying cover changes.
         var demand: [OverviewImageKey: Int] = [:]
         var preheat: [OverviewImageKey] = []
         var focusedRowOrder: [OverviewImageKey: Int] = [:]
@@ -472,7 +471,8 @@ import Observation
             preparation = nil
             generation = UUID()
             for item in items {
-                if visible.contains(item.id), let asset = item.latestAssetID, !removed.contains(asset) {
+                if let asset = item.latestAssetID, !removed.contains(asset),
+                   !changed.contains(asset) || visible.contains(item.id) {
                     item.scenicPrepared = true
                 } else {
                     item.latestAssetID = nil

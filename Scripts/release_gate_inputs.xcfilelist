@@ -11,3 +11,5 @@ $(SRCROOT)/PhotoEarth.xcodeproj/project.pbxproj
 $(SRCROOT)/PhotoEarth.xcodeproj/xcshareddata
 $(SRCROOT)/Scripts/release_gate_inputs.xcfilelist
 $(SRCROOT)/Scripts/release_gate.py
+$(SRCROOT)/Analytics.xcconfig
+$(SRCROOT)/PhotoEarth.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved

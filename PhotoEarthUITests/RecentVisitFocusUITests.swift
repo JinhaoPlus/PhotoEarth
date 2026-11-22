@@ -57,7 +57,12 @@ final class RecentVisitFocusUITests: XCTestCase {
         let title = app.staticTexts["library-place-title-\(countryID)/city:sample-focus-march-first"]
         XCTAssertTrue(title.waitForExistence(timeout: 5))
         XCTAssertEqual(title.label, "March First")
-        XCTAssertTrue(app.staticTexts["Focus Fixture"].isHittable)
+        let heading = app.staticTexts["Focus Fixture"]
+        let allPhotos = app.buttons["library-country-photos"]
+        XCTAssertTrue(heading.isHittable)
+        XCTAssertTrue(focus(allPhotos))
+        XCTAssertGreaterThan(allPhotos.frame.minX, heading.frame.maxX)
+        XCTAssertLessThan(allPhotos.frame.minY, heading.frame.maxY)
         attach(app, "City cards under their country")
     }
 

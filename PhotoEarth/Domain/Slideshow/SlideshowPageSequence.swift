@@ -1,7 +1,24 @@
 import Foundation
 
-/// Only a successful, current read can commit a cursor. A failed visit stays
-/// retryable after all other visits have had a turn.
+/// A journey intersected with the source wall. Its dates describe only the
+/// stops the viewer can actually see in this show.
+nonisolated struct EarthSlideshowSegment: Identifiable, Equatable, Sendable {
+    let id: String
+    let startDate: Date
+    let endDate: Date
+    let visits: [TravelPlace]
+
+    init(id: String, visits: [TravelPlace]) {
+        precondition(!visits.isEmpty)
+        self.id = id
+        self.visits = visits.sorted(by: SlideshowOrdering.visitComesFirst)
+        startDate = self.visits[0].startDate
+        endDate = self.visits.map(\.endDate).max() ?? startDate
+    }
+}
+
+/// Read the newest journey first, then finish each stop in capture order.
+/// A failed read retains its cursor so retrying cannot reorder the trip.
 nonisolated struct SlideshowPageSequence {
     struct Cursor: Hashable, Sendable {
         let date: Date
@@ -16,46 +33,56 @@ nonisolated struct SlideshowPageSequence {
     enum State: Equatable {
         case ready, reading(Request), retryable, exhausted
     }
-    private var pending: [Request]
-    private var head = 0
-    private var failed: [Request] = []
+
+    let segments: [EarthSlideshowSegment]
+    private let segmentByVisit: [String: Int]
+    private var segmentIndex = 0
+    private var visitIndex = 0
+    private var cursor: Cursor?
+    private var attempt = 0
     private(set) var state: State
 
-    init(places: [TravelPlace]) {
-        let sorted = places.filter { $0.photoCount > 0 }.sorted(by: SlideshowOrdering.visitComesFirst)
-        // Alternate years, then distribute separate visits to the same
-        // catalog city across rounds so a home city cannot own the opening.
-        var groups: [String: [TravelPlace]] = [:]
-        var cities: [String] = []
-        for index in sorted.indices {
-            let place = sorted[index.isMultiple(of: 2) ? sorted.count - 1 - index / 2 : index / 2]
-            let city = place.offlinePlaceID ?? place.id
-            if groups[city] == nil { cities.append(city) }
-            groups[city, default: []].append(place)
-        }
-        pending = []
-        var pass = 0
-        while !cities.isEmpty {
-            var next: [String] = []
-            for city in cities {
-                guard let visits = groups[city] else { continue }
-                pending.append(Request(visit: visits[pass]))
-                if visits.count > pass + 1 { next.append(city) }
+    init(places: [TravelPlace], journeys: [TravelJourney] = []) {
+        var remaining = Dictionary(places.filter { $0.photoCount > 0 }.map { ($0.id, $0) },
+                                   uniquingKeysWith: { first, _ in first })
+        var scoped: [EarthSlideshowSegment] = []
+        for journey in journeys {
+            let visits = journey.placeIDs.compactMap { remaining.removeValue(forKey: $0) }
+            if !visits.isEmpty {
+                scoped.append(.init(id: journey.id, visits: visits))
             }
-            cities = next
-            pass += 1
         }
-        state = pending.isEmpty ? .exhausted : .ready
+        // Some older indexes have visits with no journey membership.
+        for visit in remaining.values {
+            scoped.append(.init(id: "visit:" + visit.id, visits: [visit]))
+        }
+        segments = scoped.sorted {
+            if $0.startDate != $1.startDate { return $0.startDate > $1.startDate }
+            if $0.endDate != $1.endDate { return $0.endDate > $1.endDate }
+            return $0.id < $1.id
+        }
+        var indexes: [String: Int] = [:]
+        for (index, segment) in segments.enumerated() {
+            for visit in segment.visits { indexes[visit.id] = index }
+        }
+        segmentByVisit = indexes
+        state = segments.isEmpty ? .exhausted : .ready
+    }
+
+    func segmentIndex(forVisitID id: String) -> Int? { segmentByVisit[id] }
+
+    mutating func start(atSegment index: Int) {
+        guard segments.indices.contains(index) else { return }
+        segmentIndex = index
+        visitIndex = 0
+        cursor = nil
+        attempt = 0
+        state = .ready
     }
 
     mutating func begin() -> Request? {
         guard state == .ready else { return nil }
-        let request = pending[head]
-        head += 1
-        if head >= 64 && head * 2 >= pending.count {
-            pending.removeFirst(head)
-            head = 0
-        }
+        let request = Request(visit: segments[segmentIndex].visits[visitIndex], after: cursor, attempt: attempt)
         state = .reading(request)
         return request
     }
@@ -63,41 +90,39 @@ nonisolated struct SlideshowPageSequence {
     mutating func finish(_ request: Request, next: Cursor?) {
         guard state == .reading(request) else { return }
         if let next {
-            guard request.after.map({ ($0.date, $0.id) < (next.date, next.id) }) ?? true else {
+            guard cursor.map({ ($0.date, $0.id) < (next.date, next.id) }) ?? true else {
                 fail(request)
                 return
             }
-            pending.append(Request(visit: request.visit, after: next))
+        } else {
+            visitIndex += 1
+            if visitIndex == segments[segmentIndex].visits.count {
+                segmentIndex += 1
+                visitIndex = 0
+            }
         }
-        settle()
+        cursor = next
+        attempt = 0
+        state = segmentIndex < segments.count ? .ready : .exhausted
     }
 
     mutating func fail(_ request: Request) {
         guard state == .reading(request) else { return }
-        if request.attempt == 0 {
-            var delayed = request
-            delayed.attempt = 1
-            pending.append(delayed)
+        if attempt == 0 {
+            attempt = 1
+            state = .ready
         } else {
-            failed.append(request)
+            state = .retryable
         }
-        settle()
     }
 
     mutating func interrupt() {
-        guard case .reading(let request) = state else { return }
-        pending.insert(request, at: head)
-        settle()
+        if case .reading = state { state = .ready }
     }
 
     mutating func retry() {
         guard state == .retryable else { return }
-        pending.append(contentsOf: failed.map { Request(visit: $0.visit, after: $0.after) })
-        failed.removeAll()
-        settle()
-    }
-
-    private mutating func settle() {
-        state = head < pending.count ? .ready : (failed.isEmpty ? .exhausted : .retryable)
+        attempt = 0
+        state = .ready
     }
 }

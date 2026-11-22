@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// PhotoKit/SQLite dimensions, available before image bytes or iCloud downloads.
@@ -21,6 +22,8 @@ nonisolated struct PhotoPreviewMetadata: Equatable, Sendable {
 /// Pure, metadata-only row composition. Existing rows can stay fixed while
 /// appending pages or completing dimensions beyond the user's current view.
 nonisolated enum PhotoRowLayout {
+    static let mosaicGap = 4.0
+
     /// An append touches only the new page. Existing row geometry and position
     /// lookups survive, including the previous page's short final row.
     struct Accumulator {
@@ -28,20 +31,61 @@ nonisolated enum PhotoRowLayout {
         private(set) var rowPositions: [String: Int] = [:]
         private(set) var itemPositions: [String: Int] = [:]
 
-        mutating func append(_ items: [Item], width: Double, spacing: Double = 34) {
+        mutating func append(_ items: [Item], width: Double, spacing: Double = 34, mosaic: Bool = false) {
             var seen = Set<String>()
             let newItems = items.filter { itemPositions[$0.id] == nil && seen.insert($0.id).inserted }
-            let newRows = PhotoRowLayout.rows(for: newItems, width: width, spacing: spacing)
+            guard !newItems.isEmpty, width.isFinite, width > 0 else { return }
+            let newRows: [Row]
+            if mosaic {
+                // A short page can end midway through a band. Reuse its slots
+                // so the next page can fill the gaps without moving a photo.
+                var page = newItems
+                if let last = rows.last, last.items.count < mosaicSlots(band: rows.count - 1).count {
+                    page = rows.removeLast().items + newItems
+                }
+                newRows = mosaicRows(for: page, width: width, startingAt: rows.count)
+            } else {
+                newRows = PhotoRowLayout.rows(for: newItems, width: width, spacing: spacing)
+            }
             var position = itemPositions.count
             for row in newRows {
                 let rowPosition = rows.count
-                for item in row.items {
+                for item in row.items where itemPositions[item.id] == nil {
                     rowPositions[item.id] = rowPosition
                     itemPositions[item.id] = position
                     position += 1
                 }
                 rows.append(row)
             }
+        }
+    }
+
+    private static func mosaicRows(for items: [Item], width: Double, startingAt firstBand: Int) -> [Row] {
+        let gap = min(mosaicGap, width / 10)
+        let stride = (width + gap) / 5
+        var remaining = items[...]
+        var bands: [Row] = []
+        while !remaining.isEmpty {
+            let slots = mosaicSlots(band: firstBand + bands.count).prefix(remaining.count)
+            let frames = slots.map { slot in
+                let side = Double(slot.span) * stride - gap
+                return CGRect(x: Double(slot.column) * stride, y: Double(slot.row) * stride,
+                              width: side, height: side)
+            }
+            let height = frames.reduce(0.0) { max($0, Double($1.maxY)) }
+            bands.append(Row(items: Array(remaining.prefix(slots.count)), height: height, frames: frames))
+            remaining = remaining.dropFirst(slots.count)
+        }
+        return bands
+    }
+
+    // Five columns alternate between a strip and a two-high band. Slots
+    // follow reading order, including when the large square is on the right.
+    private static func mosaicSlots(band: Int) -> [(column: Int, row: Int, span: Int)] {
+        switch band % 4 {
+        case 0: [(0, 0, 2), (2, 0, 1), (3, 0, 1), (4, 0, 1), (2, 1, 1), (3, 1, 1), (4, 1, 1)]
+        case 2: [(0, 0, 1), (1, 0, 1), (2, 0, 1), (3, 0, 2), (0, 1, 1), (1, 1, 1), (2, 1, 1)]
+        default: [(0, 0, 1), (1, 0, 1), (2, 0, 1), (3, 0, 1), (4, 0, 1)]
         }
     }
 
@@ -58,7 +102,8 @@ nonisolated enum PhotoRowLayout {
     struct Row: Equatable, Identifiable, Sendable {
         let items: [Item]
         let height: Double
-        let widths: [Double]
+        let frames: [CGRect]
+        var widths: [Double] { frames.map { Double($0.width) } }
         var id: String { items[0].id }
     }
 
@@ -101,7 +146,13 @@ nonisolated enum PhotoRowLayout {
             let fitted = (width - Double(bestCount - 1) * gap) / ratios.reduce(0, +)
             let endsGroup = end == items.count || items[end].group != items[start].group
             let height = min(fitted, endsGroup ? preferredHeight : 340)
-            result.append(Row(items: rowItems, height: height, widths: ratios.map { $0 * height }))
+            var x = 0.0
+            let frames = ratios.map { ratio in
+                let frame = CGRect(x: x, y: 0, width: ratio * height, height: height)
+                x = frame.maxX + gap
+                return frame
+            }
+            result.append(Row(items: rowItems, height: height, frames: frames))
             start = end
         }
         return result

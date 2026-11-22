@@ -2,11 +2,16 @@ import SwiftUI
 import UIKit
 
 struct PhotoDetailView: View {
-    @State private var cachedAddress: (record: PhotoAssetRecord, text: String)?
+    private struct AddressRequest: Equatable {
+        let id: String
+        let coordinate: GeoCoordinate
+        let revision: UInt
+    }
+    @State private var addressRevision: UInt = 0
+    @State private var cachedAddress: (request: AddressRequest, text: String)?
     let record: PhotoAssetRecord
     let placeLabel: PlaceDisplayLabel?
     var initialImage: UIImage?
-    var labelState: PlaceLabelLoadState?
     var resolvePlaceLabel: () async -> Void = {}
     var records: [PhotoAssetRecord] = []
     var hasMorePhotos = false
@@ -18,21 +23,17 @@ struct PhotoDetailView: View {
     let close: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @Environment(\.scenePhase) private var scenePhase
-    @State private var showsInformation = false
-    @State private var showsControls = false
-    @State private var showsViewingHint = true
     @State private var retryIsVisible = false
     @State private var browsing = PhotoBrowsingSession()
     @State private var prefetcher = PhotoNeighborPrefetcher()
     @State private var photoSwitchDirection = PhotoSwitchDirection.forward
     @State private var locationDestination: PhotoGlobeDestination?
     @StateObject private var playback = PhotoDetailPlaybackModel()
-    @FocusState private var isInfoButtonFocused: Bool
-    @FocusState private var isPhotoFocused: Bool
-    @FocusState private var isPlaybackButtonFocused: Bool
-    @FocusState private var isShowControlsButtonFocused: Bool
+    private enum FocusTarget: Hashable {
+        case photo, globe, playback, imageRetry, pageRetry
+    }
+    @FocusState private var focus: FocusTarget?
 
     var body: some View {
         ZStack {
@@ -45,104 +46,47 @@ struct PhotoDetailView: View {
                 // photo detail from its own wall.
                 AnyView(GlobeView(model: locationLibrary, locationDestination: locationDestination) {
                     self.locationDestination = nil
-                    focusPrimaryMediaAction()
+                    focusPhoto()
                 })
             }
         }
     }
 
     private var detailCanvas: some View {
-        ZStack(alignment: .top) {
+        ZStack(alignment: .bottomLeading) {
             Color.black
-            ZStack(alignment: .trailing) {
-                ZStack(alignment: .bottomTrailing) {
-                    ZStack {
-                        mediaSurface
-                            .id(record.id)
-                            .transition(photoSwitchTransition)
-                            .accessibilityHidden(!retryIsVisible)
+            ZStack {
+                mediaSurface
+                    .id(record.id)
+                    .transition(photoSwitchTransition)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(photoSwitchAnimation, value: record.id)
+            .accessibilityHidden(!retryIsVisible)
+            .onMoveCommand(perform: moveFocusOrPhoto)
 
-                        // Keep the remote target in place while PhotoKit swaps
-                        // the poster, progress, failure and playback views.
-                        Color.clear
-                            .contentShape(Rectangle())
-                            .allowsHitTesting(!showsControls && !retryIsVisible)
-                            .focusable(!showsControls && !retryIsVisible)
-                            .focusEffectDisabled()
-                            .focused($isPhotoFocused)
-                            .onTapGesture {
-                                guard isPhotoFocused, !showsControls, !retryIsVisible else { return }
-                                if playback.isPlayable {
-                                    showsViewingHint = false
-                                    playback.toggle(record)
-                                } else {
-                                    revealControls()
-                                }
-                            }
-                            .onMoveCommand { direction in
-                                guard !showsControls, !retryIsVisible, isPhotoFocused else { return }
-                                if direction == .left { movePhoto(forward: false) }
-                                if direction == .right { movePhoto(forward: true) }
-                                if direction == .up { revealControls() }
-                                if direction == .down {
-                                    if playback.isPlayable { focusPlaybackButton() }
-                                    else { revealControls() }
-                                }
-                            }
-                            .accessibilityLabel(mediaAccessibilityLabel)
-                            .accessibilityHint(viewingAccessibilityHint)
-                            .accessibilityValue(positionText)
-                            .accessibilityIdentifier("photo-detail-image")
+            VStack(alignment: .leading, spacing: 0) {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .allowsHitTesting(!retryIsVisible)
+                    .focusable(!retryIsVisible)
+                    .focusEffectDisabled()
+                    .focused($focus, equals: .photo)
+                    .onTapGesture {
+                        if focus == .photo, playback.isPlayable { playback.toggle(record) }
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-                    .animation(photoSwitchAnimation, value: record.id)
-
-                    if playback.isPlayable {
-                        playbackButton
-                            .padding(.trailing, showsInformation ? 540 : 80)
-                            .padding(.bottom, 54)
-                            .transition(.opacity)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                if showsInformation {
-                    informationPanel
-                        .frame(width: 500)
-                        .transition(reduceMotion ? .opacity : .move(edge: .trailing).combined(with: .opacity))
+                    .onMoveCommand(perform: moveFocusOrPhoto)
+                    .accessibilityAddTraits(playback.isPlayable ? .isButton : [])
+                    .accessibilityHint(playback.isPlayable ? playbackActionTitle : "")
+                    .accessibilityLabel(mediaAccessibilityLabel)
+                    .accessibilityValue(positionText)
+                    .accessibilityIdentifier("photo-detail-image")
+                if locationDestination == nil {
+                    photoCaption
                 }
             }
 
-            if showsControls {
-                controls
-                    .transition(.opacity)
-            } else {
-                VStack {
-                    HStack {
-                        Spacer()
-                        showControlsButton
-                    }
-                    Spacer()
-                }
-                    .padding(.horizontal, 80)
-                    .padding(.top, 60)
-                    .transition(.opacity)
-
-                if showsViewingHint {
-                    Text(viewingHintText)
-                        .font(.system(size: 23))
-                        .foregroundStyle(.white.opacity(0.85))
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 14)
-                        .floatingSurface(in: Capsule())
-                        .padding(.bottom, 48)
-                        .frame(maxHeight: .infinity, alignment: .bottom)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                        .transition(.opacity)
-                }
-            }
+            playbackStatus
 
             if browsing.waitsForNextPage {
                 VStack(spacing: 20) {
@@ -150,6 +94,9 @@ struct PhotoDetailView: View {
                         Text(pagingError).font(.system(size: 23))
                         Button(AppLocalization.string("common.reload", defaultValue: "Reload"), action: loadMorePhotos)
                             .buttonStyle(.glass)
+                            .focused($focus, equals: .pageRetry)
+                            .onAppear { focus = .pageRetry }
+                            .onMoveCommand(perform: moveFocusOrPhoto)
                             .accessibilityIdentifier("photo-detail-page-retry")
                     } else {
                         ProgressView(AppLocalization.string("wall.loading", defaultValue: "Unfolding memories…"))
@@ -158,8 +105,7 @@ struct PhotoDetailView: View {
                 }
                 .padding(24)
                 .floatingSurface(in: RoundedRectangle(cornerRadius: 18))
-                .padding(.bottom, 120)
-                .frame(maxHeight: .infinity, alignment: .bottom)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
         }
         .ignoresSafeArea()
@@ -170,8 +116,11 @@ struct PhotoDetailView: View {
         .onAppear {
             playback.prepare(record)
             synchronizeBrowsing()
-            if voiceOverEnabled { revealControls() }
-            else { focusPrimaryMediaAction() }
+            focusPhoto()
+        }
+        .onChange(of: retryIsVisible) { _, visible in
+            if visible { focus = .imageRetry }
+            else if focus == .imageRetry || focus == nil { focusPhoto() }
         }
         .onChange(of: records) { _, _ in synchronizeBrowsing() }
         .onChange(of: record.id) { _, _ in
@@ -180,10 +129,7 @@ struct PhotoDetailView: View {
             browsing.select(record.id)
             updatePrefetch()
             requestNeighborPageIfNeeded()
-            if !voiceOverEnabled { focusPrimaryMediaAction() }
-        }
-        .onChange(of: playback.isPlayable) { _, _ in
-            if !voiceOverEnabled { focusPrimaryMediaAction() }
+            focusPhoto()
         }
         .onChange(of: isLoadingMorePhotos) { _, loading in
             // A strict viewport page can contain no matches. Continue from the
@@ -193,7 +139,6 @@ struct PhotoDetailView: View {
                 else { browsing.cancelPendingAdvance() }
             }
         }
-        .onChange(of: voiceOverEnabled) { _, enabled in if enabled { revealControls() } }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active, locationDestination == nil {
                 playback.prepare(record)
@@ -202,12 +147,6 @@ struct PhotoDetailView: View {
                 playback.suspend()
                 prefetcher.cancel()
             }
-        }
-        .task {
-            do { try await Task.sleep(for: .seconds(4)) } catch { return }
-            // Only passive text expires. Focused controls, retry buttons and
-            // information stay present until the user explicitly dismisses them.
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.4)) { showsViewingHint = false }
         }
         .task(id: record.placeID) { await resolvePlaceLabel() }
         .onPlayPauseCommand {
@@ -219,7 +158,7 @@ struct PhotoDetailView: View {
             playback.releaseContent()
         }
         .onExitCommand {
-            if locationDestination == nil { handleBack() }
+            if locationDestination == nil { close() }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("photo-detail")
@@ -235,8 +174,11 @@ struct PhotoDetailView: View {
                 isActive: locationDestination == nil,
                 priority: .detail,
                 initialImage: initialImage,
-                onRetryVisibilityChange: handleRetryVisibility
+                onRetryVisibilityChange: { visible in
+                    if browsing.currentID == record.id { retryIsVisible = visible }
+                }
             )
+            .focused($focus, equals: .imageRetry)
 
             if let livePhoto = playback.livePhoto {
                 LivePhotoPlaybackView(
@@ -249,41 +191,9 @@ struct PhotoDetailView: View {
                 PhotoVideoPlaybackView(player: player)
                     .transition(.opacity)
             }
-
-            playbackStatus
-
-            if playback.isPlayable, !playback.isPlaying, !playback.isLoading, !showsControls {
-                mediaBadge
-                    .padding(.leading, 80)
-                    .padding(.bottom, 54)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
         }
         .background(.black)
         .clipped()
-    }
-
-    @ViewBuilder
-    private var mediaBadge: some View {
-        if playback.kind == .livePhoto {
-            Image(systemName: "livephoto")
-                .font(.system(size: 27, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
-                .frame(width: 48, height: 48)
-                .floatingSurface(in: Circle())
-        } else {
-            HStack(spacing: 10) {
-                Image(systemName: "video.fill")
-                Text(mediaBadgeText)
-            }
-            .font(.system(size: 21, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.9))
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .floatingSurface(in: Capsule())
-        }
     }
 
     @ViewBuilder
@@ -303,136 +213,25 @@ struct PhotoDetailView: View {
             .padding(.horizontal, 28)
             .padding(.vertical, 20)
             .floatingSurface(in: RoundedRectangle(cornerRadius: 18))
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .padding(.bottom, 60)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(.trailing, 64)
+            .padding(.bottom, 148)
             .allowsHitTesting(false)
         } else if playback.hasFailed {
             Label(
-                AppLocalization.string("detail.playback_unavailable", defaultValue: "Motion unavailable · Press Play/Pause or open More Actions to retry"),
+                AppLocalization.string("detail.playback_unavailable", defaultValue: "Motion unavailable · Press Play/Pause to retry"),
                 systemImage: "exclamationmark.triangle"
             )
+            .accessibilityIdentifier("photo-detail-motion-error")
             .font(.system(size: 22, weight: .medium))
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
             .floatingSurface(in: Capsule())
-            .frame(maxHeight: .infinity, alignment: .bottom)
-            .padding(.bottom, 60)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(.trailing, 64)
+            .padding(.bottom, 148)
             .allowsHitTesting(false)
         }
-    }
-
-    private var controls: some View {
-        ZStack(alignment: .top) {
-            LinearGradient(colors: [.black.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
-                .frame(height: 200)
-                .allowsHitTesting(false)
-            HStack {
-                Spacer()
-                Button { movePhoto(forward: false) } label: {
-                    Image(systemName: "chevron.left")
-                }
-                .disabled((browsing.currentPosition ?? 0) == 0)
-                .accessibilityLabel(AppLocalization.string("detail.previous", defaultValue: "Previous"))
-                .accessibilityIdentifier("photo-detail-previous")
-                Text(positionText)
-                    .font(.system(size: 23, weight: .medium))
-                    .padding(.horizontal, 12)
-                Button { movePhoto(forward: true) } label: {
-                    Image(systemName: "chevron.right")
-                }
-                .disabled(!hasMorePhotos && browsing.currentPosition == browsing.orderedIDs.count - 1)
-                .accessibilityLabel(AppLocalization.string("detail.next", defaultValue: "Next"))
-                .accessibilityIdentifier("photo-detail-next")
-                Spacer()
-                Button {
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { showsInformation.toggle() }
-                } label: {
-                    Label(showsInformation
-                        ? AppLocalization.string("detail.hide_info", defaultValue: "Hide Info")
-                        : AppLocalization.string("detail.photo_info", defaultValue: "Media Info"), systemImage: "info.circle")
-                }
-                .focused($isInfoButtonFocused)
-                .accessibilityIdentifier("photo-information-toggle")
-                .accessibilityValue(showsInformation
-                    ? AppLocalization.string("state.expanded", defaultValue: "Expanded")
-                    : AppLocalization.string("state.collapsed", defaultValue: "Collapsed"))
-            }
-            .font(.system(size: 23, weight: .medium))
-            .buttonStyle(.glass)
-            .padding(.horizontal, 80)
-            .padding(.top, 60)
-
-            if playback.kind == .video, playback.duration > 0, playback.player != nil {
-                VStack(spacing: 8) {
-                    ProgressView(value: min(playback.currentTime, playback.duration), total: playback.duration)
-                        .progressViewStyle(.linear)
-                        .frame(width: 560)
-                    Text(verbatim: "\(AppLocalization.mediaDuration(playback.currentTime)) / \(AppLocalization.mediaDuration(playback.duration))")
-                        .font(.system(size: 19, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.74))
-                }
-                .padding(.bottom, 58)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-            }
-
-            VStack {
-                Spacer()
-                HStack(alignment: .bottom) {
-                    if locationLibrary != nil, locationDestination == nil,
-                       let destination = PhotoGlobeDestination(record: record) {
-                        PhotoLocationGlobe(destination: destination, placeTitle: globePlaceTitle, showsPlaceTitle: !showsInformation) {
-                            openLocation(destination)
-                        }
-                    }
-                    Spacer()
-                }
-                .focusSection()
-            }
-            .padding(.horizontal, 80)
-            .padding(.bottom, 60)
-        }
-    }
-
-    private var playbackButton: some View {
-        Button {
-            showsViewingHint = false
-            playback.toggle(record)
-        } label: {
-            Label(playbackControlTitle, systemImage: playbackControlIcon)
-        }
-        .font(.system(size: 23, weight: .medium))
-        .buttonStyle(.glass)
-        // The playback model coalesces Select while loading. Keep the
-        // button focusable so left/right can leave a pending or failed asset.
-        .focused($isPlaybackButtonFocused)
-        .onMoveCommand { direction in
-            guard !showsControls else { return }
-            if direction == .left { movePhoto(forward: false) }
-            if direction == .right { movePhoto(forward: true) }
-            if direction == .up { revealControls() }
-        }
-        .accessibilityIdentifier("photo-detail-playback")
-    }
-
-    private var showControlsButton: some View {
-        Button(action: revealControls) {
-            Label(
-                AppLocalization.string("detail.show_controls", defaultValue: "More Actions"),
-                systemImage: "ellipsis.circle"
-            )
-        }
-        .font(.system(size: 23, weight: .medium))
-        .buttonStyle(.glass)
-        .focused($isShowControlsButtonFocused)
-        .onMoveCommand { direction in
-            guard !showsControls, !retryIsVisible, isShowControlsButtonFocused else { return }
-            if direction == .left { movePhoto(forward: false) }
-            if direction == .right { movePhoto(forward: true) }
-            if direction == .down { focusPrimaryMediaAction() }
-        }
-        .accessibilityIdentifier("photo-detail-show-controls")
     }
 
     private var photoSwitchTransition: AnyTransition {
@@ -461,18 +260,10 @@ struct PhotoDetailView: View {
         }
     }
 
-    private var playbackControlTitle: String {
-        if playback.hasFailed {
-            return AppLocalization.string("detail.retry_playback", defaultValue: "Try Motion Again")
-        }
-        return playback.isPlaying
+    private var playbackActionTitle: String {
+        playback.isPlaying
             ? AppLocalization.string("detail.pause", defaultValue: "Pause")
             : AppLocalization.string("detail.play", defaultValue: "Play")
-    }
-
-    private var playbackControlIcon: String {
-        if playback.hasFailed { return "arrow.clockwise" }
-        return playback.isPlaying ? "pause.fill" : "play.fill"
     }
 
     private var playbackLoadingText: String {
@@ -494,11 +285,6 @@ struct PhotoDetailView: View {
         }
     }
 
-    private var mediaBadgeText: String {
-        guard playback.kind == .video, playback.duration > 0 else { return mediaKindText }
-        return "\(mediaKindText) · \(AppLocalization.mediaDuration(playback.duration))"
-    }
-
     private var mediaAccessibilityLabel: String {
         AppLocalization.format(
             "wall.photo_accessibility",
@@ -508,80 +294,32 @@ struct PhotoDetailView: View {
         )
     }
 
-    private var viewingAccessibilityHint: String {
-        viewingHintText
-    }
-
-    private var viewingHintText: String {
-        playback.isPlayable
-            ? AppLocalization.string("detail.playable_viewing_hint", defaultValue: "Left/right: Change memory · Center: Play/pause · Up: More actions")
-            : AppLocalization.string("detail.viewing_hint", defaultValue: "Left/right: Change photo · Center: More actions")
-    }
-
-    private func handleRetryVisibility(_ visible: Bool) {
-        retryIsVisible = visible
-        guard visible else { return }
-        // A retry is a native focus target, never a descendant competing with
-        // the full-photo focus surface. Reveal navigation so the user can also
-        // skip an unavailable photo; do not programmatically take retry focus.
-        showsViewingHint = false
-        showsControls = true
-    }
-
-    private func revealControls() {
-        guard locationDestination == nil else { return }
-        browsing.cancelPendingAdvance()
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-            showsViewingHint = false
-            showsControls = true
+    private func moveFocusOrPhoto(_ direction: MoveCommandDirection) {
+        switch direction {
+        case .left: movePhoto(forward: false)
+        case .right: movePhoto(forward: true)
+        case .up where browsing.waitsForNextPage && pagingError != nil:
+            focus = .pageRetry
+        case .down where hasLocationButton:
+            focus = .globe
+        case .down where playback.isPlayable:
+            focus = .playback
+        default: break
         }
-        Task { @MainActor in
-            await Task.yield()
-            guard showsControls else { return }
-            isInfoButtonFocused = true
-        }
-    }
-
-    private func handleBack() {
-        if showsControls && !retryIsVisible { hideControls() }
-        else { close() }
     }
 
     private func openLocation(_ destination: PhotoGlobeDestination) {
         browsing.cancelPendingAdvance()
         playback.suspend()
         prefetcher.cancel()
-        showsInformation = false
-        showsControls = false
         locationDestination = destination
-    }
-
-    private func hideControls() {
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-            showsInformation = false
-            showsControls = false
-        }
-        focusPrimaryMediaAction()
     }
 
     private func focusPhoto() {
         Task { @MainActor in
             await Task.yield()
-            guard !showsControls, !retryIsVisible else { return }
-            isPhotoFocused = true
-        }
-    }
-
-    private func focusPrimaryMediaAction() {
-        if playback.isPlayable { focusPlaybackButton() }
-        else { focusPhoto() }
-    }
-
-    private func focusPlaybackButton() {
-        Task { @MainActor in
-            await Task.yield()
-            guard playback.isPlayable, !showsControls, !retryIsVisible else { return }
-            isPlaybackButtonFocused = true
+            guard locationDestination == nil, !retryIsVisible else { return }
+            focus = .photo
         }
     }
 
@@ -625,103 +363,100 @@ struct PhotoDetailView: View {
         prefetcher.update(records: neighbors)
     }
 
-    private var placeTitle: String {
-        if let placeLabel, placeLabel.hasCity { return placeLabel.compactName }
-        if labelState == .loading {
-            return AppLocalization.string("place.loading", defaultValue: "Finding place…")
-        }
-        return placeLabel?.compactName ?? AppLocalization.unknownPlace(near: nil)
+    private var addressRequest: AddressRequest? {
+        guard scenePhase == .active, !SamplePhotoResource.isSample(record.id) else { return nil }
+        return AddressRequest(id: record.id, coordinate: record.coordinate, revision: addressRevision)
     }
 
-    private var globePlaceTitle: String? {
-        guard let placeLabel, placeLabel.hasCity || placeLabel.displayCountry != nil else { return nil }
-        return placeLabel.compactName
+    private var locationName: AttributedString? {
+        if let cachedAddress, cachedAddress.request == addressRequest { return AttributedString(cachedAddress.text) }
+        if let placeLabel, placeLabel.hasCity { return placeLabel.styledName(citySize: 28) }
+        return placeLabel?.displayCountry.map { AttributedString($0) }
     }
 
-    private var informationPanelContent: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(placeTitle)
-                .font(.system(size: 42, weight: .semibold))
-                .lineLimit(2)
-            Rectangle()
-                .fill(.white.opacity(0.16))
-                .frame(height: 1)
-                .padding(.vertical, 28)
+    private var hasLocationButton: Bool {
+        locationLibrary != nil && PhotoGlobeDestination(record: record) != nil
+    }
 
-            informationRow(icon: "calendar", title: AppLocalization.string("detail.capture_time", defaultValue: "Captured"), value: record.creationDate.formatted(.dateTime.year().month().day().hour().minute().locale(AppLocalization.locale)))
-            informationRow(
-                icon: playback.kind == .livePhoto ? "livephoto" : playback.kind == .video ? "video.fill" : "photo",
-                title: AppLocalization.string("detail.media_type", defaultValue: "Media"),
-                value: mediaKindText
-            )
-            if playback.kind == .video, playback.duration > 0 {
-                informationRow(
-                    icon: "clock",
-                    title: AppLocalization.string("detail.duration", defaultValue: "Duration"),
-                    value: AppLocalization.mediaDuration(playback.duration)
-                )
+    private var photoCaption: some View {
+        HStack(alignment: .bottom, spacing: 22) {
+            if locationLibrary != nil, let destination = PhotoGlobeDestination(record: record) {
+                PhotoLocationGlobe(destination: destination, placeTitle: locationName.map { String($0.characters) }, isFocused: focus == .globe) {
+                    openLocation(destination)
+                }
+                .focused($focus, equals: .globe)
             }
-            if scenePhase == .active, cachedAddress?.record == record, let address = cachedAddress?.text {
-                informationRow(icon: "mappin", title: AppLocalization.string("detail.photos_address", defaultValue: "Address in Photos"), value: address)
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 10) {
+                    Text(record.creationDate, format: .dateTime.year().month().day().hour().minute().locale(AppLocalization.locale))
+                        .font(.system(size: 23, weight: .medium))
+                        .accessibilityIdentifier("photo-detail-capture-time")
+                    if record.isFavorite {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.pink)
+                            .accessibilityLabel(AppLocalization.string("detail.favorited", defaultValue: "Favorited"))
+                            .accessibilityIdentifier("photo-detail-favorite")
+                    }
+                }
+                if let locationName {
+                    Text(locationName)
+                        .font(.system(size: 28, weight: .semibold))
+                        .lineLimit(2)
+                        .accessibilityIdentifier("photo-detail-location-name")
+                }
             }
-            informationRow(
-                icon: "mappin.and.ellipse",
-                title: AppLocalization.string("detail.location", defaultValue: "Location"),
-                value: String(
-                    format: "%.4f°,  %.4f°",
-                    locale: AppLocalization.locale,
-                    arguments: [record.coordinate.latitude, record.coordinate.longitude]
-                )
-            )
-            informationRow(icon: "aspectratio", title: AppLocalization.string("detail.dimensions", defaultValue: "Dimensions"), value: "\(record.pixelWidth) × \(record.pixelHeight)")
-            informationRow(icon: record.isFavorite ? "heart.fill" : "heart", title: AppLocalization.string("detail.favorite", defaultValue: "Favorite"), value: record.isFavorite
-                ? AppLocalization.string("detail.favorited", defaultValue: "Favorited")
-                : AppLocalization.string("detail.not_favorited", defaultValue: "Not Favorited"))
-        }
-    }
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.9), radius: 3, y: 1)
+            .frame(maxWidth: 620, alignment: .leading)
+            .padding(.bottom, 4)
+            .allowsHitTesting(false)
 
-    private var informationPanel: some View {
-        ViewThatFits(in: .vertical) {
-            informationPanelContent
-            ScrollView { informationPanelContent }
+            Spacer(minLength: 0)
+            if playback.isPlayable {
+                Button {
+                    playback.toggle(record)
+                } label: {
+                    PlaybackButtonFace(symbol: playback.isPlaying ? "pause.fill" : "play.fill", isFocused: focus == .playback)
+                }
+                .buttonStyle(QuietPhotoButtonStyle())
+                .focusEffectDisabled()
+                .focused($focus, equals: .playback)
+                .accessibilityLabel(playbackActionTitle)
+                .accessibilityIdentifier("photo-detail-playback")
+            }
         }
-        .onDisappear { cachedAddress = nil }
-        .task(id: scenePhase == .active ? record : nil) {
-            cachedAddress = nil
-            guard scenePhase == .active, !SamplePhotoResource.isSample(record.id) else { return }
-            let asset = record
-            let address = await Task.detached(priority: .utility) {
-                PECachedPhotoAddress.read(identifier: asset.id, latitude: asset.coordinate.latitude, longitude: asset.coordinate.longitude)
-            }.value
-            if !Task.isCancelled, let address { cachedAddress = (asset, address) }
+        .onMoveCommand { direction in
+            switch direction {
+            case .up:
+                if retryIsVisible { focus = .imageRetry }
+                else { focusPhoto() }
+            case .right where playback.isPlayable: focus = .playback
+            case .left where hasLocationButton: focus = .globe
+            default: break
+            }
         }
-        .padding(.horizontal, 36)
-        .padding(.vertical, 32)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .floatingSurface(in: RoundedRectangle(cornerRadius: 32))
-        .padding(.top, 144)
+        .padding(.horizontal, 64)
         .padding(.bottom, 48)
-        .padding(.trailing, 48)
-        .frame(maxHeight: .infinity, alignment: .top)
-    }
-
-    private func informationRow(icon: String, title: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: 16) {
-            Image(systemName: icon)
-                .font(.system(size: 23, weight: .regular))
-                .foregroundStyle(.cyan.opacity(0.9))
-                .frame(width: 28)
-            VStack(alignment: .leading, spacing: 7) {
-                Text(title)
-                    .font(.system(size: 23))
-                    .foregroundStyle(.white.opacity(0.6))
-                Text(value)
-                    .font(.system(size: 25, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.92))
-                    .fixedSize(horizontal: false, vertical: true)
+        .background(alignment: .bottomLeading) {
+            LinearGradient(colors: [.black.opacity(0.75), .clear], startPoint: .bottom, endPoint: .top)
+                .mask(LinearGradient(stops: [.init(color: .black, location: 0.65), .init(color: .clear, location: 1)],
+                                     startPoint: .leading, endPoint: .trailing))
+                .allowsHitTesting(false)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: PhotoAssetChangeNotice.name)) { notice in
+            if let changed = notice.userInfo?["changed"] as? Set<String>, changed.contains(record.id) {
+                addressRevision &+= 1
             }
         }
-        .padding(.bottom, 28)
+        .task(id: addressRequest) {
+            cachedAddress = nil
+            guard let request = addressRequest else { return }
+            let address = await Task.detached(priority: .utility) {
+                PECachedPhotoAddress.read(identifier: request.id, latitude: request.coordinate.latitude, longitude: request.coordinate.longitude)
+            }.value
+            if !Task.isCancelled, request == addressRequest, let address { cachedAddress = (request, address) }
+        }
     }
 }
 

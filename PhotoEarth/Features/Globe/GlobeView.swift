@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 
 struct GlobeView: View {
-    private enum Destination: Hashable {
-        case home, recent, countries, settings
+    private enum Destination: String, Hashable {
+        case home, recent, countries, anniversary, settings
     }
     private enum Layer: Equatable {
         case overview
@@ -42,6 +42,11 @@ struct GlobeView: View {
     @State private var selectedPhoto: PhotoAssetRecord?
     @State private var selectedPhotoPreview: UIImage?
     @State private var destination: Destination = .home
+    @State private var anniversaryDay: AnniversaryDay?
+    private var showsSidebarContent: Bool {
+        layer == .overview && navigationVisible && collection == nil && anniversaryDay == nil && slideshow == nil
+    }
+
     @State private var collection: PlaceCollection?
     @State private var wallReader: SQLiteTravelIndexStore?
     @State private var wallHasReadSession = false
@@ -159,10 +164,10 @@ struct GlobeView: View {
                 // browsable, then retain its focus and scroll state during exploration.
                 if locationDestination == nil && (model.phase == .globe || (hasPresentedLibrary && model.isPreparationPresented)) {
                     sidebar
-                        .opacity(layer == .overview && navigationVisible && collection == nil && slideshow == nil ? 1 : 0)
-                        .disabled(!isOverviewInteractive || collection != nil || slideshow != nil || !navigationVisible)
-                        .allowsHitTesting(isOverviewInteractive && collection == nil && navigationVisible)
-                        .accessibilityHidden(layer != .overview || collection != nil || slideshow != nil || !navigationVisible)
+                        .opacity(showsSidebarContent ? 1 : 0)
+                        .disabled(!isOverviewInteractive || !showsSidebarContent)
+                        .allowsHitTesting(isOverviewInteractive && showsSidebarContent)
+                        .accessibilityHidden(!showsSidebarContent)
                         .zIndex(1)
                 }
 
@@ -236,7 +241,7 @@ struct GlobeView: View {
                         canOpenMapReview: collectionWallSession?.membership?.reviewOrigin != nil && wallSnapshot != nil,
                         labelStates: model.placeLabelStates,
                         resolvePlaceLabels: resolveWallLabels,
-                        onInteraction: wallCountScheduling.deferForInteraction
+                        onInteraction: wallCountScheduling.deferForInteraction, analyticsLibrary: model.analyticsLibrary
                     )
                     .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                     .opacity(slideshow == nil && mapReviewOrigin == nil ? 1 : 0)
@@ -265,7 +270,6 @@ struct GlobeView: View {
                         record: selectedPhoto,
                         placeLabel: selectedPhoto.placeID.flatMap(wallLabel),
                         initialImage: selectedPhotoPreview,
-                        labelState: selectedPhoto.placeID.flatMap { model.placeLabelStates[$0] },
                         resolvePlaceLabel: { await resolveWallLabels([selectedPhoto.placeID].compactMap { $0 }) },
                         records: activeWallRecords,
                         hasMorePhotos: activeWallNextOffset != nil,
@@ -295,6 +299,12 @@ struct GlobeView: View {
 
     var body: some View {
         scene
+        .fullScreenCover(item: $anniversaryDay) { day in
+            AnniversaryWall(model: model, day: day, controlGlobe: controlSlideshowGlobe, restoreGlobe: restoreGlobeAfterSlideshow) {
+                anniversaryDay = nil
+            }
+            .presentationBackground(.clear)
+        }
         .fullScreenCover(item: $collection, onDismiss: finishCollectionDismissal) { selected in
             CollectionPhotoWall(model: model, collection: selected, controlGlobe: { target, reducedMotion in
                 controlSlideshowGlobe(target, reducedMotion)
@@ -306,8 +316,12 @@ struct GlobeView: View {
                 .presentationBackground(.clear)
         }
         .onChange(of: model.pendingTopShelfRoute, initial: true) { _, _ in openPendingShelfAction() }
+        .onChange(of: showsHome && scenePhase == .active && !showsInitialGlobeCover && model.scanScope == nil
+                  ? model.analyticsLibrary : nil, initial: true) { _, mode in
+            if let mode { ProductAnalytics.shared.capture(.homePresented, context: .init(library: mode)) }
+        }
         .onChange(of: navigationVisible) { _, visible in
-            if visible { openPendingShelfAction() }
+            if visible { openPendingShelfAction() } else { anniversaryDay = nil }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.38), value: layer)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: selectedPhoto?.id)
@@ -366,6 +380,7 @@ struct GlobeView: View {
             if model.isPreparationPresented { refreshMapContent() }
         }
         .onChange(of: model.excludedAssetIDs) { previous, removed in
+            if !removed.isSubset(of: previous) { anniversaryDay = nil }
             experience.refreshPhotos()
             slideshow?.removeAssets(removed.subtracting(previous))
             collectionWallSession?.exclude(removed, app: model)
@@ -454,7 +469,7 @@ struct GlobeView: View {
                             model.select(placeID: place.id)
                             enterExplore(
                                 at: place.coordinate,
-                                city: PlaceCollection.city(containing: place, in: places)
+                                city: PlaceCollection.city(containing: place, in: places), entry: .homeCity
                             )
                         },
                         prepareSatelliteCity: { focusedSatelliteCity = $0 },
@@ -469,6 +484,7 @@ struct GlobeView: View {
             guard destination != next else { return }
             if destination == .home { overviewReturnCamera = experience.camera }
             destination = next
+            ProductAnalytics.shared.capture(.sidebarSelected, value: next.rawValue, context: .init(library: model.analyticsLibrary))
             if next == .home, layer == .overview { restoreHomeCamera() }
         })) {
             Tab(value: Destination.home) {
@@ -493,6 +509,14 @@ struct GlobeView: View {
                 Label(AppLocalization.string("sidebar.countries", defaultValue: "Countries & Cities"), systemImage: "map")
             }
             .accessibilityIdentifier("tab-countries")
+            Tab(value: Destination.anniversary) {
+                OnThisDayView(model: model, isActive: destination == .anniversary && navigationVisible && scenePhase == .active,
+                              selectedDay: $anniversaryDay)
+                    .modifier(LibraryPreparationChrome(model: model))
+            } label: {
+                Label(AppLocalization.string("sidebar.anniversary", defaultValue: "On This Day"), systemImage: "calendar")
+            }
+            .accessibilityIdentifier("tab-anniversary")
             Tab(value: Destination.settings) {
                 SettingsView(model: model)
                     .modifier(LibraryPreparationChrome(model: model))
@@ -515,6 +539,7 @@ struct GlobeView: View {
 
     private func applyPendingShelfAction() async {
         guard let action = await model.takeTopShelfAction() else { return }
+        anniversaryDay = nil
         mapReviewOrigin = nil
         slideshow?.cancel()
         slideshow = nil
@@ -527,14 +552,20 @@ struct GlobeView: View {
         switch action {
         case .journey(let selected):
             if layer == .explore { leaveExplore() }
-            openCollection(selected)
+            ProductAnalytics.shared.capture(.topShelfOpened, value: "city")
+            openCollection(selected, entry: .topShelf)
         case .globe:
+            ProductAnalytics.shared.capture(.topShelfOpened, value: "globe")
             collection = nil
-            enterExplore(at: model.isExploringPublicGlobe ? GeoCoordinate(latitude: 24, longitude: 18) : (userLocation ?? fallbackCenter))
+            enterExplore(at: model.isExploringPublicGlobe ? GeoCoordinate(latitude: 24, longitude: 18) : (userLocation ?? fallbackCenter), entry: .topShelf)
         }
     }
 
     private func openCollection(_ selected: PlaceCollection) {
+        openCollection(selected, entry: destination == .recent ? .recent : .countries)
+    }
+
+    private func openCollection(_ selected: PlaceCollection, entry: JourneyEventContext.Entry) {
         if destination == .home, layer == .overview, overviewReturnCamera == nil {
             overviewReturnCamera = experience.camera
         }
@@ -550,6 +581,7 @@ struct GlobeView: View {
             )
         }
         collection = selected
+        ProductAnalytics.shared.capture(.wallOpened, value: "collection", context: .init(library: model.analyticsLibrary, entry: entry))
     }
 
     private var directManipulationSurface: some View {
@@ -592,11 +624,11 @@ struct GlobeView: View {
             let start = reduceMotion ? locationDestination.camera : locationDestination.previewCamera
             experience.transitionCamera(to: start.center, distance: start.distance, animated: false, overviewFraming: 0)
             enterExplore(at: locationDestination.camera.center, distance: locationDestination.camera.distance,
-                         duration: 2.2, city: photoCityCollection(for: locationDestination))
+                         duration: 2.2, city: photoCityCollection(for: locationDestination), entry: .photoGlobe)
             return
         }
         if model.isExploringPublicGlobe && layer == .overview {
-            enterExplore(at: GeoCoordinate(latitude: 24, longitude: 18))
+            enterExplore(at: GeoCoordinate(latitude: 24, longitude: 18), entry: .topShelf)
             return
         }
         guard !didPrepareOverview, layer == .overview else { return }
@@ -627,7 +659,10 @@ struct GlobeView: View {
     }
 
     private func enterExplore(at center: GeoCoordinate, distance: Double = GlobeCameraState.orbitalDistance,
-                              duration: Double = 0.9, city: PlaceCollection? = nil) {
+                              duration: Double = 0.9, city: PlaceCollection? = nil, entry: JourneyEventContext.Entry = .home) {
+        if layer != .explore {
+            ProductAnalytics.shared.capture(.globeExplored, context: .init(library: model.analyticsLibrary, entry: entry))
+        }
         if layer == .overview, destination == .home, locationDestination == nil, overviewReturnCamera == nil {
             overviewReturnCamera = experience.camera
         }
@@ -727,6 +762,8 @@ struct GlobeView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.44)) {
             layer = .photoWall
         }
+        ProductAnalytics.shared.capture(.wallOpened, value: wallCollection == nil ? "currentView" : "collection",
+                                        context: .init(library: model.analyticsLibrary, entry: .globe))
         loadNextWallPage()
     }
 
@@ -859,7 +896,7 @@ struct GlobeView: View {
     private func startHomeSlideshow() {
         guard layer == .overview, destination == .home, slideshow == nil, !places.isEmpty else { return }
         let scope = EarthSlideshowScope(id: "library",
-            title: AppLocalization.string("slideshow.start", defaultValue: "Earth Slideshow"), kind: .library)
+            title: AppLocalization.string("slideshow.start", defaultValue: "Slideshow"), kind: .library)
         let show = model.makeEarthSlideshow(scope: scope, places: places, reduceMotion: reduceMotion,
                                              cameraAction: controlSlideshowGlobe)
         slideshow = show
