@@ -134,9 +134,9 @@ struct PurchaseOffers: View {
             }
                 .focused(focus, equals: .trial).accessibilityIdentifier("purchase-trial")
         }
-        if full != nil, store.access != .unverified {
+        if let full, store.access != .unverified {
             Button { Task { await purchase(PurchaseStore.lifetimeID) } } label: {
-                actionLabel(String(localized: "purchase.full"))
+                actionLabel(AppLocalization.format("purchase.full", defaultValue: "Buy Full Version · %@ (one time)", full.displayPrice))
             }
                 .focused(focus, equals: .buy).accessibilityIdentifier("purchase-buy")
         }

@@ -1675,49 +1675,49 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Buy Full Version · One-Time Purchase"
+            "value": "Buy Full Version · %@ (one time)"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "一次性购买完整版"
+            "value": "一次性购买完整版 · %@"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "一次購買完整版"
+            "value": "一次購買完整版 · %@"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "完全版を購入（買い切り）"
+            "value": "完全版を購入（買い切り）· %@"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vollversion einmalig kaufen"
+            "value": "Vollversion einmalig kaufen · %@"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Acheter la version complète · Achat unique"
+            "value": "Version complète · %@ en un seul paiement"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Comprar la versión completa en un solo pago"
+            "value": "Versión completa · pago único de %@"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Acquista la versione completa con un unico pagamento"
+            "value": "Versione completa · pagamento unico di %@"
           }
         }
       }

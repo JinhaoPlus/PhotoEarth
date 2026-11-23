@@ -21,6 +21,7 @@ final class PurchaseFlowUITests: XCTestCase {
         XCUIRemote.shared.press(.menu)
         selectTrip(second)
         XCTAssertTrue(app.buttons["purchase-trial"].waitForExistence(timeout: 10))
+        XCTAssertEqual(app.buttons["purchase-buy"].label, "Buy Full Version · $6.99 (one time)")
         attach(app, "Offer for requested journey")
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(second.waitForExistence(timeout: 8))
@@ -47,7 +48,7 @@ final class PurchaseFlowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["purchase-trial"].exists)
         let buy = app.buttons["purchase-buy"]
         XCTAssertTrue(buy.waitForExistence(timeout: 10))
-        XCTAssertEqual(buy.label, "Buy Full Version · One-Time Purchase")
+        XCTAssertEqual(buy.label, "Buy Full Version · $6.99 (one time)")
         XCTAssertTrue(app.staticTexts["purchase-terms"].label.contains("permanently unlocks"))
         attach(app, "Unlock after seven days")
         session.disableDialogs = true
@@ -100,6 +101,7 @@ final class PurchaseFlowUITests: XCTestCase {
             XCTAssertTrue(purchase.wait(for: \.hasFocus, toEqual: true, timeout: 5))
             let buy = app.buttons["purchase-buy"]
             XCTAssertTrue(buy.waitForExistence(timeout: 5))
+            XCTAssertTrue(buy.label.hasSuffix("$6.99"), buy.label)
             XCTAssertGreaterThan(buy.frame.minX, purchase.frame.maxX)
             XCTAssertFalse(app.buttons["purchase-back"].exists)
         }
@@ -262,7 +264,8 @@ final class PurchaseFlowUITests: XCTestCase {
         XCTAssertTrue(back.waitForExistence(timeout: 12))
         XCTAssertEqual(back.label, "稍后再说")
         XCTAssertTrue(app.staticTexts["purchase-trial-terms"].label.contains("不会自动扣费"))
-        XCTAssertEqual(app.buttons["purchase-buy"].label, "一次性购买完整版")
+        let buyLabel = app.buttons["purchase-buy"].label
+        XCTAssertTrue(buyLabel.hasPrefix("一次性购买完整版 · ") && buyLabel.hasSuffix("$6.99"), buyLabel)
         XCTAssertTrue(app.staticTexts["purchase-terms"].label.contains("永久浏览和放映全部旅程"))
         attach(app, "Chinese journey offer")
         select(back)
