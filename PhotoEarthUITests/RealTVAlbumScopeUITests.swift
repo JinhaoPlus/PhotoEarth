@@ -154,6 +154,7 @@ final class RealTVAlbumScopeUITests: XCTestCase {
                 if !settings.hasFocus {
                     let sidebar = app.cells.containing(.button, identifier: "tab-settings").firstMatch
                     if sidebar.exists && sidebar.hasFocus { XCUIRemote.shared.press(.right); settle() }
+                    if app.buttons["settings-category-photos"].hasFocus { app.enterSettingsCategory("photos") }
                     try focus(settings, direction: .up)
                 }
                 XCUIRemote.shared.press(.select)

@@ -2,7 +2,16 @@ import AVFoundation
 import SwiftUI
 import UIKit
 
+@MainActor final class SlideshowPresentation {
+    weak var current: EarthSlideshowCoordinator?
+}
+
+extension EnvironmentValues {
+    @Entry var slideshowPresentation: SlideshowPresentation?
+}
+
 struct EarthSlideshowView: View {
+    @Environment(\.slideshowPresentation) private var slideshowPresentation
     private struct MediaAvailabilityKey: Equatable {
         let id: String
         let paused: Bool
@@ -34,6 +43,8 @@ struct EarthSlideshowView: View {
     }
 
     @ObservedObject var coordinator: EarthSlideshowCoordinator
+    var anniversaryPlaces = PhotoWallPlaces()
+    var requestPlayback: ((JourneyEventContext.Music) -> Void)?
     let exit: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -50,9 +61,11 @@ struct EarthSlideshowView: View {
     @State private var preparedFrames: [String: UIImage] = [:]
     @State private var controlAutoHideTask: Task<Void, Never>?
     @State private var controlsEntryFocus: WatchingControlFocus = .slideshowPlayPause
+    @State private var pendingStartMusic: JourneyEventContext.Music?
     @State private var openingRevision = 0
     @State private var showsJourneyPicker = false
     @State private var showsMusicPicker = false
+    @State private var didCommitMusicChoice = false
     @State private var showsExitConfirmation = false
     @State private var overlayPlayback: OverlayPlayback?
     @Namespace private var openingFocusScope
@@ -127,9 +140,11 @@ struct EarthSlideshowView: View {
         .onChange(of: scenePhase == .active && !coordinator.isPaused && coordinator.phase.keepsDisplayAwake,
                   initial: true) { _, keepsAwake in updateIdleTimer(keepsAwake) }
         .onAppear {
+            slideshowPresentation?.current = coordinator
             if voiceOverEnabled { coordinator.showControls() }
             focusWatchingSurface()
             synchronizeMusicPlayback()
+            music.prepareDefaultMusicIfNeeded()
         }
         .task {
             await music.activate()
@@ -151,6 +166,11 @@ struct EarthSlideshowView: View {
         .onChange(of: coordinator.nextItemForPrefetch?.record.id, initial: true) { _, _ in
             playback.prefetch(coordinator.nextItemForPrefetch?.record)
             trimPreparedFrames()
+        }
+        .onChange(of: waitsForJourneyScope) { _, waiting in
+            guard !waiting, let music = pendingStartMusic else { return }
+            pendingStartMusic = nil
+            if coordinator.awaitsPlaybackConfirmation && !showsMusicPicker && !showsJourneyPicker { requestPlayback?(music) }
         }
         .onChange(of: coordinator.phase) { _, phase in
             if isWatching, !coordinator.showsControls { focusWatchingSurface() }
@@ -233,8 +253,11 @@ struct EarthSlideshowView: View {
                     switch previous {
                     case .musicChoose, .musicPrevious, .musicPlayPause, .musicNext:
                         watchingControlFocus = .slideshowPlayPause
+                    case nil:
+                        // Restoring focus after a sheet can briefly land here without a Down press.
+                        break
                     default:
-                        coordinator.setPaused(true)
+                        if overlayPlayback == nil { coordinator.setPaused(true) }
                     }
                 }
                 refreshControlAutoHide()
@@ -328,7 +351,10 @@ struct EarthSlideshowView: View {
             SlideshowJourneyPicker(coordinator: coordinator) { showsJourneyPicker = false }
         }
         .sheet(isPresented: $showsMusicPicker, onDismiss: finishMusicPicker) {
-            SlideshowMusicSourceView(controller: music, dismiss: { showsMusicPicker = false }, cancel: cancelMusicPicker)
+            SlideshowMusicSourceView(controller: music, dismiss: {
+                didCommitMusicChoice = true
+                showsMusicPicker = false
+            }, cancel: cancelMusicPicker)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("earth-slideshow")
@@ -400,6 +426,10 @@ struct EarthSlideshowView: View {
         .id("slideshow-preload-\(record.id)")
     }
 
+    private var waitsForJourneyScope: Bool {
+        requestPlayback != nil && coordinator.availableJourneys.isEmpty && coordinator.phase == .preparing
+    }
+
     private var openingView: some View {
         VStack(spacing: 22) {
             Text(coordinator.scope.title)
@@ -417,16 +447,16 @@ struct EarthSlideshowView: View {
             HStack(spacing: TVControlLayout.actionSpacing) {
                 if coordinator.scope.kind == .library {
                     journeyPickerButton
+                        .layoutPriority(1)
                         .focused($openingFocus, equals: .trips)
                 }
-                Button {
-                    coordinator.beginPlayback(music: music.selectedChoice == nil ? .none : (music.isUsingOnlineMusic ? .online : .appleMusic))
-                } label: {
-                    Label(AppLocalization.string("slideshow.begin", defaultValue: "Start Slideshow"),
-                          systemImage: "play.fill")
-                        .labelStyle(PageActionLabelStyle())
+                EarthSlideshowEntryButton(title: AppLocalization.string("slideshow.begin", defaultValue: "Start Slideshow")) {
+                    let soundtrack: JourneyEventContext.Music = music.selectedChoice == nil ? .none : (music.isUsingOnlineMusic ? .online : .appleMusic)
+                    if waitsForJourneyScope { pendingStartMusic = soundtrack }
+                    else if let requestPlayback { requestPlayback(soundtrack) }
+                    else { coordinator.beginPlayback(music: soundtrack) }
                 }
-                .buttonStyle(.glassProminent)
+                .layoutPriority(1)
                 .focused($openingFocus, equals: .play)
                 .accessibilityIdentifier("slideshow-begin")
 
@@ -447,7 +477,7 @@ struct EarthSlideshowView: View {
         .padding(.horizontal, 44)
         .padding(.vertical, 36)
         .floatingSurface(in: RoundedRectangle(cornerRadius: 32))
-        .frame(maxWidth: 1060)
+        .padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .defaultFocus($openingFocus, .play, priority: .userInitiated)
         .focusScope(openingFocusScope)
@@ -480,19 +510,18 @@ struct EarthSlideshowView: View {
     }
 
     private var openingSoundtrackTitle: String {
-        if let title = music.selectedChoice?.title {
-            AppLocalization.format("slideshow.music.shortcut.current", defaultValue: "Soundtrack · %@", title)
-        } else {
-            AppLocalization.string("slideshow.music.choose", defaultValue: "Choose Music")
+        if music.selectedChoice == nil && !music.automaticMusicEnabled {
+            return AppLocalization.string("slideshow.music.none", defaultValue: "No Background Music")
         }
+        return AppLocalization.format("slideshow.music.shortcut.current", defaultValue: "Soundtrack · %@",
+                                      music.selectedChoice?.title ?? AppLocalization.string("slideshow.music.recommended", defaultValue: "Recommended"))
     }
 
     private var preparationView: some View {
         VStack(spacing: 26) {
             Spacer()
-            Image(systemName: "globe.americas.fill")
-                .font(.system(size: 62, weight: .ultraLight))
-                .foregroundStyle(.cyan)
+            SlideshowSymbol()
+                .accessibilityHidden(true)
             Text(coordinator.scope.title)
                 .font(.system(size: 42, weight: .semibold))
                 .focusable()
@@ -680,12 +709,7 @@ struct EarthSlideshowView: View {
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
-                    if music.selectedChoice != nil {
-                        soundtrackPanel
-                    } else {
-                        soundtrackButton
-                            .floatingSurface(in: Capsule())
-                    }
+                    soundtrackPanel
                 }
                 Spacer()
                 slideshowPlaybackControls
@@ -781,6 +805,7 @@ struct EarthSlideshowView: View {
                 watchingControlFocus = .musicChoose
             case .down:
                 if showsPhotoSelection, let id = coordinator.currentItem?.id {
+                    coordinator.setPaused(true)
                     watchingControlFocus = .photo(id)
                 } else {
                     coordinator.hideControls()
@@ -798,7 +823,7 @@ struct EarthSlideshowView: View {
             watchingControlFocus = .slideshowPlayPause
             coordinator.skipToNextJourney()
         } label: {
-            Label(AppLocalization.string("slideshow.next_journey", defaultValue: "Next Trip"),
+            Label(coordinator.scope.kind == .anniversary ? String(localized: "anniversary.next_year") : AppLocalization.string("slideshow.next_journey", defaultValue: "Next Trip"),
                   systemImage: "forward.end.fill")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(focused ? .black : .white)
@@ -853,7 +878,7 @@ struct EarthSlideshowView: View {
         .frame(height: 96)
         .focusSection()
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(AppLocalization.string("slideshow.select_memory", defaultValue: "Choose a Photo"))
+        .accessibilityLabel(AppLocalization.string("slideshow.select_memory", defaultValue: "Choose a Photo or Video"))
         .accessibilityIdentifier("slideshow-photo-selection")
     }
 
@@ -907,22 +932,13 @@ struct EarthSlideshowView: View {
             showsMusicPicker = true
             refreshControlAutoHide()
         } label: {
-            Group {
-                if hasSoundtrack {
-                    Image(systemName: "music.note")
-                        .frame(width: 46)
-                } else {
-                    Label(title, systemImage: "music.note")
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-                        .padding(.horizontal, 14)
-                }
-            }
-            .font(.system(size: 19, weight: .semibold))
-            .foregroundStyle(focused ? .black : .white)
-            .frame(height: 46)
-            .background(focused ? Color.white : Color.white.opacity(0.10), in: Capsule())
-            .contentShape(Capsule())
+            Label(title, systemImage: "music.note.list")
+                .labelStyle(.iconOnly)
+                .font(.system(size: 23, weight: .semibold))
+                .foregroundStyle(focused ? .black : .white)
+                .frame(width: 54, height: 54)
+                .background(focused ? Color.white : Color.white.opacity(0.10), in: Circle())
+                .contentShape(Circle())
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
@@ -942,45 +958,53 @@ struct EarthSlideshowView: View {
     }
 
     private var soundtrackPanel: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 11) {
-                soundtrackArtwork
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(music.nowPlaying?.title ?? music.selectedChoice?.title ?? "")
-                        .font(.system(size: 21, weight: .semibold))
-                        .accessibilityIdentifier("slideshow-music-title")
-                    if let subtitle = music.nowPlaying?.subtitle ?? music.selectedChoice?.subtitle, !subtitle.isEmpty {
-                        Text(subtitle)
-                            .font(.system(size: 15))
-                            .foregroundStyle(.white.opacity(0.68))
-                            .accessibilityIdentifier("slideshow-music-artist")
-                    }
-                }
-                .lineLimit(1)
-                Spacer(minLength: 0)
-                if let error = music.playbackError {
-                    Image(systemName: "exclamationmark.triangle")
-                        .foregroundStyle(.orange)
-                        .accessibilityLabel(error)
-                }
-            }
+        let hasSoundtrack = music.selectedChoice != nil
+        let shape = RoundedRectangle(cornerRadius: hasSoundtrack ? 20 : 27)
+        return VStack(alignment: .leading, spacing: 9) {
+            if hasSoundtrack { soundtrackMetadata }
             HStack(spacing: 8) {
-                soundtrackTransport
-                Rectangle()
-                    .fill(.white.opacity(0.18))
-                    .frame(width: 1, height: 22)
-                    .accessibilityHidden(true)
+                if hasSoundtrack {
+                    soundtrackTransport
+                    Rectangle()
+                        .fill(.white.opacity(0.18))
+                        .frame(width: 1, height: 22)
+                        .accessibilityHidden(true)
+                }
                 soundtrackButton
             }
-            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(maxWidth: hasSoundtrack ? .infinity : nil, alignment: .center)
         }
-        .padding(12)
-        .frame(width: 260)
-        .background(.black.opacity(0.32), in: RoundedRectangle(cornerRadius: 20))
-        .floatingSurface(in: RoundedRectangle(cornerRadius: 20))
+        .padding(hasSoundtrack ? 12 : 0)
+        .frame(width: hasSoundtrack ? 260 : nil)
+        .background(.black.opacity(hasSoundtrack ? 0.32 : 0), in: shape)
+        .floatingSurface(in: shape)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(AppLocalization.string("slideshow.music.control_title", defaultValue: "Background Music"))
         .accessibilityIdentifier("slideshow-music-controls")
+    }
+
+    private var soundtrackMetadata: some View {
+        HStack(spacing: 11) {
+            soundtrackArtwork
+            VStack(alignment: .leading, spacing: 3) {
+                Text(music.nowPlaying?.title ?? music.selectedChoice?.title ?? "")
+                    .font(.system(size: 21, weight: .semibold))
+                    .accessibilityIdentifier("slideshow-music-title")
+                if let subtitle = music.nowPlaying?.subtitle ?? music.selectedChoice?.subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.white.opacity(0.68))
+                        .accessibilityIdentifier("slideshow-music-artist")
+                }
+            }
+            .lineLimit(1)
+            Spacer(minLength: 0)
+            if let error = music.playbackError {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel(error)
+            }
+        }
     }
 
     private var soundtrackArtwork: some View {
@@ -1163,7 +1187,8 @@ struct EarthSlideshowView: View {
 
     private func watchingPhotoCaption(_ page: SlideshowCanvasPage) -> some View {
         let record = page.record
-        let locationName = PlaceDisplayLabel(place: page.visit).photoCaptionName
+        let place = coordinator.scope.kind == .anniversary ? record.placeID.flatMap { anniversaryPlaces[$0] } : page.visit
+        let locationName = place.flatMap { PlaceDisplayLabel(place: $0).photoCaptionName }
         return HStack(alignment: .bottom, spacing: 22) {
             if page.descriptor.ids.count == 1, let destination = PhotoGlobeDestination(record: record) {
                 SlideshowLocationGlobe(destination: destination, isVisible: showsPhotoCaption)
@@ -1186,7 +1211,7 @@ struct EarthSlideshowView: View {
             if coordinator.journeys.count > 1, let index = coordinator.displayedJourneyIndex {
                 SlideshowJourneyList(
                     journeys: coordinator.journeys,
-                    currentIndex: index
+                    currentIndex: index, yearsOnly: coordinator.scope.kind == .anniversary
                 )
             }
             if coordinator.isBuffering {
@@ -1219,7 +1244,7 @@ struct EarthSlideshowView: View {
         case .analyzing:
             return AppLocalization.format(
                 "slideshow.preparing_count",
-                defaultValue: "Preparing %1$lld of %2$lld · %3$lld ready",
+                defaultValue: "Checked %1$lld of %2$lld · Ready to play: %3$lld",
                 Int64(coordinator.preparation.analyzedCount),
                 Int64(coordinator.preparation.candidateCount),
                 Int64(coordinator.preparation.readyCount)
@@ -1377,6 +1402,12 @@ struct EarthSlideshowView: View {
         music.cancelSelection()
         finishOverlayPlayback()
         refreshControlAutoHide()
+        let committed = didCommitMusicChoice
+        didCommitMusicChoice = false
+        if coordinator.awaitsPlaybackConfirmation, committed {
+            openingRevision += 1
+            return
+        }
         Task { @MainActor in
             await Task.yield()
             guard !showsMusicPicker else { return }
@@ -1389,6 +1420,7 @@ struct EarthSlideshowView: View {
     }
 
     private func holdPlaybackForOverlay() {
+        guard overlayPlayback == nil else { return }
         overlayPlayback = .holding(resume: !coordinator.isPaused)
         coordinator.setPaused(true)
         synchronizeMusicPlayback()
@@ -1418,7 +1450,7 @@ struct EarthSlideshowView: View {
         if !originalAudioActive, !playback.isMuted { playback.isMuted = true }
         music.updatePlaybackContext(
             slideshowPaused: coordinator.isPaused,
-            presentationActive: musicPresentationActive,
+            presentationActive: !coordinator.awaitsPlaybackConfirmation && musicPresentationActive,
             originalAudioActive: originalAudioActive,
             sceneActive: scenePhase == .active
         )

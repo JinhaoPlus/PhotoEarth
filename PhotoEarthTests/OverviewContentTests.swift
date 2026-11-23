@@ -16,7 +16,9 @@ import UIKit
                      preferencesStore: MemoryPreferenceStore(), clusterer: TravelClusterer(), journeyDefaults: defaults)
         }
         let app = makeModel()
-        #expect(app.minimumJourneyItems == 5)
+        #expect(app.minimumJourneyItems == 10)
+        app.setMinimumJourneyItems(5)
+        #expect(makeModel().minimumJourneyItems == 5)
         app.useSampleData()
         let originalIndex = app.index
         #expect(!app.overview.recent.isEmpty)

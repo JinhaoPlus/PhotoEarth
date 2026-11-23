@@ -8,7 +8,7 @@ struct ScanningView: View {
                 ProgressView()
                     .controlSize(.extraLarge)
                     .tint(.cyan)
-                Text(AppLocalization.string("scanning.title", defaultValue: "Opening Photo Earth…"))
+                Text(AppLocalization.string("scanning.title", defaultValue: "Opening PHOTO EARTH…"))
                     .font(.largeTitle.bold())
             }
         }

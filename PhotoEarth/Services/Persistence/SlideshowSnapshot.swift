@@ -95,11 +95,11 @@ nonisolated final class SlideshowSnapshot: SlideshowPageReading, @unchecked Send
 
     deinit { sqlite3_close(db) }
 
-    @concurrent func appendBatch(_ records: [PhotoAssetRecord]) async throws {
-        try append(records)
+    @concurrent func appendBatch(_ records: [PhotoAssetRecord], visitID: String? = nil) async throws {
+        try append(records, visitID: visitID)
     }
 
-    func append(_ records: [PhotoAssetRecord]) throws {
+    func append(_ records: [PhotoAssetRecord], visitID: String? = nil) throws {
         try lock.withLock {
             guard !records.isEmpty else { return }
             let stmt = try statement("INSERT OR IGNORE INTO media VALUES(?,?,?,?)")
@@ -110,7 +110,7 @@ nonisolated final class SlideshowSnapshot: SlideshowPageReading, @unchecked Send
                 let encoder = JSONEncoder()
                 for record in records {
                     try Task.checkCancellation()
-                    guard let placeID = record.placeID else { continue }
+                    guard let placeID = visitID ?? record.placeID else { continue }
                     addedVisits.insert(placeID)
                     sqlite3_reset(stmt)
                     sqlite3_bind_text(stmt, 1, placeID, -1, transient)

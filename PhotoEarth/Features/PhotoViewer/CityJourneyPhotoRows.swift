@@ -107,7 +107,9 @@ private struct JourneyRows: View {
                               : AppLocalization.string("wall.journey.expand", defaultValue: "Expand"),
                               systemImage: journey.isExpanded ? "chevron.up" : "chevron.down")
                     }
+                    .labelStyle(.iconOnly)
                     .buttonStyle(.glass)
+                    .buttonBorderShape(.circle)
                     .controlSize(.small)
                     .focused(focus, equals: journey.id)
                     .onChange(of: focus.wrappedValue == journey.id) { _, active in

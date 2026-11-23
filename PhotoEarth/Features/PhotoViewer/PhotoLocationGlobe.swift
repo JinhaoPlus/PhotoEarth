@@ -27,9 +27,9 @@ struct PhotoLocationGlobe: View {
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
         .accessibilityLabel(placeTitle.map {
-            AppLocalization.format("detail.explore_accessibility", defaultValue: "Explore Earth from this memory's location, %@", $0)
-        } ?? AppLocalization.string("detail.explore_from_here", defaultValue: "Explore Earth from Here"))
-        .accessibilityHint(AppLocalization.string("detail.explore_hint", defaultValue: "Opens the full-screen globe near this memory"))
+            AppLocalization.format("detail.explore_accessibility", defaultValue: "Explore the globe from %@", $0)
+        } ?? AppLocalization.string("detail.explore_from_here", defaultValue: "Explore the Globe from Here"))
+        .accessibilityHint(AppLocalization.string("detail.explore_hint", defaultValue: "Opens the full-screen globe at the capture location."))
         .accessibilityIdentifier("photo-location-globe")
     }
 }

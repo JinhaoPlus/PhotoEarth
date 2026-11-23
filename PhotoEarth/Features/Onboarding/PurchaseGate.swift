@@ -4,20 +4,14 @@ import StoreKit
 struct PurchaseGate: View {
     @StateObject private var store = PurchaseStore()
     @Environment(\.scenePhase) private var phase
-    @State private var showingSample = false
     @State private var incomingURL: URL?
 
     var body: some View {
         Group {
-            if store.access.permitsLibrary {
-                ContentView(incomingURL: $incomingURL)
-            } else if store.access == .checking {
+            if store.access == .checking {
                 ScanningView()
             } else {
-                PurchaseOffers(store: store, sample: { showingSample = true })
-                    .sheet(isPresented: $showingSample) {
-                        ContentView(sampleOnly: true, leaveSample: { showingSample = false })
-                    }
+                ContentView(incomingURL: $incomingURL)
             }
         }
         .environmentObject(store)
@@ -30,7 +24,6 @@ struct PurchaseGate: View {
             Task { await store.refreshAccess() }
         }
         .onOpenURL { url in
-            showingSample = false
             incomingURL = url
         }
     }
@@ -38,83 +31,157 @@ struct PurchaseGate: View {
 
 struct PurchaseOffers: View {
     @ObservedObject var store: PurchaseStore
-    var sample: (() -> Void)?
+    var requestedTitle: String?
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var action: Action?
-    private enum Action { case trial, buy, restore, retry, sample }
+    enum Action: Hashable { case trial, buy, restore, retry, back }
+    var settingsFocus: FocusState<Action?>.Binding?
+    @FocusState private var sheetFocus: Action?
+    private var focus: FocusState<Action?>.Binding { settingsFocus ?? $sheetFocus }
+    private var inSettings: Bool { settingsFocus != nil }
+
+    static func firstSettingsAction(for store: PurchaseStore) -> Action {
+        if store.access == .unverified { return .restore }
+        return store.products[PurchaseStore.lifetimeID] == nil ? .retry : .buy
+    }
     private var full: Product? { store.products[PurchaseStore.lifetimeID] }
     private var canStartTrial: Bool {
         store.access == .available && store.products[PurchaseStore.trialID]?.price == 0 && full != nil
     }
 
     var body: some View {
-        ZStack {
-            SpaceBackdrop()
-            VStack(alignment: .leading, spacing: 22) {
-                Text(title).font(.system(size: 58, weight: .semibold))
-                Text(detail).font(.title3).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("purchase-terms")
-                VStack(alignment: .leading, spacing: 15) {
-                    if canStartTrial {
-                        Button(String(localized: "purchase.trial")) { Task { await store.purchase(PurchaseStore.trialID) } }
-                            .focused($action, equals: .trial).accessibilityIdentifier("purchase-trial")
+        ScrollView {
+            VStack(alignment: .leading, spacing: 38) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(title)
+                        .font(inSettings ? .title2.weight(.semibold) : .system(size: 50, weight: .semibold))
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("purchase-heading")
+                    if case .trial(let end) = store.access {
+                        Text(AppLocalization.format("purchase.until", defaultValue: "Trial ends %@.",
+                                                    end.formatted(.dateTime.year().month(.wide).day().hour().minute().locale(AppLocalization.locale))))
+                            .accessibilityIdentifier("purchase-trial-end")
                     }
-                    if let full, store.access != .unverified {
-                        Button(AppLocalization.format("purchase.buy", defaultValue: "Unlock for %@", full.displayPrice)) {
-                            Task { await store.purchase(PurchaseStore.lifetimeID) }
+                    Text(detail).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("purchase-terms")
+                }
+                .font(.system(size: 30))
+                .fixedSize(horizontal: false, vertical: true)
+
+                VStack(alignment: .leading, spacing: 18) {
+                    Group {
+                        if inSettings {
+                            VStack(alignment: .leading, spacing: 16) { primaryButtons }
+                        } else {
+                            ViewThatFits(in: .horizontal) {
+                                HStack(spacing: 24) { primaryButtons }.fixedSize(horizontal: true, vertical: false)
+                                VStack(alignment: .leading, spacing: 16) { primaryButtons }
+                            }
                         }
-                        .focused($action, equals: .buy).accessibilityIdentifier("purchase-buy")
                     }
-                    Button(String(localized: "purchase.restore")) { Task { await store.restore() } }
-                        .focused($action, equals: .restore).accessibilityIdentifier("purchase-restore")
-                    if full == nil || store.access == .unverified || (store.access == .available && !canStartTrial) {
-                        Button(String(localized: "common.retry")) {
-                            Task { await store.refreshAccess(); await store.loadProducts() }
-                        }.focused($action, equals: .retry)
-                    }
-                    if let sample {
-                        Button(AppLocalization.string("sample.view_first", defaultValue: "Explore a Sample Journey"), action: sample)
-                            .focused($action, equals: .sample).accessibilityIdentifier("purchase-sample")
+                    .font(.system(size: 32, weight: .medium))
+                    if let trialNote {
+                        Text(trialNote)
+                            .font(.system(size: 26)).foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .accessibilityIdentifier("purchase-trial-terms")
                     }
                 }
-                .buttonStyle(.glass)
-                .disabled(store.busy)
+
+                HStack(spacing: 24) {
+                    if !inSettings { returnButton }
+                    Button { Task { await store.restore() } } label: {
+                        actionLabel(String(localized: "purchase.restore"))
+                    }
+                        .focused(focus, equals: .restore).accessibilityIdentifier("purchase-restore")
+                }
+                .font(.system(size: 26))
+
                 if store.busy { ProgressView() }
                 if let notice = store.notice {
                     Text(noticeText(notice)).font(.callout).accessibilityIdentifier("purchase-notice")
                 }
             }
-            .frame(maxWidth: 970, alignment: .leading).padding(65)
+            .buttonStyle(.glass)
+            .disabled(store.busy)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, inSettings ? 20 : 64).padding(.vertical, inSettings ? 10 : 54)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .task(id: canStartTrial) {
-            if action == nil || action == .restore {
-                action = canStartTrial ? .trial : (full != nil && store.access != .unverified ? .buy : .restore)
+            guard !inSettings else { return }
+            if sheetFocus == nil || sheetFocus == .restore {
+                sheetFocus = canStartTrial && requestedTitle != nil ? .trial : (full != nil && store.access != .unverified ? .buy : .restore)
             }
         }
         .onChange(of: store.access) { _, value in
-            if value == .unlocked, sample == nil { dismiss() }
+            guard !inSettings else { return }
+            if value == .unlocked || (requestedTitle != nil && value.permitsLibrary) { dismiss() }
         }
     }
 
+    @ViewBuilder private func actionLabel(_ text: String) -> some View {
+        if inSettings {
+            Text(text).frame(maxWidth: .infinity, minHeight: 45, alignment: .leading)
+        } else {
+            Text(text)
+        }
+    }
+
+    @ViewBuilder private var primaryButtons: some View {
+        if canStartTrial {
+            Button { Task { await purchase(PurchaseStore.trialID) } } label: {
+                actionLabel(String(localized: "purchase.trial"))
+            }
+                .focused(focus, equals: .trial).accessibilityIdentifier("purchase-trial")
+        }
+        if full != nil, store.access != .unverified {
+            Button { Task { await purchase(PurchaseStore.lifetimeID) } } label: {
+                actionLabel(String(localized: "purchase.full"))
+            }
+                .focused(focus, equals: .buy).accessibilityIdentifier("purchase-buy")
+        }
+        if full == nil || store.access == .unverified || (store.access == .available && !canStartTrial) {
+            Button {
+                Task { await store.refreshAccess(); await store.loadProducts() }
+            } label: {
+                actionLabel(String(localized: "common.retry"))
+            }.focused(focus, equals: .retry).accessibilityIdentifier("purchase-retry")
+        }
+    }
+
+    private func purchase(_ id: String) async {
+        if await store.purchase(id) == .cancelled, !inSettings { dismiss() }
+    }
+
+    private var returnButton: some View {
+        Button(requestedTitle == nil ? String(localized: "preview.back") : String(localized: "purchase.later")) {
+            dismiss()
+        }
+        .focused(focus, equals: .back).accessibilityIdentifier("purchase-back")
+    }
+
     private var title: String {
-        switch store.access {
+        if let requestedTitle { return requestedTitle }
+        return switch store.access {
         case .expired: String(localized: "purchase.expired")
         case .unverified: String(localized: "purchase.verify")
-        default: String(localized: "purchase.title")
+        case .trial: String(localized: "purchase.trial_active")
+        default: String(localized: "settings.unlock_full_version")
         }
     }
 
     private var detail: String {
         if store.access == .unverified { return String(localized: "purchase.verificationHelp") }
-        guard let full else { return String(localized: "purchase.unavailable") }
-        if case .trial(let end) = store.access {
-            return AppLocalization.format("purchase.until", defaultValue: "Trial ends %@.", end.formatted(date: .long, time: .shortened))
+        guard full != nil else { return String(localized: "purchase.unavailable") }
+        return String(localized: "settings.unlock_help")
+    }
+
+    private var trialNote: String? {
+        switch store.access {
+        case .available where canStartTrial, .trial: String(localized: "purchase.trial_end_terms")
+        case .expired: requestedTitle == nil ? String(localized: "purchase.free_after_trial") : String(localized: "purchase.playbackEnded")
+        default: nil
         }
-        if store.access == .expired {
-            return AppLocalization.format("purchase.after", defaultValue: "Unlock your personal globe, journeys and slideshows with one payment of %@.", full.displayPrice)
-        }
-        return AppLocalization.format("purchase.terms", defaultValue: "Explore your photos for seven days. After that, a one-time purchase of %@ unlocks your globe, journeys and slideshows. No automatic charge.", full.displayPrice)
     }
 
     private func noticeText(_ notice: PurchaseStore.Notice) -> String {

@@ -48,7 +48,9 @@ struct PlaybackButtonFace: View {
 struct TwoOptionControlLabel<First: View, Second: View>: View {
     let secondSelected: Bool
     let focused: Bool
-    let segmentSize: CGSize
+    let minimumSegmentWidth: CGFloat
+    let segmentHeight: CGFloat
+    var horizontalInset: CGFloat = 0
     @ViewBuilder let first: () -> First
     @ViewBuilder let second: () -> Second
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -72,10 +74,11 @@ struct TwoOptionControlLabel<First: View, Second: View>: View {
 
     private func segment<Content: View>(selected: Bool, @ViewBuilder content: () -> Content) -> some View {
         content()
-            .font(.system(size: 23, weight: selected ? .semibold : .medium))
+            .font(.system(size: 23, weight: .semibold))
             .lineLimit(1)
-            .minimumScaleFactor(0.75)
-            .frame(width: segmentSize.width, height: segmentSize.height)
+            .padding(.horizontal, horizontalInset)
+            .frame(minWidth: minimumSegmentWidth)
+            .frame(height: segmentHeight)
             .foregroundStyle(selected ? Color(white: 0.10) : .white.opacity(focused ? 0.82 : 0.62))
             .background {
                 if selected {

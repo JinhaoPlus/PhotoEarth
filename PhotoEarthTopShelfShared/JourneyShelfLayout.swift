@@ -14,7 +14,7 @@ nonisolated enum JourneyShelfLayout {
         globe.setImageURL(globeImage, for: .screenScale2x)
         for item in recent { item.imageShape = .poster }
         let section = TVTopShelfItemCollection(items: [globe] + recent)
-        section.title = "Photo Earth"
+        section.title = "PHOTO EARTH"
         return TVTopShelfSectionedContent(sections: [section])
     }
 }

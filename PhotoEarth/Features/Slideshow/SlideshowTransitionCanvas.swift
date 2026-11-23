@@ -23,12 +23,14 @@ struct SlideshowMediaTimeline: View {
                     let id = page.descriptor.ids.first
                     let effect = coordinator.activeTransition
                     let ids = page.descriptor.ids
-                    let visibleTiles = effect?.visibleStaggeredTiles(at: progress, count: ids.count) ?? 0
-                    SlideshowTransitionCanvas(page: page, effect: effect,
-                        progress: progress, waiting: coordinator.phase == .transitioningItem && coordinator.activeTransition == nil,
-                        player: playback.preparedAssetID == id ? playback.player : nil,
-                        onVideoDisplay: { if let id { onDisplay(id) } })
-                        .onChange(of: visibleTiles) { _, count in coordinator.markTilesVisible(ids, count: count) }
+                    GeometryReader { geometry in
+                        let visibleTiles = effect?.visibleTiles(at: progress, ratios: page.descriptor.ratios, in: geometry.size) ?? []
+                        SlideshowTransitionCanvas(page: page, effect: effect,
+                            progress: progress, waiting: coordinator.phase == .transitioningItem && coordinator.activeTransition == nil,
+                            player: playback.preparedAssetID == id ? playback.player : nil,
+                            onVideoDisplay: { if let id { onDisplay(id) } })
+                            .onChange(of: visibleTiles) { _, indices in coordinator.markTilesVisible(ids, indices: indices) }
+                    }
                 }
                 if let id = coordinator.currentItem?.id, playback.preparedAssetID == id,
                    let live = playback.livePhoto {
@@ -65,12 +67,17 @@ struct SlideshowTransitionCanvas: UIViewRepresentable {
         private var old: UIView?
         private var incoming: PhotoPlane?
         private let feather = CAGradientLayer()
+        private let centerMask = CAGradientLayer()
 
         override init(frame: CGRect) {
             super.init(frame: frame)
             backgroundColor = .black
             clipsToBounds = true
             isUserInteractionEnabled = false
+            centerMask.startPoint = CGPoint(x: 0, y: 0.5)
+            centerMask.endPoint = CGPoint(x: 1, y: 0.5)
+            centerMask.colors = [UIColor.clear.cgColor, UIColor.black.cgColor, UIColor.black.cgColor, UIColor.clear.cgColor]
+            centerMask.locations = [0, 0.025, 0.975, 1]
             feather.colors = [UIColor.black.cgColor, UIColor.clear.cgColor]
         }
         required init?(coder: NSCoder) { nil }
@@ -112,6 +119,18 @@ struct SlideshowTransitionCanvas: UIViewRepresentable {
                     let scale = 1 - 0.018 * pow(1 - progress, 3)
                     incoming.foreground.transform = CGAffineTransform(scaleX: scale, y: scale)
                 }
+            case .panoramaGlide:
+                (old as? PhotoPlane)?.foreground.transform = CGAffineTransform(translationX: -bounds.width * 0.08 * blend, y: 0)
+                incoming.foreground.transform = CGAffineTransform(translationX: bounds.width * 0.12 * (1 - blend), y: 0)
+                incoming.alpha = blend
+            case .focusPullback:
+                let scale = 1 + 0.12 * (1 - blend)
+                incoming.foreground.transform = CGAffineTransform(scaleX: scale, y: scale)
+                incoming.alpha = blend
+            case .centerOpen:
+                // Overscan just the feathered mask so the outer tiles finish fully opaque.
+                centerMask.frame = effect.openingRect(at: progress, in: bounds)
+                incoming.layer.mask = centerMask
             case .reveal:
                 let edge = 1.5 * blend
                 feather.frame = bounds
@@ -242,14 +261,8 @@ struct SlideshowTransitionCanvas: UIViewRepresentable {
             shade.frame = bounds
             video?.frame = bounds
             guard images.count > 1 else { images.first?.frame = bounds; return }
-            let sizes = SlideshowCollageLayout.sizes(for: descriptor.ratios, in: bounds.size)
-            let gap = SlideshowCollageLayout.gap(in: bounds.size)
-            let width = sizes.reduce(CGFloat(sizes.count - 1) * gap) { $0 + $1.width }
-            var x = (bounds.width - width) / 2
-            for (image, size) in zip(images, sizes) {
-                image.frame = CGRect(x: x, y: (bounds.height - size.height) / 2, width: size.width, height: size.height)
-                x += size.width + gap
-            }
+            let frames = SlideshowCollageLayout.frames(for: descriptor.ratios, in: bounds.size)
+            for (image, frame) in zip(images, frames) { image.frame = frame }
         }
     }
 }

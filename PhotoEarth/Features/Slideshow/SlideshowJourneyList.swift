@@ -4,6 +4,7 @@ import SwiftUI
 struct SlideshowJourneyList: View {
     let journeys: [EarthSlideshowSegment]
     let currentIndex: Int
+    var yearsOnly = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let rowHeight: CGFloat = 68
@@ -77,10 +78,12 @@ struct SlideshowJourneyList: View {
                 .font(.system(size: 26, weight: .semibold))
                 .foregroundStyle(Color(white: isCurrent ? 1 : 0.72))
                 .lineLimit(1)
-            Text(AppLocalization.dateRange(from: journey.startDate, to: journey.endDate))
-                .font(.system(size: 19, weight: .medium))
-                .foregroundStyle(Color(white: isCurrent ? 0.88 : 0.66))
-                .lineLimit(1)
+            if !yearsOnly {
+                Text(AppLocalization.dateRange(from: journey.startDate, to: journey.endDate))
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(Color(white: isCurrent ? 0.88 : 0.66))
+                    .lineLimit(1)
+            }
         }
         .scaleEffect(isCurrent ? 1 : 0.92, anchor: .leading)
     }
@@ -96,8 +99,8 @@ struct SlideshowJourneyList: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(
                 above
-                    ? AppLocalization.string("slideshow.hidden_previous_journeys", defaultValue: "More previous trips")
-                    : AppLocalization.string("slideshow.hidden_upcoming_journeys", defaultValue: "More upcoming trips")
+                    ? AppLocalization.string("slideshow.hidden_previous_journeys", defaultValue: "More entries above")
+                    : AppLocalization.string("slideshow.hidden_upcoming_journeys", defaultValue: "More entries below")
             )
             .accessibilityIdentifier(above ? "slideshow-journey-more-above" : "slideshow-journey-more-below")
             .accessibilitySortPriority(above ? 1 : -1)

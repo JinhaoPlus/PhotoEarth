@@ -18,17 +18,17 @@ struct WelcomeView: View {
                 .font(.system(size: 62, weight: .light))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(AppLocalization.string("welcome.message", defaultValue: "Photo Earth uses capture dates, locations, and camera information on this Apple TV to build your travel globe. You can exclude albums from the scan."))
+            Text(AppLocalization.string("welcome.message", defaultValue: "PHOTO EARTH uses capture dates, locations, and camera information on this Apple TV to build your travel globe. You can exclude albums from the scan."))
                 .font(.system(size: 26))
                 .foregroundStyle(.white.opacity(0.8))
                 .lineSpacing(7)
                 .fixedSize(horizontal: false, vertical: true)
             GlassEffectContainer(spacing: TVControlLayout.actionSpacing) {
                 VStack(alignment: .leading, spacing: TVControlLayout.actionSpacing) {
-                    Button(AppLocalization.string("welcome.connect", defaultValue: "Connect Photo Library"), action: begin)
+                    Button(String(localized: "preview.generate"), action: begin)
                         .focused($focusedAction, equals: .connect)
                         .accessibilityIdentifier("welcome-connect")
-                    Button(AppLocalization.string("sample.view_first", defaultValue: "Explore a Sample Journey"), action: showDemo)
+                    Button(AppLocalization.string("sample.view_first", defaultValue: "Explore a Sample Trip"), action: showDemo)
                         .focused($focusedAction, equals: .sample)
                         .accessibilityIdentifier("welcome-demo")
                 }

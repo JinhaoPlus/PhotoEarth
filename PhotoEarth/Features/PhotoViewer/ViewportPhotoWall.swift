@@ -287,11 +287,8 @@ struct ViewportPhotoWall: View {
                 .accessibilityIdentifier("photo-wall-retry-count")
             }
             if let openMapReview {
-                Button(action: openMapReview) {
-                    Label(AppLocalization.string("review.title", defaultValue: "Photo Map"), systemImage: "map")
-                        .labelStyle(PageActionLabelStyle())
-                }
-                .buttonStyle(.glass)
+                EarthEntryButton(kind: .explore, title: AppLocalization.string("review.title", defaultValue: "Photo Map"),
+                                 minimumHeight: 82, action: openMapReview)
                 .disabled(!canOpenMapReview)
                 .accessibilityIdentifier("photo-wall-map-review")
             }
@@ -303,7 +300,7 @@ struct ViewportPhotoWall: View {
             if wallHasPhotos {
                 Button { usesMosaic.toggle() } label: {
                     TwoOptionControlLabel(secondSelected: !usesMosaic, focused: isLayoutSwitchFocused,
-                                          segmentSize: CGSize(width: 70, height: 70)) {
+                                          minimumSegmentWidth: 70, segmentHeight: 70) {
                         Image(systemName: "square.grid.2x2.fill")
                     } second: {
                         HStack(spacing: 3) {

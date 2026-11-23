@@ -44,6 +44,7 @@ final class JourneyScanScopeUITests: XCTestCase {
         XCUIRemote.shared.press(.select)
         app.enterHomeContent()
         app.openSidebarDestination("tab-settings")
+        app.enterSettingsCategory("photos")
         let sampleConnection = app.buttons["settings-scan"]
         XCTAssertTrue(waitForFocus(sampleConnection))
         let connectLabel = sampleConnection.label
@@ -143,6 +144,7 @@ final class JourneyScanScopeUITests: XCTestCase {
         XCTAssertTrue(summary.label.contains("\(expectedPhotos) 项"), "Expected \(expectedPhotos) indexed items. Got \(summary.label)")
         let scope = app.buttons["settings-scan-scope"]
         XCTAssertTrue(scope.waitForExistence(timeout: 5))
+        if app.buttons["settings-category-photos"].hasFocus { app.enterSettingsCategory("photos") }
         XCTAssertTrue(seek(scope, direction: .up))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(waitForFocus(app.buttons["scan-scope-save"]))

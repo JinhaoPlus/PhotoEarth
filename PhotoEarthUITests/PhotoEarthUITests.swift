@@ -129,10 +129,10 @@ final class PhotoEarthUITests: XCTestCase {
         XCTAssertTrue(app.buttons["overview-explore-button"].waitForExistence(timeout: 8))
         XCUIRemote.shared.press(.down)
         var previous = Set<String>()
-        for city in ["reykjavik", "rio"] {
-            let expectedPhotoCount = city == "reykjavik" ? 9 : 12
+        for city in ["rio", "singapore"] {
+            let expectedPhotoCount = city == "rio" ? 12 : 16
             let entry = app.buttons["overview-place-sample-\(city)"]
-            if city == "rio" { XCUIRemote.shared.press(.right) }
+            if city == "singapore" { XCUIRemote.shared.press(.right) }
             XCTAssertTrue(waitForFocus(entry))
             XCUIRemote.shared.press(.select)
             let globe = app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch
@@ -150,7 +150,7 @@ final class PhotoEarthUITests: XCTestCase {
             XCTAssertTrue(app.staticTexts["\(expectedPhotoCount) 项"].waitForExistence(timeout: 3),
                           "A city wall reports its full count, not a page size")
             XCTAssertNotEqual(identifiers, previous)
-            let excludedCity = city == "rio" ? "reykjavik" : "rio"
+            let excludedCity = city == "rio" ? "singapore" : "rio"
             XCTAssertFalse(identifiers.contains { $0.hasPrefix("viewport-photo-sample-\(excludedCity)-") })
             previous = identifiers
             attachScreenshot(app, name: "Strict current area — \(city)")
@@ -173,8 +173,8 @@ final class PhotoEarthUITests: XCTestCase {
         XCUIRemote.shared.press(.down)
         let recentPlace = try XCTUnwrap(waitForFocusedPlaceButton(in: app))
         XCTAssertTrue(recentPlace.hasFocus)
-        XCTAssertEqual(recentPlace.identifier, "overview-place-sample-reykjavik", "One down command enters the first row without skipping")
-        let cities = ["reykjavik", "rio", "singapore", "tokyo", "sydney"]
+        XCTAssertEqual(recentPlace.identifier, "overview-place-sample-rio", "One down command enters the first row without skipping")
+        let cities = ["rio", "singapore", "tokyo", "sydney", "cape-town"]
         let cards = cities.map { app.buttons["overview-place-sample-" + $0] }
         let screen = app.windows.firstMatch.frame
         let entry = app.buttons["overview-explore-button"]
@@ -244,8 +244,10 @@ final class PhotoEarthUITests: XCTestCase {
         let dock = app.descendants(matching: .any)["globe-zoom-dock"].firstMatch
         XCTAssertTrue(controls.exists)
         XCTAssertTrue(dock.exists)
-        XCTAssertTrue(app.staticTexts["globe-controls-pan-hint"].exists,
-                      "The zoom dock must explain that touch dragging remains available")
+        let drag = app.descendants(matching: .any)["globe-controls-pan-hint"].firstMatch
+        XCTAssertTrue(drag.exists)
+        XCTAssertLessThan(drag.frame.maxY, app.frame.height / 4)
+        XCTAssertGreaterThan(drag.frame.minX, app.frame.midX)
         XCTAssertLessThanOrEqual(dock.frame.maxY, app.frame.maxY - 88,
                                  "The floating glass controls must leave map attribution unobstructed")
         XCTAssertLessThan(dock.frame.width, app.frame.width * 0.5,
@@ -294,6 +296,8 @@ final class PhotoEarthUITests: XCTestCase {
         let globe = app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch
         XCTAssertEqual(globeNodes.count, 1)
         XCTAssertTrue(waitForFocus(globe), "Back closes the dock and restores direct manipulation")
+        XCTAssertTrue(app.descendants(matching: .any)["globe-drag-control-hint"].firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any)["globe-turn-control-hint"].firstMatch.exists)
         XCUIRemote.shared.press(.playPause)
         XCTAssertTrue(zoomIn.waitForExistence(timeout: 5))
         let reopenedFocus = waitForFocus(zoomIn)

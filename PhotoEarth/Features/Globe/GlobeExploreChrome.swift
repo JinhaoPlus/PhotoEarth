@@ -22,11 +22,13 @@ struct GlobeInputAccessibility: ViewModifier {
     }
 }
 
-/// This small subtree observes motion. The shelves and place dictionaries do not rebuild at 30 Hz.
-struct GlobeExploreChrome: View {
-    @ObservedObject var experience: GlobeExperienceModel
-    let showsControlHint: Bool
-    var cityTitle: String? = nil
+/// Shared by the globe and photo map. Only the introductory grid times out.
+struct MapControlHints: View {
+    let guideSymbols: SiriRemoteSymbolNames?
+    let supportsTouchPan: Bool
+    let dockOpen: Bool
+    let prefix: String
+    @AppStorage("photoEarth.showsGlobeHints") private var enabled = true
 
     private var photoHint: String {
         AppLocalization.string("globe.controls.select", defaultValue: "Photos")
@@ -56,11 +58,73 @@ struct GlobeExploreChrome: View {
             Text(title)
                 .lineLimit(1)
         }
-        .frame(minWidth: 124, alignment: .leading)
+        .frame(minWidth: guideSymbols == nil ? nil : 124, alignment: .leading)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel ?? title)
         .accessibilityIdentifier(identifier)
     }
+
+    private var panHintID: String { dockOpen ? "\(prefix)-controls-pan-hint" : "\(prefix)-drag-control-hint" }
+
+    private var dragHint: some View {
+        operationHint(AppLocalization.string("globe.controls.swipe", defaultValue: "Drag"),
+                      systemImage: guideSymbols?.touchSurface ?? "hand.draw", identifier: panHintID)
+    }
+
+    var body: some View {
+        if enabled && (guideSymbols != nil || supportsTouchPan || dockOpen) {
+            Group {
+                if let symbols = guideSymbols {
+                    Grid(alignment: .leading, horizontalSpacing: 26, verticalSpacing: 12) {
+                        GridRow {
+                            operationHint(
+                                AppLocalization.string("globe.controls.arrows", defaultValue: "Turn"),
+                                systemImage: symbols.directionalPad,
+                                identifier: "\(prefix)-turn-control-hint"
+                            )
+                            if supportsTouchPan {
+                                dragHint
+                            } else {
+                                Color.clear.frame(width: 124, height: 30).accessibilityHidden(true)
+                            }
+                        }
+                        GridRow {
+                            operationHint(
+                                zoomActionHint,
+                                systemImage: symbols.playPauseButton,
+                                accessibilityLabel: zoomAccessibilityHint,
+                                identifier: "\(prefix)-zoom-control-hint"
+                            )
+                            operationHint(
+                                photoHint,
+                                systemImage: symbols.centerButton,
+                                identifier: "\(prefix)-photo-control-hint"
+                            )
+                        }
+                    }
+                } else if supportsTouchPan {
+                    dragHint
+                } else if dockOpen {
+                    operationHint(AppLocalization.string("globe.controls.choose", defaultValue: "Choose"),
+                                  systemImage: "arrow.left.and.right", identifier: panHintID)
+                }
+            }
+            .font(.system(size: 24, weight: .medium))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 14)
+            .background(.black.opacity(0.72), in: RoundedRectangle(cornerRadius: 18))
+            .floatingSurface(in: RoundedRectangle(cornerRadius: 18))
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+/// This small subtree observes motion. The shelves and place dictionaries do not rebuild at 30 Hz.
+struct GlobeExploreChrome: View {
+    @ObservedObject var experience: GlobeExperienceModel
+    let showsControlHint: Bool
+    var cityTitle: String? = nil
 
     private var zoomHint: String? {
         switch experience.zoomBoundary {
@@ -87,47 +151,8 @@ struct GlobeExploreChrome: View {
                         .accessibilityIdentifier("globe-photo-scope")
                 }
                 Spacer()
-                Grid(alignment: .leading, horizontalSpacing: 26, verticalSpacing: 12) {
-                    GridRow {
-                        if experience.supportsTouchPan {
-                            operationHint(
-                                AppLocalization.string("globe.controls.swipe", defaultValue: "Drag"),
-                                systemImage: experience.remoteSymbolNames.touchSurface,
-                                identifier: "globe-drag-control-hint"
-                            )
-                        } else {
-                            Color.clear
-                                .frame(minWidth: 124, minHeight: 30)
-                                .accessibilityHidden(true)
-                        }
-                        operationHint(
-                            AppLocalization.string("globe.controls.arrows", defaultValue: "Turn"),
-                            systemImage: experience.remoteSymbolNames.directionalPad,
-                            identifier: "globe-turn-control-hint"
-                        )
-                    }
-                    GridRow {
-                        operationHint(
-                            photoHint,
-                            systemImage: experience.remoteSymbolNames.centerButton,
-                            identifier: "globe-photo-control-hint"
-                        )
-                        operationHint(
-                            zoomActionHint,
-                            systemImage: experience.remoteSymbolNames.playPauseButton,
-                            accessibilityLabel: zoomAccessibilityHint,
-                            identifier: "globe-zoom-control-hint"
-                        )
-                    }
-                }
-                .font(.system(size: 23, weight: .regular))
-                .foregroundStyle(.white.opacity(0.88))
-                .padding(18)
-                .floatingSurface(in: RoundedRectangle(cornerRadius: 18))
-                // The direct input surface retains the full accessible controls.
-                // Once learnt, these visual hints leave the sky completely clear.
-                .opacity(showsControlHint ? 1 : 0)
-                .accessibilityHidden(!showsControlHint)
+                MapControlHints(guideSymbols: showsControlHint ? experience.remoteSymbolNames : nil,
+                                supportsTouchPan: experience.supportsTouchPan, dockOpen: false, prefix: "globe")
             }
             .padding(.horizontal, 80)
             .padding(.top, 60)
@@ -162,7 +187,7 @@ struct GlobeControlPanel: View {
 
     var body: some View {
         MapZoomControlPanel(zoomIn: zoomIn, zoomOut: zoomOut, close: close,
-                            extraTitle: cityTitle == nil ? nil : AppLocalization.string("globe.scope.use_view", defaultValue: "Use Current View"),
+                            extraTitle: cityTitle == nil ? nil : AppLocalization.string("globe.scope.use_view", defaultValue: "Show Photos in View"),
                             extraSymbol: "viewfinder", extraAction: useCurrentView, experience: experience)
     }
 }
@@ -172,7 +197,6 @@ struct MapZoomControlPanel: View {
     let zoomIn: () -> Void
     let zoomOut: () -> Void
     let close: () -> Void
-    var status = AppLocalization.string("globe.zoom.center", defaultValue: "Centered zoom")
     var supportsTouchPan = true
     var extraTitle: String? = nil
     var extraSymbol = "viewfinder"
@@ -200,7 +224,7 @@ struct MapZoomControlPanel: View {
                     MapZoomControlPanelContent(
                         navigation: navigation,
                         zoomIn: zoomIn, zoomOut: zoomOut, close: close,
-                        status: status, supportsTouchPan: supportsTouchPan, extraTitle: extraTitle,
+                        status: nil, supportsTouchPan: supportsTouchPan, extraTitle: extraTitle,
                         extraSymbol: extraSymbol, extraAction: extraAction, identifierPrefix: identifierPrefix,
                         mapStyle: mapStyle, toggleStyle: toggleStyle,
                         cameraAccessibilityValue: cameraAccessibilityValue,
@@ -230,11 +254,11 @@ private struct GlobeZoomControlsContent: View {
     let reduceMotion: Bool
     let reduceTransparency: Bool
 
-    private var status: String {
+    private var status: String? {
         switch experience.zoomBoundary {
         case .regional: AppLocalization.string("globe.zoom.nearest", defaultValue: "Closest view")
         case .global: AppLocalization.string("globe.zoom.farthest", defaultValue: "Farthest view")
-        case nil: AppLocalization.string("globe.zoom.center", defaultValue: "Centered zoom")
+        case nil: nil
         }
     }
     var body: some View {
@@ -254,7 +278,7 @@ private struct MapZoomControlPanelContent: View {
     let zoomIn: () -> Void
     let zoomOut: () -> Void
     let close: () -> Void
-    let status: String
+    let status: String?
     let supportsTouchPan: Bool
     let extraTitle: String?
     let extraSymbol: String
@@ -271,31 +295,18 @@ private struct MapZoomControlPanelContent: View {
 
     var body: some View {
         VStack(spacing: 18) {
-            HStack(spacing: 16) {
+            MapControlHints(guideSymbols: nil, supportsTouchPan: supportsTouchPan, dockOpen: true, prefix: identifierPrefix)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.top, 60)
+            Spacer()
+            if let status {
                 Text(status)
-                    .foregroundStyle(.white.opacity(0.82))
+                    .font(.system(size: 23, weight: .medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 18).padding(.vertical, 8)
+                    .floatingSurface(in: Capsule())
                     .accessibilityIdentifier("\(identifierPrefix)-controls-status")
-                Text(verbatim: "·")
-                    .foregroundStyle(.white.opacity(0.4))
-                    .accessibilityHidden(true)
-                if supportsTouchPan {
-                    Label(
-                        AppLocalization.string("globe.controls.swipe", defaultValue: "Drag"),
-                        systemImage: "hand.draw"
-                    )
-                    .foregroundStyle(.white.opacity(0.65))
-                    .accessibilityIdentifier("\(identifierPrefix)-controls-pan-hint")
-                } else {
-                    Label(
-                        AppLocalization.string("globe.controls.choose", defaultValue: "Choose"),
-                        systemImage: "arrow.left.and.right"
-                    )
-                    .foregroundStyle(.white.opacity(0.65))
-                    .accessibilityIdentifier("\(identifierPrefix)-controls-pan-hint")
-                }
             }
-            .font(.system(size: 23, weight: .regular))
-            .shadow(color: .black.opacity(0.8), radius: 6, y: 2)
 
             GlassEffectContainer(spacing: TVControlLayout.toolbarSpacing) {
                 HStack(spacing: TVControlLayout.toolbarSpacing) {
@@ -356,10 +367,10 @@ private struct MapZoomControlPanelContent: View {
         let isFocused = focusedControl == .mapStyle
         return Button(action: toggleStyle) {
             TwoOptionControlLabel(secondSelected: style == .standard, focused: isFocused,
-                                  segmentSize: CGSize(width: 128, height: 60)) {
-                Label(PhotoMapStyle.satellite.title, systemImage: "globe.americas.fill")
+                                  minimumSegmentWidth: 96, segmentHeight: 60, horizontalInset: 22) {
+                Text(PhotoMapStyle.satellite.title)
             } second: {
-                Label(PhotoMapStyle.standard.title, systemImage: "map.fill")
+                Text(PhotoMapStyle.standard.title)
             }
         }
         .buttonStyle(QuietPhotoButtonStyle())
@@ -377,19 +388,28 @@ private struct MapZoomControlPanelContent: View {
     ) -> some View {
         let isFocused = focusedControl == value
         return Button(action: action) {
-            Label(title, systemImage: symbol)
-                .font(.system(size: 27, weight: .medium))
-                .frame(width: value == .currentView ? 300 : 174, height: 72)
-                .lineLimit(2).minimumScaleFactor(0.85)
-                .foregroundStyle(isFocused ? .black : .white.opacity(0.9))
-                .background {
-                    Capsule().fill(.white.opacity(isFocused ? 0.94 : 0.035))
+            Group {
+                if value == .currentView {
+                    Label(title, systemImage: symbol)
+                        .lineLimit(1)
+                        .padding(.horizontal, 26)
+                } else {
+                    Label(title, systemImage: symbol)
+                        .labelStyle(.iconOnly)
+                        .frame(width: 72)
                 }
-                .overlay {
-                    Capsule().strokeBorder(.white.opacity(isFocused ? 0.95 : 0.10), lineWidth: 1)
-                }
-                .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isFocused)
+            }
+            .font(.system(size: 27, weight: .medium))
+            .frame(height: 72)
+            .foregroundStyle(isFocused ? .black : .white.opacity(0.9))
+            .background {
+                Capsule().fill(.white.opacity(isFocused ? 0.94 : 0.035))
+            }
+            .overlay {
+                Capsule().strokeBorder(.white.opacity(isFocused ? 0.95 : 0.10), lineWidth: 1)
+            }
+            .scaleEffect(isFocused && !reduceMotion ? 1.025 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isFocused)
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .prefersDefaultFocus(value == .zoomIn, in: dockFocusScope)

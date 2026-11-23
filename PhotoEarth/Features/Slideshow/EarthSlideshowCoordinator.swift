@@ -55,7 +55,7 @@ import UIKit
     // Asset-to-page ownership survives paging and reverse navigation without retaining images.
     private var displayedPage: [String: String] = [:]
     private var pageDidAppear = false
-    private var visibleTileCount = 0
+    private var visibleTileIndices = IndexSet()
     @Published private(set) var inspectingPhoto = false
     private var followsFilmstripOrder = false
     private var pageCount: Int { max(1, collageTiles.count) }
@@ -161,6 +161,12 @@ import UIKit
     var currentJourney: EarthSlideshowSegment? { currentJourneyIndex.map { pages.segments[$0] } }
     var currentJourneyNumber: Int { currentJourneyIndex.map { $0 + 1 } ?? 0 }
     var journeyCount: Int { pages.segments.count }
+    var singlePlaybackJourneyID: String? {
+        if let ids = selectedJourneyIDs { return ids.count == 1 ? ids.first : nil }
+        return availableJourneys.count == 1 ? availableJourneys.first?.id : nil
+    }
+
+    var hasStartedPlayback: Bool { !awaitsPlaybackConfirmation && phase.keepsDisplayAwake }
     var journeys: [EarthSlideshowSegment] { pages.segments }
     var displayedChapter: EarthSlideshowChapter? {
         phase == .earthIntro ? openingVisit.map { .init(visit: $0) } : currentChapter
@@ -202,7 +208,7 @@ import UIKit
     }
 
     private func candidates(at index: Int) -> [FilmstripItem] {
-        guard filmstrip.indices.contains(index) else { return [] }
+        guard scope.kind != .anniversary, filmstrip.indices.contains(index) else { return [] }
         let first = filmstrip[index]
         let owner = displayedPage[first.id]
         let prefix = filmstrip[index...].prefix(3).prefix { member in
@@ -237,7 +243,7 @@ import UIKit
         localTiles = []
         preparingCollage = false
         pageDidAppear = false
-        visibleTileCount = 0
+        visibleTileIndices.removeAll()
     }
 
     private func preparePresentationPage() {
@@ -264,18 +270,19 @@ import UIKit
               phase == .presentingItem || phase == .transitioningItem else { return }
         commitCanvas(tiles: collageTiles)
         pageDidAppear = true
-        if activeTransition?.kind != .stagger { markTilesVisible(ids, count: ids.count) }
+        if activeTransition?.kind.revealsTilesIndividually != true { markTilesVisible(ids, indices: IndexSet(ids.indices)) }
         finishDisplayingPage()
     }
 
-    func markTilesVisible(_ ids: [String], count: Int) {
-        guard !suspended, count > visibleTileCount, count <= ids.count, ids.count > 1,
+    func markTilesVisible(_ ids: [String], indices: IndexSet) {
+        let newlyVisible = indices.subtracting(visibleTileIndices)
+        guard !suspended, !newlyVisible.isEmpty, ids.count > 1,
               ids == canvasPage?.descriptor.ids, ids == collageTiles.map(\.id),
               let item = currentItem, let chapter = currentChapter, item.id == ids.first else { return }
         visitedPlaces.insert(chapter.id)
         lastShownVisit = chapter.visit
-        lastViewedAssetID = item.id
-        for index in visibleTileCount..<count {
+        if newlyVisible.contains(0) { lastViewedAssetID = item.id }
+        for index in newlyVisible {
             let id = ids[index]
             viewed.insert(id)
             if displayedPage[id] == nil { displayedPage[id] = item.id }
@@ -285,7 +292,7 @@ import UIKit
             }
 #endif
         }
-        visibleTileCount = count
+        visibleTileIndices.formUnion(newlyVisible)
     }
 
     func prepareFilmstrip(around id: String?) {
@@ -408,20 +415,25 @@ import UIKit
                         if retryingMedia {
                             records = candidates
                         } else {
-                            let eligibleCandidates = candidates.filter(photoSpacing.allows)
+                            let playsEveryItem = scope.kind == .anniversary
+                            let eligibleCandidates = playsEveryItem ? candidates : candidates.filter(photoSpacing.allows)
                             if filmstrip.isEmpty, lastShownVisit == nil, !eligibleCandidates.isEmpty {
                                 openingCandidateIDs = Set(eligibleCandidates.map(\.id))
                                 beginOpeningWhenReady(at: request.visit)
                             }
-                            selection = try await analyze(eligibleCandidates, token: token)
-                            records = selection?.records ?? []
+                            if playsEveryItem {
+                                records = eligibleCandidates
+                            } else {
+                                selection = try await analyze(eligibleCandidates, token: token)
+                                records = selection?.records ?? []
+                            }
                         }
                         try Task.checkCancellation()
                         guard generation == token else { return }
                         let eligible = records.filter { record in
                             guard !self.excluded.contains(record.id), !self.viewed.contains(record.id) else { return false }
                             // Media retries only revisit items already admitted to this show.
-                            return self.retryingMedia || self.photoSpacing.admit(record)
+                            return self.retryingMedia || self.scope.kind == .anniversary || self.photoSpacing.admit(record)
                         }
                         let firstAdded = filmstrip.count
                         do { try append(eligible, visit: request.visit) }
@@ -463,7 +475,7 @@ import UIKit
         guard !records.isEmpty else { return }
         let needsCurrentItem = currentItem == nil
         let archive = try playlistRecords ?? SlideshowSnapshot()
-        try archive.append(records)
+        try archive.append(records, visitID: visit.id)
         playlistRecords = archive
         for record in records {
             selected.insert(record.id)
@@ -927,8 +939,8 @@ import UIKit
     }
 
     private func presentCurrentItem() {
-        if activeTransition?.kind == .stagger, let ids = canvasPage?.descriptor.ids {
-            markTilesVisible(ids, count: ids.count)
+        if activeTransition?.kind.revealsTilesIndividually == true, let ids = canvasPage?.descriptor.ids {
+            markTilesVisible(ids, indices: IndexSet(ids.indices))
         }
         activeTransition = nil
         phase = .presentingItem

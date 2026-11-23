@@ -48,6 +48,21 @@ struct PlaceCollectionTests {
         #expect(try france(visits + [newer]).countryJourneyCoverAssetID == "new-cover")
     }
 
+    @Test func purchaseChecksUseTheSameJourneyAcrossVisitsAndHandleOlderIndexes() {
+        let visits = ["arrival", "next-city", "return", "old"].map { place($0, city: "City", country: "Country", date: 0) }
+        let trip = TravelJourney(id: "trip", title: "", startDate: .distantPast, endDate: .distantFuture,
+                                 placeIDs: ["arrival", "next-city"])
+        let later = TravelJourney(id: "later", title: "", startDate: .distantPast, endDate: .distantFuture,
+                                  placeIDs: ["return"])
+        let index = TravelIndex(schemaVersion: TravelIndex.currentSchemaVersion, generatedAt: .now, sourcePhotoCount: 8,
+                                locatedPhotoCount: 8, places: visits, journeys: [trip, later])
+        #expect(index.singleJourneyID(for: ["next-city"]) == "trip")
+        #expect(index.singleJourneyID(for: ["arrival", "next-city"]) == "trip")
+        #expect(index.singleJourneyID(for: ["arrival", "return"]) == nil)
+        #expect(index.singleJourneyID(for: ["old"]) == "visit:old")
+        #expect(index.singleJourneyID(for: []) == nil)
+    }
+
     @Test func recentArrivalTiesHaveStableOrder() {
         let places = [place("b", city: "B", country: "X", date: 20),
                       place("a", city: "A", country: "X", date: 20),

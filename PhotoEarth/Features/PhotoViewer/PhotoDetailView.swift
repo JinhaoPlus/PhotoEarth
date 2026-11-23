@@ -92,8 +92,10 @@ struct PhotoDetailView: View {
                 VStack(spacing: 20) {
                     if let pagingError {
                         Text(pagingError).font(.system(size: 23))
-                        Button(AppLocalization.string("common.reload", defaultValue: "Reload"), action: loadMorePhotos)
+                        Button(AppLocalization.string("common.reload", defaultValue: "Reload"), systemImage: "arrow.clockwise", action: loadMorePhotos)
+                            .labelStyle(.iconOnly)
                             .buttonStyle(.glass)
+                            .buttonBorderShape(.circle)
                             .focused($focus, equals: .pageRetry)
                             .onAppear { focus = .pageRetry }
                             .onMoveCommand(perform: moveFocusOrPhoto)
@@ -219,7 +221,7 @@ struct PhotoDetailView: View {
             .allowsHitTesting(false)
         } else if playback.hasFailed {
             Label(
-                AppLocalization.string("detail.playback_unavailable", defaultValue: "Motion unavailable · Press Play/Pause to retry"),
+                AppLocalization.string("detail.playback_unavailable", defaultValue: "Playback unavailable · Press Play/Pause to retry"),
                 systemImage: "exclamationmark.triangle"
             )
             .accessibilityIdentifier("photo-detail-motion-error")

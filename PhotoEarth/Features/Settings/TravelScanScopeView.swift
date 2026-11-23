@@ -16,11 +16,11 @@ struct TravelScanScopeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: TVControlLayout.actionSpacing) {
-                Text(AppLocalization.string("scan.scope.title", defaultValue: "Scan Scope")).font(.title2)
+                Text(AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings")).font(.title2)
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if saveTask != nil { ProgressView() }
-                Button(presentation.startsFirstScan ? AppLocalization.string("scan.scope.start", defaultValue: "Start Scan") : AppLocalization.string("scan.scope.save", defaultValue: "Save Scope"), action: save)
+                Button(presentation.startsFirstScan ? AppLocalization.string("scan.scope.start", defaultValue: "Start Scan") : AppLocalization.string("scan.scope.save", defaultValue: "Save Changes"), action: save)
                     .focused($saveFocused)
                     .accessibilityValue(Text(AppLocalization.format("scan.scope.selected_count", defaultValue: "Excluded albums: %@", AppLocalization.number(preferences.excludedAlbums.count))))
                     .accessibilityIdentifier("scan-scope-save")
@@ -32,6 +32,10 @@ struct TravelScanScopeView: View {
                 LazyVStack(alignment: .leading, spacing: 16) {
                     Toggle(AppLocalization.string("scan.scope.camera", defaultValue: "Exclude media without camera information"), isOn: $preferences.excludesMissingCamera)
                         .accessibilityIdentifier("scan-scope-camera")
+                    if preferences.excludesMissingCamera {
+                        Text(String(localized: "scan.scope.camera_help"))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     ForEach(Array(albums.enumerated()), id: \.element.id) { index, album in
                         let excluded = preferences.excludedAlbums.contains(album.id)
                         Button {
@@ -97,7 +101,7 @@ struct TravelScanScopeView: View {
                 albums = try await Task.detached(priority: .utility) { try TravelScanScope.albums() }.value
                 fetchedAlbums = true
             }
-            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Couldn’t load your albums. Reopen Scan Scope to try again.") }
+            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Couldn’t load your albums. Reopen Scan Settings to try again.") }
             while !Task.isCancelled {
                 counts = await model.scanCounts()
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }
@@ -128,7 +132,7 @@ private extension TravelScanDecision {
         case .invalidDate: AppLocalization.string("scan.count.date", defaultValue: "Missing capture date")
         case .missingLocation: AppLocalization.string("scan.count.location", defaultValue: "Missing location")
         case .noCamera: AppLocalization.string("scan.count.camera", defaultValue: "Confirmed missing camera information")
-        case .pendingCamera: AppLocalization.string("scan.count.pending", defaultValue: "Included · camera unverified")
+        case .pendingCamera: AppLocalization.string("scan.count.pending", defaultValue: "Included · camera details unverified")
         }
     }
 }

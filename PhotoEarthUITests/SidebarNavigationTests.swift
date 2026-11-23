@@ -18,12 +18,12 @@ final class SidebarNavigationTests: XCTestCase {
         attach(app, "Native sidebar")
         XCUIRemote.shared.press(.down)
         XCUIRemote.shared.press(.select)
-        let city = app.buttons["library-collection-sample-reykjavik"]
+        let city = app.buttons["library-collection-sample-rio"]
         XCTAssertTrue(city.waitForExistence(timeout: 5))
         let monthTitle = app.descendants(matching: .any)["library-recent-month-title"].firstMatch
         XCTAssertTrue(monthTitle.waitForExistence(timeout: 5))
-        XCTAssertTrue(monthTitle.label.contains("2025年2月"), "Recent visits must use a localized month heading")
-        let visitSummary = app.descendants(matching: .any)["library-visit-summary-sample-reykjavik"].firstMatch
+        XCTAssertTrue(monthTitle.label.contains("2024年10月"), "Recent visits must use a localized month heading")
+        let visitSummary = app.descendants(matching: .any)["library-visit-summary-sample-rio"].firstMatch
         XCTAssertTrue(visitSummary.waitForExistence(timeout: 5))
         XCTAssertTrue(visitSummary.label.contains("项"), "A recent-visit card must identify the full range and photo count")
         attach(app, "Recent arrivals")
@@ -99,12 +99,11 @@ final class SidebarNavigationTests: XCTestCase {
         app.openSidebarDestination("tab-settings")
         XCTAssertTrue(app.buttons["settings-scan"].waitForExistence(timeout: 5))
         attach(app, "Settings")
-        XCTAssertTrue(focus(app.buttons["settings-scan"]))
-        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(focus(app.buttons["settings-category-photos"]))
+        app.enterSettingsCategory("globe")
         let hints = app.descendants(matching: .any)["settings-globe-hints"].firstMatch
-        XCTAssertTrue(focusHomeScreenSwitch(in: app))
-        XCUIRemote.shared.press(.down)
         XCTAssertTrue(focus(hints))
+        XCTAssertFalse(app.buttons["settings-scan"].exists)
         let original = hints.value as? String
         XCUIRemote.shared.press(.select)
         XCTAssertNotEqual(hints.value as? String, original)
@@ -193,7 +192,90 @@ final class SidebarNavigationTests: XCTestCase {
         XCUIRemote.shared.press(.menu)
         XCUIRemote.shared.press(.up)
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(focus(app.buttons["library-collection-sample-reykjavik"]))
+        XCTAssertTrue(focus(app.buttons["library-collection-sample-rio"]))
+    }
+
+    @MainActor func testSettingsCategoriesPreviewAndRestoreRemoteFocus() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo"]
+        app.useSimplifiedChineseTestLanguage()
+        app.launch()
+        app.enterHomeContent()
+        app.openSidebarDestination("tab-settings")
+
+        let photos = app.buttons["settings-category-photos"]
+        let globe = app.buttons["settings-category-globe"]
+        let hints = app.descendants(matching: .any)["settings-globe-hints"].firstMatch
+        XCTAssertTrue(focus(photos))
+        XCTAssertTrue(app.buttons["settings-scan"].exists)
+        attach(app, "Settings categories")
+        XCUIRemote.shared.press(.down)
+        XCTAssertTrue(focus(globe))
+        XCTAssertTrue(hints.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["settings-scan"].exists)
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(focus(hints))
+        attach(app, "Globe settings")
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(focus(globe))
+        XCUIRemote.shared.press(.down)
+        XCTAssertTrue(focus(app.buttons["settings-category-music"]))
+        XCTAssertTrue(app.buttons["settings-music-credits"].waitForExistence(timeout: 5))
+        attach(app, "Music settings")
+        XCUIRemote.shared.press(.down)
+        XCTAssertTrue(focus(app.buttons["settings-category-home"]))
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(focus(app.descendants(matching: .any)["settings-top-shelf"].firstMatch))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(app.buttons["settings-category-home"]))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(app.cells.containing(.button, identifier: "tab-settings").firstMatch))
+    }
+
+    @MainActor func testPrivacyPolicyAndSoundtrackCreditsInSettings() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo"]
+        app.useSimplifiedChineseTestLanguage()
+        app.launch()
+        app.enterHomeContent()
+        app.openSidebarDestination("tab-settings")
+        app.enterSettingsCategory("privacy")
+        let policy = app.buttons["settings-policy"]
+        XCTAssertTrue(focus(policy))
+        XCUIRemote.shared.press(.select)
+        let passage = app.descendants(matching: .any)["settings-reference-passage-0"].firstMatch
+        XCTAssertTrue(passage.waitForExistence(timeout: 6))
+        XCTAssertTrue(passage.label.contains("隐私政策"))
+        attach(app, "Privacy policy on Apple TV")
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(policy))
+        XCUIRemote.shared.press(.down)
+        let analytics = app.descendants(matching: .any)["settings-usage-analytics"].firstMatch
+        XCTAssertTrue(focus(analytics))
+        XCTAssertEqual(app.staticTexts["settings-analytics-purpose"].label,
+                       "使用统计仅用于帮助开发者改进 App。不会上传你的照片、视频或拍摄地点。")
+        let original = try XCTUnwrap(analytics.value as? String)
+        XCUIRemote.shared.press(.select)
+        XCTAssertNotEqual(analytics.value as? String, original)
+        XCUIRemote.shared.press(.select)
+        app.enterSettingsCategory("music")
+        let automatic = app.descendants(matching: .any)["settings-music-automatic"].firstMatch
+        XCTAssertTrue(focus(automatic))
+        let music = try XCTUnwrap(automatic.value as? String)
+        XCUIRemote.shared.press(.select)
+        XCTAssertNotEqual(automatic.value as? String, music)
+        XCUIRemote.shared.press(.select)
+        attach(app, "Music sources in Settings")
+        XCUIRemote.shared.press(.down)
+        let credits = app.buttons["settings-music-credits"]
+        XCTAssertTrue(focus(credits))
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(passage.waitForExistence(timeout: 6))
+        XCTAssertTrue(passage.label.contains("HoliznaCC0"))
+        XCTAssertTrue(passage.label.contains("opengameart.org"))
+        attach(app, "Online track credits")
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(credits))
     }
 
     @MainActor func testRecentJourneyPreferencePersistsAcrossRelaunchAndRestores() throws {
@@ -204,9 +286,8 @@ final class SidebarNavigationTests: XCTestCase {
             app.launch()
             app.enterHomeContent()
             app.openSidebarDestination("tab-settings")
-            XCTAssertTrue(focus(app.buttons["settings-scan"]))
-            XCUIRemote.shared.press(.right)
-            XCTAssertTrue(focusHomeScreenSwitch(in: app))
+            app.enterSettingsCategory("home")
+            XCTAssertTrue(focus(app.descendants(matching: .any)["settings-top-shelf"].firstMatch))
         }
         openSettings()
         let preference = app.descendants(matching: .any)["settings-top-shelf"].firstMatch
@@ -222,7 +303,9 @@ final class SidebarNavigationTests: XCTestCase {
         XCTAssertEqual(preference.value as? String, changed)
         XCUIRemote.shared.press(.select)
         XCTAssertEqual(preference.value as? String, original)
-        XCUIRemote.shared.press(.down)
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(app.buttons["settings-category-home"]))
+        app.enterSettingsCategory("globe")
         XCTAssertTrue(focus(app.descendants(matching: .any)["settings-globe-hints"].firstMatch))
         XCUIRemote.shared.press(.down)
         XCTAssertTrue(focus(app.descendants(matching: .any)["settings-wait-for-globe"].firstMatch))
@@ -249,15 +332,7 @@ final class SidebarNavigationTests: XCTestCase {
         }
         XCTAssertTrue(scope.waitForExistence(timeout: 10), "Settings must belong to the live Photos library")
         let shelf = app.descendants(matching: .any)["settings-top-shelf"].firstMatch
-        let hints = app.descendants(matching: .any)["settings-globe-hints"].firstMatch
-        let imagery = app.descendants(matching: .any)["settings-wait-for-globe"].firstMatch
-        let deadline = Date().addingTimeInterval(12)
-        while !shelf.hasFocus && Date() < deadline {
-            // The native sidebar and then the two Settings columns are reached
-            // by Right. Within the right column, Home Screen is its first row.
-            let inRightColumn = hints.hasFocus || imagery.hasFocus
-            XCUIRemote.shared.press(inRightColumn ? .up : .right)
-        }
+        app.enterSettingsCategory("home")
         XCTAssertTrue(shelf.hasFocus, "The focused control must be the Home Screen preference")
         let previous = try XCTUnwrap(shelf.value as? String)
         XCTAssertTrue(["已开启", "已关闭"].contains(previous))
@@ -275,17 +350,6 @@ final class SidebarNavigationTests: XCTestCase {
         XCTAssertEqual(pixels.width, 3840)
         XCTAssertEqual(pixels.height, 2160)
 #endif
-    }
-
-    @MainActor private func focusHomeScreenSwitch(in app: XCUIApplication) -> Bool {
-        let shelf = app.descendants(matching: .any)["settings-top-shelf"].firstMatch
-        let hints = app.descendants(matching: .any)["settings-globe-hints"].firstMatch
-        let imagery = app.descendants(matching: .any)["settings-wait-for-globe"].firstMatch
-        for _ in 0..<2 {
-            if shelf.hasFocus { return true }
-            if hints.hasFocus || imagery.hasFocus { XCUIRemote.shared.press(.up) }
-        }
-        return focus(shelf)
     }
 
     @MainActor private func focus(_ element: XCUIElement) -> Bool {

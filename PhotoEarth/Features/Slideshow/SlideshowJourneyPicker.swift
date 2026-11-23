@@ -133,10 +133,12 @@ struct SlideshowJourneyPicker: View {
         } label: {
             HStack(spacing: 14) {
                 Image(systemName: tab == .selected ? "checklist" : "calendar").frame(width: 34)
-                Text(title).lineLimit(1).minimumScaleFactor(0.75)
-                Spacer()
+                Text(title)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .font(.system(size: 26, weight: .semibold))
+            .padding(.vertical, 10)
             .frame(maxWidth: .infinity, minHeight: 58, alignment: .leading)
             .padding(.horizontal, 16)
             .modifier(SlideshowBrowserRowAppearance(focused: focus == target, highlighted: section == tab))
@@ -158,7 +160,7 @@ struct SlideshowJourneyPicker: View {
                let cities = index.citiesByCountry[key], !cities.isEmpty {
                 cityMenu(cities)
             }
-            TextField(AppLocalization.string("slideshow.trip_search", defaultValue: "City or country"), text: $location.query)
+            TextField(AppLocalization.string("slideshow.trip_search", defaultValue: "City, country, or region"), text: $location.query)
                 .accessibilityIdentifier("slideshow-picker-search")
             if location != Location() {
                 Button {

@@ -79,6 +79,7 @@ private struct PlaceCollectionGrid: View {
         let key: String
         let visitID: String?
     }
+    @State private var selectionTasks: [String: UUID] = [:]
     @State private var scenicAssets: [String: EvaluatedCover] = [:]
     @State private var preparedPlaceIDs = Set<String>()
     @State private var settledResidentCollectionIDs = Set<String>()
@@ -159,7 +160,7 @@ private struct PlaceCollectionGrid: View {
                             hiddenTransitItems: model.index?.hiddenTransitPhotoCount ?? 0
                         )
                         ContentUnavailableView(
-                            notice?.title ?? AppLocalization.string("library.empty.title", defaultValue: "No Travel Places Yet"),
+                            notice?.title ?? AppLocalization.string("library.empty.title", defaultValue: "No Places Yet"),
                             systemImage: "globe.asia.australia",
                             description: Text(notice?.help ?? AppLocalization.string(
                                 "library.empty.message", defaultValue: "Photos with a date and location will appear here."))
@@ -495,16 +496,23 @@ private struct PlaceCollectionGrid: View {
                 Group {
                     if loadsImage, let asset = displayAsset, !model.excludedAssetIDs.contains(asset) {
                         PhotoAssetImage(assetID: asset, targetSize: CGSize(width: 640, height: 400),
-                                        isActive: isActive, priority: imagePriority, usesOriginalCover: usesOriginalCover,
+                                        isActive: isActive, priority: imagePriority, usesOriginalCover: usesOriginalCover, reportsCoverPhase: true,
                                         initialImage: SharedPhotoImageScheduler.shared.cachedPreview(for: asset, maximumLongEdge: 640, fullFrameOnly: usesOriginalCover))
                     } else if loadsImage && !collection.usesCountryJourneyCover {
-                        WaitingCoverView()
+                        if needsSelection, selectionTasks[collection.id] != nil {
+                            Color.clear.preference(key: CoverDisplayPreference.self, value: .waiting)
+                        } else {
+                            WaitingCoverView()
+                        }
                     } else {
                         Rectangle().fill(.white.opacity(0.07))
                             .overlay { Image(systemName: "photo").font(.system(size: 36, weight: .ultraLight)) }
                     }
                 }
                 .frame(width: width, height: width * 0.59)
+                .overlayPreferenceValue(CoverDisplayPreference.self) { phase in
+                    CoverLoadingOverlay(phase: phase, focused: focused)
+                }
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 18))
                 .overlay { RoundedRectangle(cornerRadius: 18).strokeBorder(.white.opacity(focused ? 0.95 : 0.1), lineWidth: focused ? 3 : 1) }
@@ -535,6 +543,11 @@ private struct PlaceCollectionGrid: View {
             guard needsSelection, let input else { return }
             if !isOpeningCard {
                 do { try await Task.sleep(for: .milliseconds(600)) } catch { return }
+            }
+            let token = UUID()
+            selectionTasks[collection.id] = token
+            defer {
+                if selectionTasks[collection.id] == token { selectionTasks.removeValue(forKey: collection.id) }
             }
             let preferred = await model.preferredCover(for: collection, fallback: input.fallback)
             guard !Task.isCancelled, key == scenicKey(for: card), let preferred,

@@ -3,7 +3,7 @@ import Foundation
 /// LensPin applies this threshold to each visit after indexing located items.
 nonisolated enum JourneyVisitThreshold {
     static let storageKey = "photoEarth.minimumJourneyItems"
-    static let defaultValue = 5
+    static let defaultValue = 10
     static let range = 1...1_000
     static let presets = [1, 3, 5, 10, 20, 50]
 

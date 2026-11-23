@@ -656,10 +656,13 @@ actor SQLiteTravelIndexStore: TravelIndexStoring {
             );
             CREATE INDEX IF NOT EXISTS scan_photos_date ON scan_photos(creation_date, id);
             CREATE TABLE IF NOT EXISTS scan_cover_updates (asset_id TEXT PRIMARY KEY NOT NULL) WITHOUT ROWID;
-            CREATE TRIGGER IF NOT EXISTS record_staged_cover_edit AFTER UPDATE OF latitude ON scan_photos
+            -- PhotoKit may replay the same asset in several change transactions. The
+            -- outer staging UPSERT overrides INSERT OR IGNORE inside its update trigger.
+            CREATE TRIGGER IF NOT EXISTS record_staged_cover_edit_v2 AFTER UPDATE OF latitude ON scan_photos
             BEGIN
-                INSERT OR IGNORE INTO scan_cover_updates(asset_id) VALUES (NEW.id);
+                INSERT INTO scan_cover_updates(asset_id) VALUES (NEW.id) ON CONFLICT(asset_id) DO NOTHING;
             END;
+            DROP TRIGGER IF EXISTS record_staged_cover_edit;
             """
         )
         try ensureLocalizedPlaceLabelSchema(database)
@@ -988,7 +991,7 @@ actor SQLiteTravelIndexStore: TravelIndexStoring {
             guard status == SQLITE_ROW else { throw databaseError(database) }
             guard let id = textColumn(statement, at: 0),
                   let title = textColumn(statement, at: 1) else {
-                throw TravelIndexStoreError.database(AppLocalization.string("error.index.journey_fields", defaultValue: "A journey record is incomplete."))
+                throw TravelIndexStoreError.database(AppLocalization.string("error.index.journey_fields", defaultValue: "A trip record is incomplete."))
             }
             result.append(TravelJourney(
                 id: id,
@@ -3060,34 +3063,48 @@ extension SQLiteTravelIndexStore {
 }
 
 extension SQLiteTravelIndexStore {
-    /// One indexed half-open range per anniversary, in the television's time zone.
-    /// Only the cover is decoded until the user opens a year.
-    func anniversaryDays(in ranges: [Range<Date>], excluding: Set<String>) throws -> [AnniversaryDay] {
+    func anniversaryPage(in range: Range<Date>, excluding: Set<String>, offset: Int, limit: Int = PhotoWallPageSelection.pageSize) throws -> PhotoQueryPage {
         try withDatabase(create: false) { db in
             if !excluding.isEmpty { try prepareSelectedPlaces(Array(excluding), table: "anniversary_excluded", database: db) }
-            return try ranges.compactMap { range in
-                let page = try anniversaryRows(in: range, excluding: excluding, offset: 0, limit: 1, withCount: true, db: db)
-                return page.records.first.map { AnniversaryDay(range: range, cover: $0, count: page.count) }
-            }
-        }
-    }
-
-    func anniversaryPage(in range: Range<Date>, excluding: Set<String>, offset: Int) throws -> PhotoQueryPage {
-        try withDatabase(create: false) { db in
-            if !excluding.isEmpty { try prepareSelectedPlaces(Array(excluding), table: "anniversary_excluded", database: db) }
-            let size = PhotoWallPageSelection.pageSize
-            let rows = try anniversaryRows(in: range, excluding: excluding, offset: offset, limit: size + 1, withCount: false, db: db).records
+            let size = max(1, min(limit, PhotoWallPageSelection.pageSize))
+            let rows = try anniversaryRows(in: range, excluding: excluding, offset: offset, limit: size + 1, db: db)
             return PhotoQueryPage(records: Array(rows.prefix(size)), nextOffset: rows.count > size ? offset + size : nil)
         }
     }
 
+    private func anniversaryPredicate(excluding: Set<String>) -> String {
+        """
+        creation_date >= ?1 AND creation_date < ?2 AND \(transitPredicate())
+        \(excluding.isEmpty ? "" : "AND id NOT IN (SELECT id FROM anniversary_excluded)")
+        """
+    }
+
+    func anniversaryVisitIDs(in range: Range<Date>, excluding: Set<String>) throws -> [String] {
+        try withDatabase(create: false) { db in
+            if !excluding.isEmpty { try prepareSelectedPlaces(Array(excluding), table: "anniversary_excluded", database: db) }
+            let stmt = try prepare(db, """
+                SELECT place_id FROM photos WHERE \(anniversaryPredicate(excluding: excluding)) AND place_id IS NOT NULL
+                GROUP BY place_id ORDER BY MIN(creation_date), place_id
+                """)
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_double(stmt, 1, range.lowerBound.timeIntervalSince1970)
+            sqlite3_bind_double(stmt, 2, range.upperBound.timeIntervalSince1970)
+            var visits: [String] = []
+            while true {
+                try Task.checkCancellation()
+                switch sqlite3_step(stmt) {
+                case SQLITE_ROW:
+                    if let id = textColumn(stmt, at: 0) { visits.append(id) }
+                case SQLITE_DONE: return visits
+                default: throw databaseError(db)
+                }
+            }
+        }
+    }
+
     private func anniversaryRows(in range: Range<Date>, excluding: Set<String>, offset: Int, limit: Int,
-                                 withCount: Bool, db: OpaquePointer) throws -> (records: [PhotoAssetRecord], count: Int) {
+                                 db: OpaquePointer) throws -> [PhotoAssetRecord] {
         try Task.checkCancellation()
-        let predicate = """
-            creation_date >= ?1 AND creation_date < ?2 AND \(transitPredicate())
-            \(excluding.isEmpty ? "" : "AND id NOT IN (SELECT id FROM anniversary_excluded)")
-            """
         sqlite3_progress_handler(db, 1000, { _ in Task.isCancelled ? 1 : 0 }, nil)
         defer { sqlite3_progress_handler(db, 0, nil, nil) }
         func datedStatement(_ sql: String) throws -> OpaquePointer {
@@ -3096,18 +3113,10 @@ extension SQLiteTravelIndexStore {
             sqlite3_bind_double(stmt, 2, range.upperBound.timeIntervalSince1970)
             return stmt
         }
-        var count = 0
-        if withCount {
-            let stmt = try datedStatement("SELECT COUNT(*) FROM photos WHERE " + predicate)
-            defer { sqlite3_finalize(stmt) }
-            guard sqlite3_step(stmt) == SQLITE_ROW else { throw databaseError(db) }
-            count = Int(sqlite3_column_int64(stmt, 0))
-            if count == 0 { return ([], 0) }
-        }
         let stmt = try datedStatement("""
             SELECT id,latitude,longitude,creation_date,pixel_width,pixel_height,favorite,place_id,
                    media_kind,duration,altitude,horizontal_accuracy,vertical_accuracy
-            FROM photos WHERE \(predicate) ORDER BY creation_date DESC, id ASC LIMIT ?3 OFFSET ?4
+            FROM photos WHERE \(anniversaryPredicate(excluding: excluding)) ORDER BY creation_date ASC, id ASC LIMIT ?3 OFFSET ?4
             """)
         defer { sqlite3_finalize(stmt) }
         sqlite3_bind_int64(stmt, 3, Int64(limit))
@@ -3117,9 +3126,38 @@ extension SQLiteTravelIndexStore {
             try Task.checkCancellation()
             switch sqlite3_step(stmt) {
             case SQLITE_ROW: rows.append(try photoRecord(from: stmt, database: db))
-            case SQLITE_DONE: return (rows, count)
+            case SQLITE_DONE: return rows
             default: throw databaseError(db)
             }
+        }
+    }
+}
+
+extension SQLiteTravelIndexStore {
+    /// Calendar dots need only the distinct local day numbers, within the indexed month windows.
+    func anniversaryCalendarDays(months: [DateInterval], excluding: Set<String>) throws -> Set<Int> {
+        try withDatabase(create: false) { db in
+            if !excluding.isEmpty { try prepareSelectedPlaces(Array(excluding), table: "anniversary_excluded", database: db) }
+            let stmt = try prepare(db, """
+                SELECT DISTINCT CAST(strftime('%d',creation_date,'unixepoch','localtime') AS INTEGER)
+                FROM photos WHERE creation_date >= ? AND creation_date < ? AND \(transitPredicate())
+                \(excluding.isEmpty ? "" : "AND id NOT IN (SELECT id FROM anniversary_excluded)")
+                """)
+            defer { sqlite3_finalize(stmt) }
+            var days = Set<Int>()
+            for month in months {
+                try Task.checkCancellation()
+                sqlite3_reset(stmt)
+                sqlite3_bind_double(stmt, 1, month.start.timeIntervalSince1970)
+                sqlite3_bind_double(stmt, 2, month.end.timeIntervalSince1970)
+                var code = sqlite3_step(stmt)
+                while code == SQLITE_ROW {
+                    days.insert(Int(sqlite3_column_int(stmt, 0)))
+                    code = sqlite3_step(stmt)
+                }
+                guard code == SQLITE_DONE else { throw databaseError(db) }
+            }
+            return days
         }
     }
 }

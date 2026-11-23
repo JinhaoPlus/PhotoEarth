@@ -3,6 +3,28 @@ import XCTest
 final class PhotoGlobeNavigationTests: XCTestCase {
     override func setUpWithError() throws { continueAfterFailure = false }
 
+    @MainActor func testExploreButtonSharesFocusRowAndRestoresFocusAfterExploring() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo"]
+        app.useTestLanguage("en", locale: "en_US")
+        app.launch()
+        app.enterHomeContent()
+
+        let explore = app.buttons["overview-explore-button"]
+        XCTAssertTrue(focus(explore))
+        XCTAssertEqual(explore.label, "Explore the Globe")
+        attach(app, "Explore the Globe — focused")
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(focus(app.buttons["overview-slideshow"]))
+        attach(app, "Explore the Globe — resting")
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(focus(explore))
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(focus(app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(explore))
+    }
+
     @MainActor func testPublicGlobeDeepLinkReturnsToAppHome() throws {
         let app = XCUIApplication()
         app.launchArguments = ["--demo"]
@@ -26,7 +48,7 @@ final class PhotoGlobeNavigationTests: XCTestCase {
             XCUIRemote.shared.press(.right)
         }
         XCTAssertTrue(focus(home))
-        XCTAssertTrue(app.buttons["overview-place-sample-reykjavik"].exists)
+        XCTAssertTrue(app.buttons["overview-place-sample-rio"].exists)
         attach(app, "Home content after Top Shelf Globe return")
     }
 

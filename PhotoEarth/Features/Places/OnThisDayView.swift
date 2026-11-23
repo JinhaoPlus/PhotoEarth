@@ -3,213 +3,324 @@ import SwiftUI
 struct OnThisDayView: View {
     @ObservedObject var model: AppModel
     let isActive: Bool
-    @Binding var selectedDay: AnniversaryDay?
+    @Binding var detail: AnniversaryDetailSelection?
+    let requestAccess: (AnniversaryAccessRequest) -> Void
+    let controlGlobe: @MainActor @Sendable (EarthSlideshowCameraTarget, Bool) -> Void
+    let restoreGlobe: () -> Void
 
+    @EnvironmentObject private var purchases: PurchaseStore
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var now = Date.now
-    @State private var days: [AnniversaryDay]?
+    @State private var chosen: DateComponents?
+    @State private var browser: AnniversaryBrowser?
+    @State private var loadedQuery: Query?
     @State private var failed = false
     @State private var attempt = 0
-    @FocusState private var focus: Date?
-    @State private var rememberedDay: Date?
-    @State private var belowTop = false
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @State private var picker = false
+    @State private var show: EarthSlideshowCoordinator?
+    @State private var showReturnFocus: Target?
+    @State private var lastDetail: AnniversaryDetailSelection?
+    @State private var restoration: Target?
+    @Namespace private var shelfFocus
+    @Environment(\.resetFocus) private var resetFocus
+    @FocusState private var focus: Target?
 
-    private var calendar: Calendar {
-        var value = Calendar(identifier: .gregorian)
-        value.timeZone = .autoupdatingCurrent
-        return value
+    private enum Target: Hashable {
+        case date, previous, next, play, expand(Int), photo(Int, String)
+        var year: Int? {
+            switch self {
+            case .expand(let y), .photo(let y, _): y
+            default: nil
+            }
+        }
     }
-
-    private struct Query: Equatable {
-        var day: Date
-        var revision: String?
-        var excluded: Set<String>
-        var active: Bool
-        var attempt: Int
+    private var calendar: Calendar {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = .autoupdatingCurrent
+        return cal
+    }
+    private var date: Date {
+        let md = chosen ?? calendar.dateComponents([.month, .day], from: now)
+        return calendar.anniversaryDate(month: md.month!, day: md.day!)!
+    }
+    private var title: String { date.formatted(.dateTime.month(.wide).day().locale(AppLocalization.locale)) }
+    private var years: [Int] {
+        let year = calendar.component(.year, from: now)
+        return AnniversaryDay.years(from: model.index?.places.map(\.year).min(), through: year)
+    }
+    private struct Query: Hashable {
+        let date: Date
+        let currentYear: Int
+        let zone: String
+        let revision: String?
+        let excluded: Set<String>
+        let active: Bool
+        let attempt: Int
+    }
+    private var query: Query {
+        Query(date: date, currentYear: calendar.component(.year, from: now), zone: calendar.timeZone.identifier,
+              revision: model.index?.contentRevision, excluded: model.excludedAssetIDs, active: isActive, attempt: attempt)
     }
 
     var body: some View {
-        let query = Query(day: calendar.startOfDay(for: now), revision: model.index?.contentRevision,
-                          excluded: model.excludedAssetIDs, active: isActive, attempt: attempt)
-        ScrollViewReader { scroll in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    Text(now.formatted(.dateTime.month(.wide).day().locale(AppLocalization.locale)))
-                        .font(.system(size: 50, weight: .medium)).accessibilityAddTraits(.isHeader)
-                        .id("anniversary-top")
-                    if failed {
-                        Text(AppLocalization.string("error.wall.index", defaultValue: "The photo index is temporarily unavailable. Try again."))
-                        Button(AppLocalization.string("common.retry", defaultValue: "Try Again")) { attempt += 1 }
-                    } else if let days, days.isEmpty {
-                        ContentUnavailableView(AppLocalization.string("anniversary.empty", defaultValue: "No travel photos from this day in past years"),
-                                               systemImage: "calendar")
-                            .focusable().accessibilityIdentifier("anniversary-empty")
-                    } else if let days {
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 30), count: 3), alignment: .leading, spacing: 36) {
-                            ForEach(days) { day in
-                                Button {
-                                    rememberedDay = day.id
-                                    selectedDay = day
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 0) {
-                                        Color.clear.aspectRatio(1.8, contentMode: .fit)
-                                            .overlay { PhotoAssetImage(assetID: day.cover.id, targetSize: CGSize(width: 640, height: 360)) }
-                                            .clipped()
-                                        HStack(alignment: .firstTextBaseline) {
-                                            Text(day.id.formatted(.dateTime.year().locale(AppLocalization.locale))).font(.title3.bold())
-                                            Spacer()
-                                            Text(AppLocalization.itemCount(day.count)).foregroundStyle(.secondary)
-                                        }
-                                        .padding(.horizontal, 18).padding(.vertical, 12)
-                                    }
-                                    .foregroundStyle(.white)
-                                    .background(.black.opacity(0.48))
-                                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .strokeBorder(.white.opacity(focus == day.id ? 0.95 : 0.18), lineWidth: focus == day.id ? 3 : 1)
-                                    }
-                                }
-                                .buttonStyle(QuietPhotoButtonStyle())
-                                .focusEffectDisabled()
-                                .focused($focus, equals: day.id)
-                                .accessibilityIdentifier("anniversary-year-\(calendar.component(.year, from: day.id))")
-                            }
-                        }
-                    } else {
-                        ProgressView().frame(maxWidth: .infinity)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
-                .padding(.top, 110).padding(.bottom, 60)
+        VStack(alignment: .leading, spacing: 36) {
+            header.padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
+            if failed {
+                Button(String(localized: "common.retry")) { attempt += 1 }
+                    .frame(maxWidth: .infinity)
+            } else if let browser {
+                shelves(browser)
+            } else {
+                ProgressView().frame(maxWidth: .infinity)
             }
-            .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 4 } action: { _, value in belowTop = value }
-            .onExitCommand(perform: belowTop && selectedDay == nil ? {
-                scroll.scrollTo("anniversary-top", anchor: .top)
-                focus = days?.first?.id
-            } : nil)
+            Spacer(minLength: 0)
         }
-        .background(.black.opacity(reduceTransparency ? 1 : 0.56))
-        .onAppear { now = .now }
+        .padding(.top, 100)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(.black.opacity(reduceTransparency ? 1 : 0.64))
+        .opacity(show == nil ? 1 : 0)
+        .sheet(isPresented: $picker) {
+            AnniversaryDatePicker(date: date, calendar: calendar, years: years, browser: browser, model: model) { selection in
+                chosen = selection.map { calendar.dateComponents([.month, .day], from: $0) }
+                picker = false
+                focus = .date
+            }
+        }
+        .fullScreenCover(item: $show, onDismiss: { restoreGlobe(); focus = showReturnFocus ?? .play }) { coordinator in
+            EarthSlideshowView(coordinator: coordinator, anniversaryPlaces: model.indexedPlaces) { coordinator.cancel(); show = nil }
+                .presentationBackground(.clear)
+        }
+        .onChange(of: detail?.id) { _, new in
+            if new == nil, let selection = lastDetail, selection.browser === browser {
+                restoration = .photo(selection.browser.shelves[selection.index].id, selection.record.id)
+            }
+            lastDetail = detail
+        }
+        .onChange(of: purchases.access) { old, new in
+            if old.permitsLibrary && !new.permitsLibrary && !model.isUsingSampleData {
+                clearContent()
+                attempt += 1
+            }
+        }
         .onChange(of: isActive) { _, active in if active { now = .now } }
         .onReceive(NotificationCenter.default.publisher(for: .NSCalendarDayChanged)) { _ in now = .now }
         .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in now = .now }
-        .onChange(of: query.day) { _, _ in selectedDay = nil }
+        .onChange(of: query) { _, next in
+            if let loadedQuery, loadedQuery != next { clearContent() }
+        }
         .task(id: query) {
-            guard isActive else { return }
+            let requested = query
+            guard browser == nil || loadedQuery != requested else { return }
+            clearContent()
             failed = false
+            guard isActive else { return }
             do {
-                let matches = try await model.anniversaryDays(on: query.day, calendar: calendar)
-                try Task.checkCancellation()
-                days = matches
-            } catch {
-                guard !Task.isCancelled else { return }
-                failed = true
-            }
-        }
-        .onChange(of: model.excludedAssetIDs) { _, _ in
-            days = nil
-        }
-        .onChange(of: selectedDay) { _, day in
-            if day == nil { focus = rememberedDay }
-        }
-    }
-}
-
-struct AnniversaryWall: View {
-    @ObservedObject var model: AppModel
-    let day: AnniversaryDay
-    let controlGlobe: @MainActor @Sendable (EarthSlideshowCameraTarget, Bool) -> Void
-    let restoreGlobe: () -> Void
-    let close: () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var reader: SQLiteTravelIndexStore?
-    @State private var records: [PhotoAssetRecord] = []
-    @State private var count: Int?
-    @State private var nextOffset: Int? = 0
-    @State private var loading = false
-    @State private var selectedID: String?
-    @State private var selectedPhoto: PhotoAssetRecord?
-    @State private var preview: UIImage?
-    @State private var errorText: String?
-    @State private var pageTask: Task<Void, Never>?
-    @State private var show: EarthSlideshowCoordinator?
-
-    private var title: String { AppLocalization.shortDate(day.id) }
-    private func label(_ id: String) -> PlaceDisplayLabel? { model.indexedPlaces[id].map(PlaceDisplayLabel.init(place:)) }
-
-    var body: some View {
-        ZStack {
-            ViewportPhotoWall(records: records, isLoading: loading, hasMore: nextOffset != nil,
-                              placeLabel: label, selectPhoto: { photo, image in
-                                  selectedID = photo.id
-                                  selectedPhoto = photo
-                                  preview = image
-                              }, loadMore: loadMore, close: close, isActive: selectedPhoto == nil && show == nil,
-                              selectedPhotoID: $selectedID, errorMessage: errorText, title: title, emptyHint: nil,
-                              totalPhotoCount: count, startSlideshow: startShow, analyticsLibrary: model.analyticsLibrary)
-                .disabled(selectedPhoto != nil || show != nil)
-                .opacity(show == nil ? 1 : 0)
-            if let photo = selectedPhoto {
-                PhotoDetailView(record: photo, placeLabel: photo.placeID.flatMap(label), initialImage: preview,
-                                records: records, hasMorePhotos: nextOffset != nil, isLoadingMorePhotos: loading,
-                                pagingError: errorText, loadMorePhotos: loadMore, selectRecord: { next in
-                                    selectedID = next.id
-                                    selectedPhoto = next
-                                    preview = nil
-                                }, locationLibrary: model) { selectedPhoto = nil; preview = nil }
-            }
-            if let show {
-                EarthSlideshowView(coordinator: show) { self.show = nil; restoreGlobe() }
-            }
-        }
-        .ignoresSafeArea()
-        .onAppear(perform: loadMore)
-        .onDisappear { pageTask?.cancel(); show?.cancel(); restoreGlobe() }
-    }
-
-    private func loadMore() {
-        guard !loading, let offset = nextOffset else { return }
-        loading = true
-        errorText = nil
-        pageTask = Task {
-            defer { loading = false }
-            do {
-                if offset == 0 {
-                    if reader == nil { reader = try await model.makePhotoReadSnapshot() }
-                    if let reader {
-                        count = try await reader.anniversaryDays(in: [day.range], excluding: model.excludedAssetIDs).first?.count ?? 0
-                    } else { count = day.count }
+                let reader = try await model.makePhotoReadSnapshot()
+                let md = calendar.dateComponents([.month, .day], from: date)
+                let rows = years.map { year in
+                    let interval = calendar.anniversaryDate(month: md.month!, day: md.day!, year: year)
+                        .flatMap { calendar.dateInterval(of: .day, for: $0) }
+                    return AnniversaryShelf(id: year, range: interval.map { $0.start..<$0.end }, nextOffset: 0)
                 }
-                let page = try await model.anniversaryPage(in: day.range, reader: reader, offset: offset, excluding: model.excludedAssetIDs)
+                let session = AnniversaryBrowser(model: model, reader: reader, shelves: rows)
+                for i in rows.indices { try await session.load(i, preview: true) }
                 try Task.checkCancellation()
-                records.append(contentsOf: page.records)
-                nextOffset = page.nextOffset
+                loadedQuery = requested
+                browser = session
             } catch {
-                guard !Task.isCancelled else { return }
-                errorText = AppLocalization.string("error.wall.index", defaultValue: "The photo index is temporarily unavailable. Try again.")
+                if !Task.isCancelled { failed = true }
             }
         }
+    }
+
+    private func clearContent() {
+        show?.cancel()
+        show = nil
+        detail = nil
+        lastDetail = nil
+        restoration = nil
+        loadedQuery = nil
+        browser = nil
+    }
+
+    private var header: some View {
+        HStack(spacing: 20) {
+            arrow(-1)
+            Button { picker = true } label: {
+                HStack(spacing: 16) {
+                    Text(title).font(.system(size: 46, weight: .semibold))
+                    Image(systemName: "chevron.down").font(.system(size: 22, weight: .semibold))
+                }
+            }
+            .focused($focus, equals: .date)
+            .accessibilityIdentifier("anniversary-date")
+            arrow(1)
+            Spacer()
+            EarthSlideshowEntryButton(title: String(localized: "anniversary.play"), minimumHeight: 82, action: startShow)
+                .focused($focus, equals: .play)
+                .disabled(browser?.shelves.contains { !$0.records.isEmpty } != true)
+                .accessibilityIdentifier("anniversary-play")
+        }
+        .buttonStyle(.glass)
+    }
+
+    private func arrow(_ step: Int) -> some View {
+        Button {
+            guard let next = calendar.date(byAdding: .day, value: step, to: date) else { return }
+            chosen = calendar.dateComponents([.month, .day], from: next)
+        } label: { Image(systemName: step < 0 ? "chevron.left" : "chevron.right") }
+        .focused($focus, equals: step < 0 ? .previous : .next)
+        .accessibilityLabel(step < 0 ? String(localized: "anniversary.previous") : String(localized: "anniversary.next"))
+        .accessibilityIdentifier(step < 0 ? "anniversary-previous" : "anniversary-next")
+    }
+
+    private func shelves(_ session: AnniversaryBrowser) -> some View {
+        GeometryReader { geo in
+            let inset = FullScreenMapLayout.contentHorizontalInset
+            let width = floor((geo.size.width - inset * 2 - 180 - 108 - 64) / 5)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(session.shelves.indices, id: \.self) { i in
+                            shelf(session, index: i, width: max(64, width))
+                        }
+                    }
+                    .padding(.horizontal, inset)
+                    .padding(.vertical, 12)
+                }
+                .focusScope(shelfFocus)
+                .onChange(of: focus) { _, target in
+                    if case .photo(_, let id) = target { proxy.scrollTo(id, anchor: nil) }
+                }
+                .task(id: restoration) {
+                    guard let restoration, case .photo(_, let id) = restoration else { return }
+                    proxy.scrollTo(id, anchor: nil)
+                    await Task.yield()
+                    guard !Task.isCancelled else { return }
+                    resetFocus(in: shelfFocus)
+                    focus = restoration
+                }
+                .onExitCommand(perform: focus?.year == nil ? nil : {
+                    proxy.scrollTo("anniversary-top", anchor: .top)
+                    focus = .date
+                })
+            }
+        }
+        .onPlayPauseCommand { startShow() }
+    }
+
+    private func shelf(_ session: AnniversaryBrowser, index: Int, width: CGFloat) -> some View {
+        let row = session.shelves[index]
+        let empty = row.records.isEmpty
+        let current = row.id == (focus?.year ?? session.shelves.first(where: { !$0.records.isEmpty })?.id)
+        let count = row.expanded ? row.records.count : min(5, row.records.count)
+        return HStack(alignment: .top, spacing: 0) {
+            HStack(spacing: 14) {
+                Rectangle().frame(width: current ? 32 : 16, height: 2)
+                Text(verbatim: String(row.id))
+                    .font(.system(size: current ? 39 : 31, weight: current ? .semibold : .medium))
+            }
+            .foregroundStyle(Color(white: empty ? 0.53 : current ? 1 : 0.82))
+            .frame(width: 180, height: empty ? 76 : 42, alignment: .leading)
+            .visualEffect { label, geo in
+                let tileHeight = width * 0.67
+                let extraRows = max(0, (count - 1) / 5)
+                let offset = min(CGFloat(extraRows) * (tileHeight + 16), max(0, -geo.frame(in: .scrollView).minY))
+                return label.offset(y: row.expanded ? offset : 0)
+            }
+            .accessibilityIdentifier("anniversary-year-\(row.id)")
+            if empty {
+                Text(String(localized: "anniversary.no_record"))
+                    .font(.system(size: 25)).foregroundStyle(.secondary)
+                    .frame(height: 76)
+                    .accessibilityIdentifier("anniversary-empty")
+                Spacer()
+            } else {
+                VStack(alignment: .leading, spacing: 14) {
+                    let locations = row.locationLabels(in: model.indexedPlaces)
+                    Text(locationTitle(locations))
+                        .font(.system(size: 31, weight: .semibold))
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("anniversary-locations-\(row.id)")
+                    HStack(alignment: .top, spacing: 0) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.fixed(width), spacing: 16), count: 5),
+                                  alignment: .leading, spacing: 16) {
+                            ForEach(row.records.prefix(count)) { record in
+                                ViewportPhotoCell(record: record, dateText: record.creationDate.formatted(.dateTime.hour().minute()),
+                                                  placeName: nil, isFocused: focus == .photo(row.id, record.id),
+                                                  isActive: isActive && detail == nil && show == nil, isMosaic: true,
+                                                  width: width, height: width * 0.67) { image in
+                                    authorize(session, ranges: [row.range].compactMap { $0 }) {
+                                        restoration = nil
+                                        detail = AnniversaryDetailSelection(browser: session, index: index, record: record, preview: image)
+                                    }
+                                }
+                                .id(record.id)
+                                .prefersDefaultFocus(restoration == .photo(row.id, record.id), in: shelfFocus)
+                                .focused($focus, equals: .photo(row.id, record.id))
+                                .task(id: row.expanded && record.id == row.records.last?.id && !row.failed) {
+                                    if row.expanded, record.id == row.records.last?.id, !row.failed { try? await session.load(index) }
+                                }
+                            }
+                        }
+                        .frame(width: width * 5 + 64, alignment: .leading)
+                        Spacer(minLength: 12)
+                        if row.failed {
+                            Button(String(localized: "common.retry")) { Task { try? await session.load(index) } }
+                        } else if row.records.count > 5 || row.nextOffset != nil {
+                            Button {
+                                if row.expanded { session.shelves[index].expanded = false }
+                                else {
+                                    authorize(session, ranges: [row.range].compactMap { $0 }) { session.shelves[index].expanded = true }
+                                }
+                            } label: { Image(systemName: row.expanded ? "chevron.up" : "chevron.down") }
+                            .buttonStyle(.glass)
+                            .focused($focus, equals: .expand(row.id))
+                            .accessibilityLabel(row.expanded ? String(localized: "wall.journey.collapse") : String(localized: "wall.journey.expand"))
+                            .accessibilityIdentifier("anniversary-expand-\(row.id)")
+                            .frame(height: width * 0.67)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(.vertical, empty ? 4 : 16)
+        .background(alignment: .leading) { Rectangle().fill(.white.opacity(0.22)).frame(width: 1) }
+        .focusSection()
+        .id(index == 0 ? "anniversary-top" : "anniversary-row-\(row.id)")
+    }
+
+    private func locationTitle(_ labels: [PlaceDisplayLabel]) -> AttributedString {
+        guard !labels.isEmpty else { return AttributedString(AppLocalization.unresolvedPlace) }
+        var title = AttributedString()
+        for label in labels {
+            if !title.characters.isEmpty { title.append(AttributedString("  ·  ")) }
+            if label.hasCity { title.append(label.styledName(citySize: 31)) }
+            else if let country = label.displayCountry { title.append(AttributedString(country)) }
+        }
+        return title
+    }
+
+    private func authorize(_ session: AnniversaryBrowser, ranges: [Range<Date>], open: @escaping () -> Void) {
+        let requested = query
+        requestAccess(AnniversaryAccessRequest(title: title, ranges: ranges, reader: session.reader,
+                                              isCurrent: { browser === session && query == requested }, open: open))
     }
 
     private func startShow() {
-        let scope = EarthSlideshowScope(id: "anniversary", title: title, kind: .collection)
-        let visits = (model.index?.places ?? []).filter { $0.startDate < day.range.upperBound && $0.endDate >= day.range.lowerBound }
-        let coordinator = EarthSlideshowCoordinator(scope: scope, places: visits, analyticsLibrary: model.analyticsLibrary,
-                                                   reduceMotion: reduceMotion, makeSnapshot: {
-            let snapshot = try SlideshowSnapshot(places: visits, journeys: model.index?.journeys ?? [])
-            var offset: Int? = 0
-            let excluded = model.excludedAssetIDs
-            while let start = offset {
-                try Task.checkCancellation()
-                let page = try await model.anniversaryPage(in: day.range, reader: reader, offset: start, excluding: excluded)
-                try await snapshot.appendBatch(page.records)
-                offset = page.nextOffset
-            }
-            return snapshot
-        }, cameraAction: { target, reducedMotion in controlGlobe(target, reducedMotion) })
-        show = coordinator
-        coordinator.start(waitingForConfirmation: true)
+        guard let browser else { return }
+        let ranges = browser.shelves.filter { !$0.records.isEmpty }.compactMap(\.range)
+        guard !ranges.isEmpty else { return }
+        let origin = focus
+        authorize(browser, ranges: ranges) {
+            showReturnFocus = origin
+            let scope = EarthSlideshowScope(id: "anniversary", title: title, kind: .anniversary)
+            let coordinator = EarthSlideshowCoordinator(scope: scope, places: [], analyticsLibrary: model.analyticsLibrary,
+                                                        reduceMotion: reduceMotion, makeSnapshot: { try await browser.snapshot() },
+                                                        cameraAction: controlGlobe)
+            show = coordinator
+            coordinator.start(waitingForConfirmation: true)
+        }
     }
 }

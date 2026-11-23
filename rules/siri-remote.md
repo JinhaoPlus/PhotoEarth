@@ -32,6 +32,7 @@
 
 - 探索页顶部的可见操作提示使用严格对齐的 2 × 2 网格，四格均为「按键／手势图标 + 一个动作／对象词」：拖动、转动、照片、缩放。缩放格以当前控制器提供的 Play/Pause 符号表示实体按键（缺失时回退 `playpause.fill`），文字只写「缩放」，不再显示「播放／暂停键」或「缩放控制」等句式。完整操作句只用于 VoiceOver，各提示保留稳定 accessibility identifier。
 - 四格图标优先读取当前 Game Controller 实体输入元素的 `sfSymbolsName`，并监听当前控制器、连接状态与用户按键映射变化；触摸面、物理方向环、中键和 Play/Pause 分别对应 `GCInputDirectionalDpad`、`GCInputDirectionalCardinalDpad`、`GCInputDirectionalCenterButton` 与 `GCInputMicroGamepadButtonX`。系统未提供、返回无效符号，或模拟器／通用手柄把中键与 Play/Pause 错画成 A／X 字母键时，回退到语义明确的公开 SF Symbols；不得复制 Xcode Simulator 的私有遥控器 PDF 资源，也不引入第三方图标包。
+- 开启地球操作提示且触摸面可用时，主地球与地图回看在右上角用深色衬底和白色图文提示拖动。主地球的四格提示收起后，以及打开缩放工具条时，保留拖动提示。关闭提示设置后隐藏。工具条底部只在达到缩放边界时显示状态。
 - 记忆地平线不再重复显示「按中键查看照片」；有内容时只保留照片带标题，无预览或查询失败时只显示简短状态。中键打开照片墙的完整说明仍由直接操控地球的 VoiceOver 标签提供。
 
 输入模型与回归见 [交互行动计划](../Docs/INTERACTION_ACTION_PLAN_2026-09-08.md)。

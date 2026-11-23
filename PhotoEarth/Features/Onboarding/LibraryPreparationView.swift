@@ -26,9 +26,9 @@ struct LibraryPreparationView: View {
             Spacer(minLength: 80)
             VStack(alignment: .leading, spacing: 18) {
                 if progress.phase != .complete, model.isInitialLibraryReady, let index = model.index {
-                    Text(AppLocalization.format("preparation.ready.count", defaultValue: "%1$@ · %2$@ ready to explore",
+                    Text(AppLocalization.format("preparation.ready.count", defaultValue: "Ready to explore: %1$@ · %2$@",
                                                 AppLocalization.itemCount(index.locatedPhotoCount),
-                                                AppLocalization.placeCount(index.places.count)))
+                                                AppLocalization.visitCount(index.places.count)))
                         .font(.system(size: 32, weight: .light))
                         .accessibilityIdentifier("preparation-ready")
                 }
@@ -78,7 +78,7 @@ struct LibraryPreparationView: View {
                     }
 
                     if model.usesLivePhotoLibrary && progress.phase == .failed {
-                        Button(AppLocalization.string("scan.scope.title", defaultValue: "Scan Scope"), action: model.showScanScope)
+                        Button(AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings"), action: model.showScanScope)
                             .focused($focus, equals: .scope)
                             .accessibilityIdentifier("preparation-scan-scope")
                     }
@@ -95,7 +95,7 @@ struct LibraryPreparationView: View {
                     if !reduceMotion && progress.phase.isWorking {
                         Button(followsDiscoveries
                             ? AppLocalization.string("preparation.pause_camera", defaultValue: "Pause Camera Movement")
-                            : AppLocalization.string("preparation.follow_places", defaultValue: "Follow Places")) { followsDiscoveries.toggle() }
+                            : AppLocalization.string("preparation.follow_places", defaultValue: "Follow New Places")) { followsDiscoveries.toggle() }
                             .focused($focus, equals: .camera)
                             .accessibilityIdentifier("preparation-camera")
                     }
@@ -168,11 +168,11 @@ struct LibraryPreparationEntry: View {
                     }
                 }
             }
-            .frame(width: 280, alignment: .leading)
+            .fixedSize(horizontal: true, vertical: false)
         }
         .buttonStyle(.glass)
         .accessibilityIdentifier("library-preparation-entry")
-        .accessibilityLabel(AppLocalization.format("preparation.accessibility", defaultValue: "Photos and places progress, %1$@, %2$@", progress.title, progress.countText))
+        .accessibilityLabel(AppLocalization.format("preparation.accessibility", defaultValue: "Scan progress, %1$@, %2$@", progress.title, progress.countText))
     }
 }
 

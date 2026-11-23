@@ -17,7 +17,7 @@ struct JourneyShelfTests {
             let shelf = try #require(JourneyShelfLayout.content(globeTitle: "Globe", globeImage: opaqueImage,
                                                                 journeys: Array(rows.prefix(count)), readablePosterRoutes: ["item-0"]))
             let section = try #require(shelf.sections.first)
-            #expect(shelf.sections.count == 1 && section.title == "Photo Earth")
+            #expect(shelf.sections.count == 1 && section.title == "PHOTO EARTH")
             let globe = try #require(section.items.first)
             #expect(globe.imageShape == .hdtv && globe.displayAction?.url == JourneyShelfDestination.globeURL)
             #expect(globe.imageURL(for: .screenScale2x) == opaqueImage)

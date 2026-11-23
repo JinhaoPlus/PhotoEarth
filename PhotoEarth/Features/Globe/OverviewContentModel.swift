@@ -10,7 +10,7 @@ import Observation
     @ObservationIgnored var previewMetadata: PhotoPreviewMetadata?
     @ObservationIgnored var coverPrepared = false
     @ObservationIgnored var displayedBeforeRefresh: String?
-    @ObservationIgnored var scenicPrepared = false
+    var scenicPrepared = false
     init(_ place: TravelPlace) { id = place.id; self.place = place }
 }
 

@@ -24,9 +24,11 @@
     page('Tokyo', 14), page('Rio', 20), page('p1', 26), page('p2', 31),
     page('Reykjavik', 35), page('CapeTown', 90),
     page(['p1','p2','p3'], 95), page(['s4','s5','s6'], 100),
-    page(['p1','p2','p3'], 105), page('Sydney', 110)
+    page(['p1','p2','p3'], 105), page('Sydney', 110),
+    page('Rio', 114), page('Istanbul', 118), page('Paris', 122), page('Sydney', 126)
   ];
-  const examples = { dissolve: [0,1], settle: [1,2], reveal: [7,8], backdrop: [4,5], stagger: [9,10] };
+  const examples = { dissolve: [0,1], settle: [1,2], reveal: [7,8], backdrop: [4,5], stagger: [9,10],
+                     panoramaGlide: [15,16], focusPullback: [1,2], centerOpen: [8,9] };
   const sequence = [];
   let current = null, index = 0, progress = 1, duration = 720;
   let effect = 'dissolve', mode = 'example', playing = false, job = 0, last = null, held = 0;
@@ -82,6 +84,21 @@
         b.slots.forEach(([x,y,w,h], i) => {
           ctx.globalAlpha = frame.cells[i]; ctx.drawImage(b.full, x,y,w,h, x,y,w,h);
         });
+      } else if (frame.glide) {
+        ctx.drawImage(a.bg, 0, 0);
+        ctx.drawImage(a.fg, frame.glide.oldX * W, 0);
+        overlayCtx.drawImage(b.bg, 0, 0);
+        overlayCtx.drawImage(b.fg, frame.glide.nextX * W, 0);
+        ctx.globalAlpha = frame.blend;
+        ctx.drawImage(overlay, 0, 0);
+      } else if (frame.openWidth > 0) {
+        const c = overlayCtx, width = frame.openWidth * W;
+        const gradient = c.createLinearGradient((W-width)/2, 0, (W+width)/2, 0);
+        gradient.addColorStop(0, 'transparent'); gradient.addColorStop(0.025, 'white');
+        gradient.addColorStop(0.975, 'white'); gradient.addColorStop(1, 'transparent');
+        c.drawImage(b.full, 0, 0); c.globalCompositeOperation = 'destination-in';
+        c.fillStyle = gradient; c.fillRect(0, 0, W, H); c.globalCompositeOperation = 'source-over';
+        ctx.drawImage(overlay, 0, 0);
       } else if (frame.mask) {
         const { edge, feather } = frame.mask, c = overlayCtx;
         c.drawImage(b.full, 0, 0); c.globalCompositeOperation = 'destination-in';

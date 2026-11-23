@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 /// One equal-height row, preserving each photograph's complete composition.
@@ -11,6 +12,17 @@ nonisolated enum SlideshowCollageLayout {
         let width = canvas.width - CGFloat(ratios.count - 1) * gap(in: canvas)
         let height = min(canvas.height, width / ratios.reduce(0, +))
         return ratios.map { CGSize(width: $0 * height, height: height) }
+    }
+
+    static func frames(for ratios: [CGFloat], in canvas: CGSize) -> [CGRect] {
+        let sizes = sizes(for: ratios, in: canvas)
+        let spacing = gap(in: canvas)
+        let width = sizes.reduce(CGFloat(max(0, sizes.count - 1)) * spacing) { $0 + $1.width }
+        var x = (canvas.width - width) / 2
+        return sizes.map { size in
+            defer { x += size.width + spacing }
+            return CGRect(x: x, y: (canvas.height - size.height) / 2, width: size.width, height: size.height)
+        }
     }
 
     static func count(for ratios: [CGFloat], in canvas: CGSize = television) -> Int {

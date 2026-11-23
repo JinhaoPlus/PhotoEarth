@@ -1,0 +1,19 @@
+PHOTO EARTH Privacy Policy
+Effective November 23, 2026
+
+Your photo library
+With your permission, PHOTO EARTH uses Apple’s Photos framework on Apple TV to read photos, videos and their metadata, including capture dates, GPS coordinates and camera information. It uses these to group visits and cities, choose covers and play slideshows. The app builds its travel index on your Apple TV and matches places against a bundled offline database. It does not change your originals or send your library, thumbnails or travel index to the developer.
+
+Your controls and storage
+In PHOTO EARTH Settings, open Scan Scope to exclude albums. Turn off Show Recently Visited Cities to remove personal city previews from the Apple TV Home Screen. You can revoke Photos access in Apple TV Settings > General > Privacy & Security > Photos. Revoking access stops private-library browsing and withdraws personal Home Screen previews. Deleting the app removes its local travel index and app-container caches. Your Photos library is managed separately by Apple. Lightweight preferences, such as the last selected place ID, can sync through your Apple Account with iCloud. Deleting the app from one TV does not clear those iCloud preferences.
+
+Usage analytics
+Usage analytics is on by default. We use PostHog Cloud in the United States to understand which features people use and where a step fails. A pseudonymous installation ID links events from the same installation. Events include opening the app, the result of a Photos permission request, opening a photo wall, starting a slideshow, the selected music source and an approximate duration. Events include the app and system versions and languages. We do not send photos, photo IDs, album names, places, coordinates, song titles or your Apple Account to PostHog. IP-based geolocation and person profiles are disabled. We do not track you across other companies’ apps or websites or sell this data.
+
+Turn off Share Usage Analytics in PHOTO EARTH Settings to stop collection and clear unsent events on that TV. This does not delete previously delivered events. The project’s retention period is 12 months. PostHog removes expired events in scheduled cleanups.
+
+Apple and other services
+Apple Maps supplies the map for the area you view. Photos may retrieve originals from your iCloud Photos library. If you choose Apple Music and grant access, MusicKit retrieves music selections and plays them through Apple. Apple handles purchases and restores through StoreKit. PHOTO EARTH reads verified purchase entitlements and does not receive your payment details. Online Music retrieves a public catalog and audio from Cloudflare. As with other network requests, the provider receives your IP address and the requested resource. Your photos are not included in those requests.
+
+Contact and deletion requests
+For a privacy question or deletion request, email rowin2013@gmail.com with PHOTO EARTH in the subject. We use information you choose to send to respond and resolve your request. Analytics records use an installation ID and contain no email address, so an email address alone cannot identify a particular installation’s records. Please do not send photos, exact locations or payment details.

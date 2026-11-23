@@ -20,8 +20,17 @@ extension XCUIApplication {
             }
         }
         guard let target = ids.firstIndex(of: identifier) else { XCTFail("Unknown sidebar destination"); return }
-        if focusedIndex() == nil { XCUIRemote.shared.press(.menu) }
-        let deadline = Date().addingTimeInterval(12)
+        if focusedIndex() == nil {
+            let inSettings = buttons["settings-category-photos"].exists
+            XCUIRemote.shared.press(.menu)
+            // Back can first return focus to the top of Home or to a settings category.
+            let homeEntry = buttons["overview-explore-button"]
+            if focusedIndex() == nil && (inSettings || (homeEntry.exists && homeEntry.hasFocus)) {
+                XCUIRemote.shared.press(.menu)
+            }
+        }
+        var deadline = Date().addingTimeInterval(12)
+        var visited = Set<Int>()
         while Date() < deadline {
             guard let index = focusedIndex() else {
                 RunLoop.current.run(until: Date().addingTimeInterval(0.15))
@@ -31,10 +40,30 @@ extension XCUIApplication {
                 XCUIRemote.shared.press(.select)
                 return
             }
+            if visited.insert(index).inserted {
+                deadline = Date().addingTimeInterval(12)
+            }
             XCUIRemote.shared.press(index < target ? .down : .up)
             RunLoop.current.run(until: Date().addingTimeInterval(0.45))
         }
-        XCTFail("Native sidebar did not focus the requested destination")
+        XCTFail("Native sidebar did not focus the requested destination\n" + debugDescription)
+    }
+
+    @MainActor func enterSettingsCategory(_ name: String) {
+        let categories = buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'settings-category-'"))
+        let target = buttons["settings-category-\(name)"]
+        guard target.waitForExistence(timeout: 6) else { XCTFail("Missing settings category " + name + "\n" + debugDescription); return }
+        func focusedCategory() -> XCUIElement? { categories.allElementsBoundByIndex.first { $0.hasFocus } }
+        if focusedCategory() == nil { XCUIRemote.shared.press(.left) }
+        for _ in 0..<6 {
+            guard let current = focusedCategory() else { XCTFail("Expected focus in the settings categories\n" + debugDescription); return }
+            if current.identifier == target.identifier {
+                XCUIRemote.shared.press(.select)
+                return
+            }
+            XCUIRemote.shared.press(current.frame.midY < target.frame.midY ? .down : .up)
+        }
+        XCTFail("Could not enter settings category " + name)
     }
 
     @MainActor func confirmSlideshowExit(file: StaticString = #filePath, line: UInt = #line) {
@@ -44,7 +73,8 @@ extension XCUIApplication {
         // tvOS focuses the native button containing the identified SwiftUI action.
         let stay = alert.buttons.containing(.button, identifier: "slideshow-exit-stay").firstMatch
         let exit = alert.buttons.containing(.button, identifier: "slideshow-exit-confirm").firstMatch
-        XCTAssertTrue(stay.hasFocus, file: file, line: line)
+        let initialFocus = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasFocus == true"), object: stay)
+        XCTAssertEqual(XCTWaiter.wait(for: [initialFocus], timeout: 5), .completed, file: file, line: line)
         XCUIRemote.shared.press(.right)
         let focused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasFocus == true"), object: exit)
         XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed, file: file, line: line)

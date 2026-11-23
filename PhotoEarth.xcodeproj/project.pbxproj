@@ -484,8 +484,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PhotoEarth-Info.plist";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth uses the Apple TV's approximate location to start the globe near you.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth uses capture dates, locations, and camera information to build your travel globe on this Apple TV.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "PHOTO EARTH uses the Apple TV's approximate location to start the globe near you.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PHOTO EARTH uses capture dates, locations, and camera information to build your travel globe on this Apple TV.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -521,8 +521,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "PhotoEarth-Info.plist";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Photo Earth uses the Apple TV's approximate location to start the globe near you.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Photo Earth uses capture dates, locations, and camera information to build your travel globe on this Apple TV.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "PHOTO EARTH uses the Apple TV's approximate location to start the globe near you.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "PHOTO EARTH uses capture dates, locations, and camera information to build your travel globe on this Apple TV.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UIUserInterfaceStyle = Automatic;
 				LD_RUNPATH_SEARCH_PATHS = (

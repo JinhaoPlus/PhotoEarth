@@ -107,6 +107,11 @@ final class SlideshowMusicController: ObservableObject {
     @Published private(set) var errorMessage: String?
     @Published private(set) var playbackError: String?
 
+    static let automaticMusicOffKey = "PhotoEarth.slideshow.automaticMusicOff"
+    @Published private(set) var automaticMusicEnabled = !UserDefaults.standard.bool(forKey: automaticMusicOffKey)
+    private var defaultMusicTask: Task<Void, Never>?
+    private var catalogTask: Task<OnlineSlideshowCatalog.Snapshot, Error>?
+
     var isUsingOnlineMusic: Bool {
         guard let queue else { return false }
         return queue === onlineDriver
@@ -116,7 +121,7 @@ final class SlideshowMusicController: ObservableObject {
     private let requestPermission: @MainActor () async -> SlideshowMusicAuthorizationState
     private let makeDriver: @MainActor () -> any SlideshowAppleMusicDriving
     private var driver: (any SlideshowAppleMusicDriving)?
-    let recommendations: OnlineMusicRecommendations
+    private let recommendations: OnlineMusicRecommendations
     private let onlineDriver: OnlineSlideshowMusicDriver
     private var queue: (any SlideshowMusicPlaying)?
     private var preparingAppleDriver: (any SlideshowAppleMusicDriving)?
@@ -291,19 +296,62 @@ final class SlideshowMusicController: ObservableObject {
             return true
         }
         return await prepareSelection { [self] token in
-            do {
-                let snapshot = try await onlineDriver.prepare(playlist, startingAt: trackID)
-                guard session == token, !Task.isCancelled else { return false }
-                let choice = SlideshowMusicChoice(
-                    id: playlist.id, title: playlist.displayTitle, subtitle: nil, kind: .playlist, artworkURL: nil
-                )
-                installQueue(onlineDriver, choice: choice, snapshot: snapshot)
-                if explicitTrackChoice { recommendations.recordChoice(track) }
-                return true
-            } catch {
-                return false
+            let prepared = await prepareOnlineQueue(playlist, startingAt: trackID, session: token)
+            if prepared && explicitTrackChoice { recommendations.recordChoice(track) }
+            return prepared
+        }
+    }
+
+    // The opening and picker share an in-flight fetch and the same session recommendation order.
+    func onlineCatalog() async throws -> OnlineSlideshowCatalog.Snapshot {
+        if let catalogTask { return try await catalogTask.value }
+        let token = session
+        let task = Task {
+            let snapshot = try await OnlineSlideshowCatalog.load()
+            try Task.checkCancellation()
+            return OnlineSlideshowCatalog.Snapshot(
+                playlists: recommendations.playlists(for: snapshot.playlists), isCached: snapshot.isCached)
+        }
+        catalogTask = task
+        defer { if session == token { catalogTask = nil } }
+        return try await task.value
+    }
+
+    func prepareDefaultMusicIfNeeded() {
+        guard automaticMusicEnabled, selectedChoice == nil, defaultMusicTask == nil else { return }
+        let token = session
+        defaultMusicTask = Task {
+            guard !Task.isCancelled else { return }
+            guard let playlist = try? await onlineCatalog().playlists.first,
+                  playlist.id == OnlineSlideshowPlaylist.recommendedID,
+                  let first = playlist.tracks.first else { return }
+            if await prepareOnlineQueue(playlist, startingAt: first.id, session: token) {
+                pauseForOriginalAudioOrScheduleReconciliation()
             }
         }
+    }
+
+    private func prepareOnlineQueue(_ playlist: OnlineSlideshowPlaylist,
+                                    startingAt trackID: OnlineSlideshowPlaylist.Track.ID, session token: UUID) async -> Bool {
+        guard !Task.isCancelled, session == token,
+              let snapshot = try? await onlineDriver.prepare(playlist, startingAt: trackID),
+              !Task.isCancelled, session == token else { return false }
+        let choice = SlideshowMusicChoice(
+            id: playlist.id, title: playlist.displayTitle, subtitle: nil, kind: .playlist, artworkURL: nil)
+        installQueue(onlineDriver, choice: choice, snapshot: snapshot)
+        return true
+    }
+
+    func turnOffMusic() {
+        setAutomaticMusicEnabled(false)
+        defaultMusicTask?.cancel()
+        defaultMusicTask = nil
+        clearMusic()
+    }
+
+    private func setAutomaticMusicEnabled(_ enabled: Bool) {
+        automaticMusicEnabled = enabled
+        UserDefaults.standard.set(!enabled, forKey: Self.automaticMusicOffKey)
     }
 
     func cancelSelection() {
@@ -312,10 +360,15 @@ final class SlideshowMusicController: ObservableObject {
 
     private func prepareSelection(_ prepare: @escaping @MainActor (UUID) async -> Bool) async -> Bool {
         guard selectionTask == nil, !Task.isCancelled else { return false }
+        let interruptedDefault = defaultMusicTask != nil && selectedChoice == nil
+        defaultMusicTask?.cancel()
+        defaultMusicTask = nil
         let token = session
         let task = Task { @MainActor in
             guard !Task.isCancelled else { return false }
-            return await prepare(token)
+            let selected = await prepare(token)
+            if selected && !automaticMusicEnabled { setAutomaticMusicEnabled(true) }
+            return selected
         }
         selectionTask = task
         isPreparingSelection = true
@@ -324,6 +377,7 @@ final class SlideshowMusicController: ObservableObject {
                 selectionTask = nil
                 preparingAppleDriver = nil
                 isPreparingSelection = false
+                if interruptedDefault { prepareDefaultMusicIfNeeded() }
                 pauseForOriginalAudioOrScheduleReconciliation()
             }
         }
@@ -390,7 +444,7 @@ final class SlideshowMusicController: ObservableObject {
         pauseForOriginalAudioOrScheduleReconciliation()
     }
 
-    func clearMusic() {
+    private func clearMusic() {
         reconciliationTask?.cancel()
         playbackObservationTask?.cancel()
         reconciliationTask = nil
@@ -405,6 +459,10 @@ final class SlideshowMusicController: ObservableObject {
     }
 
     func stopAndReset() {
+        defaultMusicTask?.cancel()
+        defaultMusicTask = nil
+        catalogTask?.cancel()
+        catalogTask = nil
         recommendations.resetSession()
         subscriptionTask?.cancel()
         subscriptionTask = nil
@@ -913,7 +971,7 @@ private final class FixtureSlideshowMusicDriver: SlideshowAppleMusicDriving, Sli
         SlideshowMusicChoice(
             id: "fixture:playlist:quiet-journeys",
             title: "Quiet Journeys",
-            subtitle: "Photo Earth",
+            subtitle: "PHOTO EARTH",
             kind: .playlist,
             artworkURL: nil
         ),
@@ -938,7 +996,9 @@ private final class FixtureSlideshowMusicDriver: SlideshowAppleMusicDriving, Sli
         return .authorized
     }
 
-    func canPlayCatalogContent() async throws -> Bool { true }
+    func canPlayCatalogContent() async throws -> Bool {
+        !ProcessInfo.processInfo.arguments.contains("--apple-music-no-subscription-fixture")
+    }
 
     func subscriptionUpdates() -> AsyncStream<Bool> {
         AsyncStream { _ in }

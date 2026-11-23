@@ -207,24 +207,14 @@ struct MapReviewView: View {
                             HStack(alignment: .top) {
                                 Text(text("review.title", "Photo Map")).font(.system(size: 30, weight: .medium))
                                 Spacer()
-                                Grid(alignment: .leading, horizontalSpacing: 26, verticalSpacing: 12) {
-                                    GridRow {
-                                        if camera.supportsTouchPan {
-                                            Label(text("globe.controls.swipe", "Drag"), systemImage: camera.remoteSymbolNames.touchSurface)
-                                        } else {
-                                            Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
-                                        }
-                                        Label(text("globe.controls.arrows", "Turn"), systemImage: camera.remoteSymbolNames.directionalPad)
-                                    }
-                                    GridRow {
-                                        Label(text("globe.controls.select", "Photos"), systemImage: camera.remoteSymbolNames.centerButton)
-                                        Label(text("globe.controls.zoom", "Zoom"), systemImage: camera.remoteSymbolNames.playPauseButton)
-                                    }
-                                }.font(.system(size: 23)).padding(18).floatingSurface(in: RoundedRectangle(cornerRadius: 18))
-                            }.padding(.horizontal, 80).padding(.top, 60).allowsHitTesting(false)
+                                MapControlHints(guideSymbols: camera.remoteSymbolNames, supportsTouchPan: camera.supportsTouchPan,
+                                                dockOpen: false, prefix: "map-review")
+                            }
+                            .padding(.horizontal, 80).padding(.top, 60)
                             Spacer()
                             horizon
-                        }.foregroundStyle(.white).allowsHitTesting(false)
+                        }
+                        .foregroundStyle(.white).allowsHitTesting(false)
                     } else {
                         MapZoomControlPanel(zoomIn: { camera.zoom(inward: true, animated: !reduceMotion) },
                             zoomOut: { camera.zoom(inward: false, animated: !reduceMotion) }, close: closeControls,

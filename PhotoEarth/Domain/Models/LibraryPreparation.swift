@@ -31,9 +31,9 @@ nonisolated enum LibraryPreparationNotice: String, Codable, Sendable {
         case .waitForWall:
             AppLocalization.string("preparation.message.wait_for_wall", defaultValue: "Photo information is ready. Updating will continue after you leave the photo wall.", locale: locale)
         case .geocoderBusy:
-            AppLocalization.string("preparation.message.geocoder_busy", defaultValue: "Place naming is paused. Your progress is saved and will resume later.", locale: locale)
+            AppLocalization.string("preparation.message.geocoder_busy", defaultValue: "Adding place names is paused. Your progress is saved. Work will resume later.", locale: locale)
         case .noLocatedPhotos:
-            AppLocalization.string("preparation.message.no_located_photos", defaultValue: "No photos or videos matched this scan. Check the scan scope and the locations in Photos.", locale: locale)
+            AppLocalization.string("preparation.message.no_located_photos", defaultValue: "No photos or videos matched this scan. Check your scan settings and the capture locations in Photos.", locale: locale)
         case .savedOnDevice:
             AppLocalization.string("preparation.message.saved_on_device", defaultValue: "Your scan results are saved on this Apple TV.", locale: locale)
         case .partialLabels:
@@ -107,7 +107,7 @@ nonisolated struct LibraryPreparationProgress: Codable, Equatable, Sendable {
             AppLocalization.format("preparation.count.remaining", defaultValue: "%lld places still need names", Int64(remainingPlaces))
         case .complete:
             AppLocalization.format("preparation.count.complete", defaultValue: "Items with a location: %1$@ · Places: %2$@", AppLocalization.number(locatedPhotos), AppLocalization.number(totalPlaces))
-        case .failed: AppLocalization.string("preparation.count.saved", defaultValue: "Your saved memories are still here")
+        case .failed: AppLocalization.string("preparation.count.saved", defaultValue: "Your previous scan results are safe.")
         case .saving: AppLocalization.string("preparation.count.saving", defaultValue: "Saving progress on this Apple TV")
         case .idle: AppLocalization.string("preparation.count.idle", defaultValue: "View photos and places")
         }

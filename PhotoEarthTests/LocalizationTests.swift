@@ -85,7 +85,7 @@ struct LocalizationTests {
 
         verify("settings.photos_and_scan", simplified: "照片与扫描", traditional: "照片與掃描")
         verify("settings.journeys_on_home", simplified: "显示最近到访的城市", traditional: "顯示最近到訪的城市")
-        verify("settings.label_summary", simplified: "已命名地点 %1$@ / %2$@", traditional: "已命名地點 %1$@ / %2$@")
+        verify("settings.label_summary", simplified: "已有地名的到访 %1$@ / %2$@", traditional: "已有地名的到訪 %1$@ / %2$@")
         verify("settings.last_organized", simplified: "上次整理：%@", traditional: "上次整理：%@")
         verify("settings.complete_places", simplified: "继续补充地点名称", traditional: "繼續補充地點名稱")
         verify("settings.rebuild", simplified: "重新扫描照片和视频", traditional: "重新掃描照片和影片")
@@ -150,6 +150,9 @@ struct LocalizationTests {
         #expect(AppLocalization.itemCount(2, locale: Locale(identifier: "zh-Hant")) == "2 項")
         #expect(AppLocalization.photoCount(1, locale: Locale(identifier: "en")) == "1 photo")
         #expect(AppLocalization.photoCount(2, locale: Locale(identifier: "en")) == "2 photos")
+        #expect(AppLocalization.visitCount(1, locale: Locale(identifier: "en")) == "1 visit")
+        #expect(AppLocalization.visitCount(2, locale: Locale(identifier: "en")) == "2 visits")
+        #expect(AppLocalization.visitCount(2, locale: Locale(identifier: "zh-Hans")) == "2 次到访")
         #expect(AppLocalization.placeCount(2, locale: Locale(identifier: "de")) == "2 Orte")
         #expect(AppLocalization.cityCount(2, locale: Locale(identifier: "ja")) == "2都市")
         #expect(AppLocalization.photoCount(2, locale: Locale(identifier: "zh-Hans")) == "2 张照片")
@@ -158,10 +161,10 @@ struct LocalizationTests {
 
     @Test(arguments: [
         ("en", "Drag", "Turn", "Photos", "Zoom", "Play/Pause · Zoom controls"),
-        ("de", "Bewegen", "Drehen", "Fotos", "Zoom", "Wiedergabe/Pause · Zoomsteuerung"),
-        ("es", "Mover", "Girar", "Fotos", "Zoom", "Reproducir/Pausa · Controles de zoom"),
+        ("de", "Ziehen", "Drehen", "Fotos", "Zoom", "Wiedergabe/Pause · Zoomsteuerung"),
+        ("es", "Arrastrar", "Girar", "Fotos", "Zoom", "Reproducir/Pausa · Controles de zoom"),
         ("fr", "Déplacer", "Tourner", "Photos", "Zoom", "Lecture/Pause · Commandes de zoom"),
-        ("it", "Sposta", "Ruota", "Foto", "Zoom", "Riproduci/Pausa · Controlli zoom"),
+        ("it", "Trascina", "Ruota", "Foto", "Zoom", "Riproduci/Pausa · Controlli zoom"),
         ("ja", "ドラッグ", "回転", "写真", "ズーム", "再生／一時停止・ズーム操作"),
         ("zh-Hans", "拖动", "转动", "照片", "缩放", "播放/暂停 · 缩放控制"),
         ("zh-Hant", "拖曳", "轉動", "照片", "縮放", "播放/暫停 · 縮放控制"),
@@ -204,7 +207,7 @@ struct LocalizationTests {
 
     @Test(arguments: [
         ("en", "clickpad center", "touch surface", "Play/Pause", "Back"),
-        ("de", "Klickpad-Mitte", "Touch-Oberfläche", "Wiedergabe-/Pausetaste", "Zurück-Taste"),
+        ("de", "Klickpad-Mitte", "Touch-Oberfläche", "Taste „Wiedergabe/Pause“", "Taste „Zurück“"),
         ("es", "centro del clickpad", "superficie táctil", "Reproducir/Pausa", "botón Atrás"),
         ("fr", "centre du clickpad", "surface tactile", "Lecture/Pause", "bouton Retour"),
         ("it", "centro del clickpad", "superficie touch", "Riproduci/Pausa", "tasto Indietro"),
@@ -250,7 +253,7 @@ struct LocalizationTests {
         ("es", "Controles de zoom del globo", "Acercar", "Alejar", "Mostrar indicaciones de control del globo"),
         ("fr", "Commandes de zoom du globe", "Zoom avant", "Zoom arrière", "Afficher les indications de contrôle du globe"),
         ("it", "Controlli zoom del globo", "Ingrandisci", "Riduci", "Mostra i suggerimenti per controllare il globo"),
-        ("ja", "地球のズーム操作", "拡大", "縮小", "地球の操作ヒントを表示"),
+        ("ja", "地球儀のズーム操作", "拡大", "縮小", "地球儀の操作ヒントを表示"),
         ("zh-Hans", "地球缩放控制", "放大", "缩小", "显示地球操作提示"),
         ("zh-Hant", "地球縮放控制", "放大", "縮小", "顯示地球操作提示"),
     ])
@@ -344,7 +347,7 @@ struct LocalizationTests {
         ("de", "Diashow", "Zurück zur Fotowand"),
         ("fr", "Diaporama", "Retour au mur de photos"),
         ("es", "Presentación", "Volver al muro de fotos"),
-        ("it", "Presentazione", "Torna alla parete di foto"),
+        ("it", "Presentazione", "Torna alla galleria"),
         ("zh-Hans", "放映", "返回照片墙"),
         ("zh-Hant", "放映", "返回照片牆"),
     ])
@@ -367,7 +370,7 @@ struct LocalizationTests {
     }
 
     @Test(arguments: [
-        ("en", "Connect Apple Music", "Choose Music", "Music for This Journey", "Background Music"),
+        ("en", "Connect Apple Music", "Choose Music", "Slideshow Music", "Background Music"),
         ("ja", "Apple Musicに接続", "音楽を選択", "この旅の音楽", "BGM"),
         ("de", "Mit Apple Music verbinden", "Musik auswählen", "Musik für diese Reise", "Hintergrundmusik"),
         ("fr", "Connecter Apple Music", "Choisir la musique", "Musique de ce voyage", "Musique de fond"),
@@ -396,7 +399,7 @@ struct LocalizationTests {
         ) == choose)
         #expect(AppLocalization.string(
             "slideshow.music.title",
-            defaultValue: "Music for This Journey",
+            defaultValue: "Slideshow Music",
             locale: locale
         ) == title)
         #expect(AppLocalization.string(

@@ -125,7 +125,7 @@ def write_playback_catalog(output, playlists, metadata):
 
 def write_catalog(output, playlists, metadata):
     credits = [
-        "Photo Earth online music",
+        "PHOTO EARTH online music",
         f"License: CC0 1.0 Universal ({LICENSE})",
         "Audio was adjusted for playback loudness and transcoded to AAC.",
         "",

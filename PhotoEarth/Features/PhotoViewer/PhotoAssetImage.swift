@@ -12,6 +12,7 @@ struct PhotoAssetImage: View {
     var isActive = true
     var priority: PhotoImagePriority = .visible
     var usesOriginalCover = false
+    var reportsCoverPhase = false
     var initialImage: UIImage?
     var onImageChange: ((UIImage?) -> Void)?
     var onRetryVisibilityChange: ((Bool) -> Void)?
@@ -49,6 +50,12 @@ struct PhotoAssetImage: View {
             && loader.shouldOfferRetry(for: assetID)
     }
 
+    private var coverPhase: CoverDisplayPhase {
+        guard reportsCoverPhase, requestKey.isActive, !isRemoved else { return .idle }
+        if currentImage != nil || initialImage != nil || usesSampleArtwork { return .displayed }
+        return loader.loadedAssetID != assetID || loader.isLoading ? .waiting : .idle
+    }
+
     var body: some View {
         Group {
             if isRemoved || !isActive {
@@ -59,7 +66,9 @@ struct PhotoAssetImage: View {
                     .aspectRatio(contentMode: displayContentMode ?? contentMode)
             } else if usesSampleArtwork {
                 SamplePhotoArtwork(seed: assetID)
-            } else if usesOriginalCover {
+            } else if reportsCoverPhase && coverPhase == .waiting {
+                Color.clear
+            } else if usesOriginalCover || reportsCoverPhase {
                 WaitingCoverView()
             } else {
                 ZStack {
@@ -73,8 +82,10 @@ struct PhotoAssetImage: View {
                             Text(AppLocalization.string("photo.check_connection", defaultValue: "Check your connection and try again"))
                                 .font(.system(size: 23))
                                 .foregroundStyle(.secondary)
-                            Button(AppLocalization.string("common.reload", defaultValue: "Reload"), action: load)
+                            Button(AppLocalization.string("common.reload", defaultValue: "Reload"), systemImage: "arrow.clockwise", action: load)
+                                .labelStyle(.iconOnly)
                                 .buttonStyle(.bordered)
+                                .buttonBorderShape(.circle)
                                 .accessibilityIdentifier("photo-image-retry")
                         }
                     } else {
@@ -85,14 +96,17 @@ struct PhotoAssetImage: View {
                 }
             }
         }
+        .preference(key: CoverDisplayPreference.self, value: coverPhase)
         .clipped()
         .overlay(alignment: .bottom) {
             if retryVisible, (currentImage != nil || initialImage != nil) {
                 HStack(spacing: 24) {
                     Text(AppLocalization.string("photo.full_load_failed", defaultValue: "Full photo unavailable"))
                         .font(.system(size: 23))
-                    Button(AppLocalization.string("common.reload", defaultValue: "Reload"), action: load)
+                    Button(AppLocalization.string("common.reload", defaultValue: "Reload"), systemImage: "arrow.clockwise", action: load)
+                        .labelStyle(.iconOnly)
                         .buttonStyle(.bordered)
+                        .buttonBorderShape(.circle)
                         .accessibilityIdentifier("photo-image-retry")
                 }
                 .padding(24)

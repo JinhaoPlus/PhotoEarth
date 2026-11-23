@@ -107,6 +107,41 @@ nonisolated struct TravelIndex: Codable, Equatable, Sendable {
 
     var isCompatible: Bool { schemaVersion == Self.currentSchemaVersion }
 
+    /// Older indexes can contain visits without journey membership.
+    func singleJourneyID(for placeIDs: [String]) -> String? {
+        guard let first = placeIDs.first else { return nil }
+        let ids = Set(placeIDs)
+        if let journey = journeys.first(where: { $0.placeIDs.contains(first) }) {
+            return ids.isSubset(of: journey.placeIDs) ? journey.id : nil
+        }
+        return ids.count == 1 && place(id: first) != nil ? "visit:" + first : nil
+    }
+
+    enum JourneyScope { case empty, journey(String), requiresUnlock }
+
+    @MainActor func journeyScope(chosen: String, excluding: Set<String>,
+                                 page: (Int) async throws -> PhotoQueryPage) async throws -> JourneyScope {
+        var offset = 0
+        var visited = Set<String>()
+        var journey: String?
+        while true {
+            let batch = try await page(offset)
+            try Task.checkCancellation()
+            for photo in batch.records where !excluding.contains(photo.id) {
+                guard let visit = photo.placeID else { return .requiresUnlock }
+                guard visited.insert(visit).inserted else { continue }
+                guard let id = singleJourneyID(for: [visit]), journey == nil || journey == id,
+                      chosen.isEmpty || chosen == id else { return .requiresUnlock }
+                journey = id
+            }
+            guard let next = batch.nextOffset else { break }
+            guard next > offset else { throw TravelIndexStoreError.invalidSnapshot }
+            offset = next
+            await Task.yield()
+        }
+        return journey.map(JourneyScope.journey) ?? .empty
+    }
+
     func place(id: String?) -> TravelPlace? {
         guard let id else { return nil }
         return places.first { $0.id == id }

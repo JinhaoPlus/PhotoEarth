@@ -99,14 +99,22 @@ final class AppModel: ObservableObject {
         if enabled { refreshTopShelf() }
     }
 
+    private var hasFullShelfAccess = false
+
+    func setFullShelfAccess(_ allowed: Bool) {
+        guard hasFullShelfAccess != allowed else { return }
+        hasFullShelfAccess = allowed
+        if allowed { refreshTopShelf() } else { withdrawTopShelf() }
+    }
+
     private func refreshTopShelf() {
-        guard isSceneActive, showsJourneysOnTopShelf, usesLivePhotoLibrary, let index,
+        guard hasFullShelfAccess, isSceneActive, showsJourneysOnTopShelf, usesLivePhotoLibrary, let index,
               let store = indexStore as? SQLiteTravelIndexStore else { return }
         topShelf.refresh(self, index: index, store: store)
     }
 
     private func withdrawTopShelf() {
-        if privateLibraryAllowed && photoLibrary is PhotoKitLibrary { topShelf.clear() }
+        if photoLibrary is PhotoKitLibrary { topShelf.clear() }
     }
 
     func requestTopShelfURL(_ url: URL) {
@@ -234,7 +242,6 @@ final class AppModel: ObservableObject {
     private static let deferredScanScopeKey = "travelScan.deferredInitialChoice.v1"
     private var preparation: LibraryPreparationCoordinator?
     private var maintainsLibrary = true
-    private var privateLibraryAllowed = true
     private var hasStarted = false
     private var scanPoints: [String: TravelPlace] = [:]
     private var lastDiscoveryPublish = Date.distantPast
@@ -242,16 +249,18 @@ final class AppModel: ObservableObject {
 
     var canBrowsePreparedLibrary: Bool { index != nil }
     var canReturnToPreparation: Bool { preparation != nil }
-    var usesLivePhotoLibrary: Bool { privateLibraryAllowed && photoLibrary is PhotoKitLibrary && !isUsingSampleData }
+    var usesLivePhotoLibrary: Bool { photoLibrary is PhotoKitLibrary && !isUsingSampleData }
 
-    init(sampleOnly: Bool = false) {
-        privateLibraryAllowed = !sampleOnly
+    init() {
         journeyDefaults = .standard
         minimumJourneyItems = JourneyVisitThreshold.load()
 #if DEBUG
         let isWelcomeFixture = ProcessInfo.processInfo.arguments.contains("--welcome-fixture")
         let isTransitFixture = ProcessInfo.processInfo.arguments.contains("--transit-fixture")
         let isAnniversaryFixture = ProcessInfo.processInfo.arguments.contains("--anniversary-fixture")
+        if isWelcomeFixture && ProcessInfo.processInfo.arguments.contains("--reset-test-free-journey") {
+            UserDefaults.standard.removeObject(forKey: "photoEarth.freeJourneyID")
+        }
         if ProcessInfo.processInfo.arguments.contains("--preparation-fixture") || isWelcomeFixture || isTransitFixture || isAnniversaryFixture {
             let folder = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
                 .appendingPathComponent(isWelcomeFixture ? "PhotoEarth/WelcomeFixture" : "PhotoEarth/PreparationFixture", isDirectory: true)
@@ -261,7 +270,8 @@ final class AppModel: ObservableObject {
             let records = isAnniversaryFixture
                 ? PreparationFixtureLibrary.anniversaryRecords(empty: ProcessInfo.processInfo.arguments.contains("--anniversary-empty"))
                 : (isTransitFixture ? PreparationFixtureLibrary.transitRecords : SampleTravelIndex.make().photos)
-            photoLibrary = PreparationFixtureLibrary(records: records,
+            let singleJourney = isWelcomeFixture && ProcessInfo.processInfo.arguments.contains("--single-journey-fixture")
+            photoLibrary = PreparationFixtureLibrary(records: singleJourney ? records.filter { $0.placeID == "sample-reykjavik" } : records,
                                                       initiallyRequiresAuthorization: isWelcomeFixture)
             indexStore = SQLiteTravelIndexStore(databaseURL: folder.appendingPathComponent("fixture.sqlite"), hidesTransitPhotos: isTransitFixture)
             preferencesStore = LocalPreferenceStore()
@@ -308,7 +318,7 @@ final class AppModel: ObservableObject {
     }
 
     func start() async {
-        guard privateLibraryAllowed, !hasStarted else { return }
+        guard !hasStarted else { return }
         hasStarted = true
         JourneyPlaceCatalog.removeRetiredDownloads()
 #if DEBUG
@@ -389,12 +399,11 @@ final class AppModel: ObservableObject {
     }
 
     func requestAccessAndScan() async {
-        guard privateLibraryAllowed, !isRequestingPhotoAccess, scanScope == nil else { return }
+        guard !isRequestingPhotoAccess, scanScope == nil else { return }
         isRequestingPhotoAccess = true
         defer { isRequestingPhotoAccess = false }
         ProductAnalytics.shared.capture(.accessRequested, context: .init(library: isUsingSampleData ? .sample : nil))
         let status = await photoLibrary.requestAuthorization()
-        guard privateLibraryAllowed else { return }
         switch status {
         case .authorized, .limited: ProductAnalytics.shared.capture(.photoAccessResult, value: "granted")
         case .denied, .restricted: ProductAnalytics.shared.capture(.photoAccessResult, value: "denied")
@@ -505,7 +514,6 @@ final class AppModel: ObservableObject {
     }
 
     func rescan() async {
-        guard privateLibraryAllowed else { return }
         guard !isUsingSampleData else {
             resetPlaceLabelWork()
             phase = .welcome
@@ -793,6 +801,9 @@ final class AppModel: ObservableObject {
         return try await store.removedPhotoCount(for: placeIDs, assetIDs: assetIDs)
     }
 
+    // The concrete player may belong to Home, a collection, a day, or map review.
+    let slideshowPresentation = SlideshowPresentation()
+
     func makeEarthSlideshow(scope: EarthSlideshowScope, places: [TravelPlace],
                             viewport: PhotoViewportSnapshot? = nil, reader: SQLiteTravelIndexStore? = nil,
                             wallRecords: [PhotoAssetRecord] = [], collectionExclusions: Set<String> = [], reduceMotion: Bool,
@@ -1061,7 +1072,6 @@ final class AppModel: ObservableObject {
     }
 
     private func scan(presentsProgress: Bool = true) async {
-        guard privateLibraryAllowed else { return }
         if photoLibrary is any PhotoLibraryUpdating, let store = indexStore as? SQLiteTravelIndexStore {
             installPreparation()
             if presentsProgress {
@@ -1157,7 +1167,6 @@ final class AppModel: ObservableObject {
     }
 
     func setSceneActive(_ active: Bool) async {
-        guard privateLibraryAllowed else { return }
         isSceneActive = active
 #if DEBUG
         if active { shelfQA.observe(self, store: indexStore as? SQLiteTravelIndexStore) }
@@ -1257,7 +1266,7 @@ final class AppModel: ObservableObject {
     }
 
     private func installPreparation() {
-        guard privateLibraryAllowed, preparation == nil, let library = photoLibrary as? any PhotoLibraryUpdating,
+        guard preparation == nil, let library = photoLibrary as? any PhotoLibraryUpdating,
               let store = indexStore as? SQLiteTravelIndexStore else { return }
         maintainsLibrary = true
         librarySession = UUID()
@@ -1370,22 +1379,6 @@ final class AppModel: ObservableObject {
         scanDiscovery = ScanDiscovery(revision: scanDiscovery.revision + 1, places: representatives)
     }
 
-    func closeLibrarySession() {
-        privateLibraryAllowed = false
-        scanScope = nil
-        librarySession = UUID()
-        isSceneActive = false
-        overview.setActive(false)
-        preparationHandoffTask?.cancel()
-        coverInvalidation?.cancel()
-        scenicCovers?.invalidate()
-        resetPlaceLabelWork()
-        if photoLibrary is PhotoKitLibrary && !isUsingSampleData { topShelf.clear() }
-        let old = preparation
-        preparation = nil
-        Task { await old?.stop() }
-    }
-
     private func loseLibraryAccess(_ access: PhotoLibraryAccess) async {
         withdrawTopShelf()
         scanScope = nil
@@ -1418,30 +1411,32 @@ final class AppModel: ObservableObject {
 }
 
 extension AppModel {
-    func anniversaryDays(on today: Date, calendar: Calendar) async throws -> [AnniversaryDay] {
-        guard let earliest = index?.places.map(\.startDate).min() else { return [] }
-        let ranges = AnniversaryDay.pastDays(on: today, since: earliest, calendar: calendar)
-        if isUsingSampleData {
-            return ranges.compactMap { range in
-                let photos = anniversarySamplePhotos(in: range)
-                return photos.first.map { AnniversaryDay(range: range, cover: $0, count: photos.count) }
-            }
-        }
-        guard let store = indexStore as? SQLiteTravelIndexStore else { throw TravelIndexStoreError.invalidSnapshot }
-        return try await store.anniversaryDays(in: ranges, excluding: excludedAssetIDs)
-    }
-
     func anniversaryPage(in range: Range<Date>, reader: SQLiteTravelIndexStore?, offset: Int,
-                         excluding: Set<String>) async throws -> PhotoQueryPage {
-        if let reader { return try await reader.anniversaryPage(in: range, excluding: excluding, offset: offset) }
+                         excluding: Set<String>, limit: Int = PhotoWallPageSelection.pageSize) async throws -> PhotoQueryPage {
+        if let reader { return try await reader.anniversaryPage(in: range, excluding: excluding, offset: offset, limit: limit) }
         guard isUsingSampleData else { throw TravelIndexStoreError.invalidSnapshot }
-        let photos = anniversarySamplePhotos(in: range).filter { !excluding.contains($0.id) }
-        let size = PhotoWallPageSelection.pageSize
+        let photos = samplePhotos.filter { range.contains($0.creationDate) && !excluding.contains($0.id) }
+            .sorted(by: SlideshowOrdering.recordComesFirst)
+        let size = max(1, min(limit, PhotoWallPageSelection.pageSize))
         return .init(records: Array(photos.dropFirst(offset).prefix(size)), nextOffset: offset + size < photos.count ? offset + size : nil)
     }
 
-    private func anniversarySamplePhotos(in range: Range<Date>) -> [PhotoAssetRecord] {
-        samplePhotos.filter { range.contains($0.creationDate) && !excludedAssetIDs.contains($0.id) }
-            .sorted { $0.creationDate == $1.creationDate ? $0.id < $1.id : $0.creationDate > $1.creationDate }
+    func anniversaryVisitIDs(in range: Range<Date>, reader: SQLiteTravelIndexStore?, excluding: Set<String>) async throws -> [String] {
+        if let reader { return try await reader.anniversaryVisitIDs(in: range, excluding: excluding) }
+        guard isUsingSampleData else { throw TravelIndexStoreError.invalidSnapshot }
+        var firstCapture: [String: Date] = [:]
+        for photo in samplePhotos where range.contains(photo.creationDate) && !excluding.contains(photo.id) {
+            guard let id = photo.placeID else { continue }
+            firstCapture[id] = min(firstCapture[id] ?? photo.creationDate, photo.creationDate)
+        }
+        return firstCapture.sorted { ($0.value, $0.key) < ($1.value, $1.key) }.map(\.key)
     }
+
+    func anniversarySampleDays(months: [DateInterval], calendar: Calendar) -> Set<Int> {
+        Set(samplePhotos.lazy.filter { record in
+            !self.excludedAssetIDs.contains(record.id) && months.contains { $0.start <= record.creationDate && record.creationDate < $0.end }
+        }.map { calendar.component(.day, from: $0.creationDate) })
+    }
+
+
 }

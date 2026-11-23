@@ -3,6 +3,7 @@ import SwiftUI
 struct GlobeOverviewView: View {
     let content: OverviewContentModel
     let isUsingSampleData: Bool
+    var showsFreeJourneyHint = false
     let enterGlobe: () -> Void
     var startSlideshow: (() -> Void)? = nil
     let openPlace: (TravelPlace) -> Void
@@ -34,10 +35,14 @@ struct GlobeOverviewView: View {
                     VStack(alignment: .leading, spacing: 48) {
                         VStack(alignment: .leading, spacing: 0) {
                             header
-                                .padding(.top, 60)
                             actions
                                 // Leave the native scan-progress focus row above these buttons.
                                 .padding(.top, isUsingSampleData ? 28 : 84)
+                            if showsFreeJourneyHint {
+                                Text(String(localized: "purchase.firstJourney"))
+                                    .font(.system(size: 23)).foregroundStyle(.secondary)
+                                    .padding(.top, 18)
+                            }
                             Spacer(minLength: 200)
                             recentShelf(cardWidth: cardWidth)
                                 .id("places-shelf-0")
@@ -133,35 +138,28 @@ struct GlobeOverviewView: View {
     }
 
     private var header: some View {
-        HStack {
-            if !isUsingSampleData { Spacer() }
+        ZStack(alignment: .topTrailing) {
             Text(verbatim: "PHOTO EARTH")
-                .font(.system(size: 23, weight: .medium))
+                .font(.custom("AvenirNext-DemiBold", fixedSize: 32))
                 .accessibilityAddTraits(.isHeader)
-                .tracking(5)
-                .foregroundStyle(.white.opacity(0.7))
+                .tracking(2)
+                .foregroundStyle(.white.opacity(0.88))
+                .frame(height: 45)
             if isUsingSampleData {
-                Spacer()
-                Text(AppLocalization.string("sample.journey", defaultValue: "Sample Journey"))
+                Text(AppLocalization.string("sample.journey", defaultValue: "Sample Trip"))
                     .font(.system(size: 23, weight: .regular))
                     .foregroundStyle(.white.opacity(0.55))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(height: 88, alignment: .top)
     }
 
     private var actions: some View {
         HStack(spacing: TVControlLayout.actionSpacing) {
-            Button(action: enterGlobe) {
-                HStack(spacing: 14) {
-                    Text(AppLocalization.string("home.explore_globe", defaultValue: "Explore the Globe"))
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 23, weight: .medium))
-                }
-                .font(.system(size: 27, weight: .medium))
-                .padding(.horizontal, 6)
-                .frame(minHeight: 52)
-            }
-            .buttonStyle(.glass)
+            EarthEntryButton(kind: .explore, title: AppLocalization.string("home.explore_globe", defaultValue: "Explore the Globe"),
+                            action: enterGlobe)
             .focused($focusedID, equals: entryFocusID)
             .id(entryFocusID)
             .accessibilityHint(AppLocalization.string("home.explore_hint", defaultValue: "Turn the globe with the remote, then press the clickpad center or touch surface to browse visible photos."))
@@ -178,7 +176,6 @@ struct GlobeOverviewView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .shadow(color: .black.opacity(0.55), radius: 10, y: 2)
         .focusSection()
     }
 
@@ -253,7 +250,7 @@ struct GlobeOverviewView: View {
         let focusID = "place-\(item.id)"
         let isFocused = focusedID == focusID
         return OverviewPlaceCard(item: item, width: width, isArrival: isArrival,
-                                 isFocused: isFocused, openPlace: openPlace)
+                                 isFocused: isFocused, isActive: isActive, openPlace: openPlace)
             .focused($focusedID, equals: focusID)
             .id(focusID)
             .zIndex(isFocused ? 1 : 0)
@@ -300,12 +297,13 @@ private struct OverviewPlaceCard: View {
     let width: CGFloat
     let isArrival: Bool
     let isFocused: Bool
+    let isActive: Bool
     let openPlace: (TravelPlace) -> Void
 
     var body: some View {
         PlaceCard(place: item.place, isSelected: false, isFocused: isFocused,
                   cardWidth: width, isArrival: isArrival, usesManagedThumbnail: true,
-                  thumbnail: item.thumbnail, coverUnavailable: item.coverFailed, action: { openPlace(item.place) })
+                  thumbnail: item.thumbnail, waitingForSelection: isActive && !item.scenicPrepared, coverUnavailable: item.coverFailed, action: { openPlace(item.place) })
             .accessibilityValue(item.thumbnail?.image == nil
                 ? AppLocalization.string("photo.pending", defaultValue: "Photo pending")
                 : AppLocalization.string("photo.loaded", defaultValue: "Photo loaded"))

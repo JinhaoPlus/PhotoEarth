@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>Photo Earth</string>
+	<string>PHOTO EARTH</string>
 	<key>PhotoEarthShelfAccessGroup</key>
 	<string>$(AppIdentifierPrefix)com.doupi.PhotoEarth.RecentJourneys</string>
 	<key>NSPhotoLibraryUsageDescription</key>

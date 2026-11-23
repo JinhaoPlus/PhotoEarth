@@ -223,7 +223,7 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertTrue(focusHome(in: app), app.debugDescription)
         app.openSidebarDestination("tab-recent")
 
-        let recentVisit = app.buttons["library-collection-sample-reykjavik"]
+        let recentVisit = app.buttons["library-collection-sample-rio"]
         XCTAssertTrue(recentVisit.waitForExistence(timeout: 8))
         XCTAssertTrue(waitForFocus(recentVisit))
         XCUIRemote.shared.press(.select)
@@ -270,8 +270,8 @@ final class EarthSlideshowUITests: XCTestCase {
             "Location globe must remain anchored to the television's bottom safe region. App: \(app.frame), location: \(location.frame)"
         )
         attach(app, "Earth Slideshow — immersive location")
-        XCTAssertTrue(captureTime.label.contains("2025"), captureTime.label)
-        XCTAssertTrue(place.label.contains("雷克雅未克"), place.label)
+        XCTAssertTrue(captureTime.label.contains("2024"), captureTime.label)
+        XCTAssertTrue(place.label.contains("里约热内卢"), place.label)
         // MapKit may report accessibility bounds that extend beyond the clipped map tile.
         XCTAssertEqual(captureTime.frame.minX, app.frame.minX + 382, accuracy: 8)
         XCTAssertEqual(place.frame.minX, captureTime.frame.minX, accuracy: 4)
@@ -694,12 +694,16 @@ final class EarthSlideshowUITests: XCTestCase {
 
     @MainActor
     func testCityWallToolbarStartsTheSameJourneyRange() {
-        let app = openJapanSlideshow(cityOnly: true, startFromToolbar: true)
+        let app = openJapanSlideshow(cityOnly: true, startFromToolbar: true, verifyMusic: true)
         waitForSlide("sample-tokyo-", in: app)
         let current = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         let queued = app.descendants(matching: .any)["slideshow-queued-journey"].firstMatch
         XCTAssertTrue(current.label.contains("2025"), current.label)
         XCTAssertTrue(queued.label.contains("2023"), queued.label)
+        XCUIRemote.shared.press(.up)
+        let music = app.buttons["slideshow-playback-music"]
+        XCTAssertTrue(waitForFocus(music))
+        waitForOnlineAudio(music, state: "playing")
         attach(app, "Tokyo — both journeys after starting from the wall toolbar")
     }
 
@@ -735,9 +739,10 @@ final class EarthSlideshowUITests: XCTestCase {
     }
 
     @MainActor
-    private func openJapanSlideshow(cityOnly: Bool, startFromToolbar: Bool = false) -> XCUIApplication {
+    private func openJapanSlideshow(cityOnly: Bool, startFromToolbar: Bool = false, verifyMusic: Bool = false) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--slideshow-journeys-fixture", "--slideshow-observe-media"]
+        if verifyMusic { app.launchArguments += ["--slideshow-observe-music", "--slideshow-long-dwell-fixture"] }
         app.useSimplifiedChineseTestLanguage()
         app.launch()
         XCTAssertTrue(focusHome(in: app), app.debugDescription)
@@ -837,6 +842,40 @@ final class EarthSlideshowUITests: XCTestCase {
     }
 
     @MainActor
+    func testNonSubscriberCanBrowseOnlineMusicWithoutChangingSoundtrack() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--apple-music-fixture", "--apple-music-no-subscription-fixture",
+                               "-PhotoEarth.slideshow.automaticMusicOff", "YES"]
+        app.useSimplifiedChineseTestLanguage()
+        app.launch()
+        openHomeSlideshow(in: app)
+        let opening = app.buttons["slideshow-opening-music"]
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-begin"]))
+        XCTAssertEqual(opening.label, "无配乐")
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(opening))
+        XCUIRemote.shared.press(.select)
+        let recommended = app.buttons["slideshow-online-playlist-local.recommended"]
+        XCTAssertTrue(waitForFocus(recommended, timeout: 20))
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-music-source-online"]))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-music-source-apple"]))
+        XCUIRemote.shared.press(.select)
+        let browse = app.buttons["slideshow-music-browse-online"]
+        XCTAssertTrue(waitForFocus(browse))
+        XCTAssertEqual(app.staticTexts["slideshow-music-apple-status"].label, "订阅 Apple Music 后，可从它的曲库选歌")
+        XCTAssertTrue(app.staticTexts["PHOTO EARTH 自带的在线配乐无需订阅。"].exists)
+        XCTAssertFalse(app.buttons["slideshow-music-off"].exists)
+        attach(app, "Apple Music subscription required")
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(waitForFocus(recommended))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(waitForFocus(opening))
+        XCTAssertEqual(opening.label, "无配乐")
+    }
+
+    @MainActor
     func testSubscriberCanChooseAndReviseAppleMusicBeforeStarting() throws {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -908,6 +947,8 @@ final class EarthSlideshowUITests: XCTestCase {
         XCUIRemote.shared.press(.select)
 
         XCTAssertTrue(waitForDisappearance(picker))
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-begin"]), app.debugDescription)
+        XCUIRemote.shared.press(.right)
         XCTAssertTrue(waitForFocus(soundtrack))
         XCTAssertEqual(soundtrack.label, "配乐 · Quiet Journeys")
         XCUIRemote.shared.press(.select)
@@ -1072,6 +1113,79 @@ final class EarthSlideshowUITests: XCTestCase {
     }
 
     @MainActor
+    func testDefaultSoundtrackPlaysFirstRecommendationAndRemembersOffAfterRelaunch() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--slideshow-long-dwell-fixture", "--slideshow-observe-music"]
+        app.useSimplifiedChineseTestLanguage()
+        app.launch()
+        openHomeSlideshow(in: app)
+        let opening = app.buttons["slideshow-opening-music"]
+        XCTAssertEqual(opening.label, "配乐 · 推荐")
+        beginSlideshow(in: app)
+
+        let media = app.descendants(matching: .any)["slideshow-media"].firstMatch
+        let choose = app.buttons["slideshow-playback-music"]
+        let title = app.staticTexts["slideshow-music-title"]
+        XCTAssertTrue(media.waitForExistence(timeout: 20))
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(waitForFocus(choose))
+        waitForOnlineAudio(choose, state: "playing")
+        let firstTitle = title.label
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-music-next"]))
+        XCUIRemote.shared.press(.select)
+        let advanced = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label != %@", firstTitle), object: title)
+        XCTAssertEqual(XCTWaiter.wait(for: [advanced], timeout: 5), .completed)
+        let secondTitle = title.label
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(choose))
+        XCUIRemote.shared.press(.select)
+        let recommended = app.buttons["slideshow-online-playlist-local.recommended"]
+        XCTAssertTrue(waitForFocus(recommended, timeout: 15))
+        let tiles = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'slideshow-online-track-'"))
+        XCTAssertEqual(tiles.element(boundBy: 0).label, firstTitle)
+        XCTAssertEqual(tiles.element(boundBy: 1).label, secondTitle)
+        XCTAssertTrue(tiles.element(boundBy: 1).isSelected)
+        turnOffSoundtrackInPicker(in: app)
+        XCTAssertTrue(waitForFocus(choose))
+        XCTAssertFalse(title.exists)
+        XCUIRemote.shared.press(.menu)
+        app.confirmSlideshowExit()
+        XCTAssertTrue(waitForFocus(app.buttons["overview-slideshow"]))
+        app.terminate()
+        app.launch()
+        openHomeSlideshow(in: app)
+        XCTAssertEqual(opening.label, "无配乐")
+        beginSlideshow(in: app)
+        XCTAssertTrue(media.waitForExistence(timeout: 20))
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(waitForFocus(choose))
+        XCTAssertEqual(choose.label, "选择配乐")
+        XCTAssertFalse(title.exists)
+        let transport = app.buttons["slideshow-play-pause"]
+        XCTAssertEqual(transport.label, "暂停", "Opening the music controls keeps photos playing")
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(waitForFocus(recommended, timeout: 15))
+        XCTAssertFalse(app.buttons["slideshow-music-off"].exists)
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(waitForFocus(choose))
+        XCTAssertEqual(transport.label, "暂停", "Enabling music restores the running slideshow")
+        waitForOnlineAudio(choose, state: "playing")
+        XCTAssertTrue(title.exists)
+    }
+
+    @MainActor
+    private func turnOffSoundtrackInPicker(in app: XCUIApplication) {
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-music-source-online"]))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-music-source-apple"]))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-music-off"]))
+        XCUIRemote.shared.press(.select)
+    }
+
+    @MainActor
     func testRecommendedSoundtrackKeepsOrderAndPlaysFromChosenTrack() {
         let app = XCUIApplication()
         app.launchArguments = ["--demo", "--slideshow-long-dwell-fixture", "--slideshow-observe-music"]
@@ -1096,7 +1210,9 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertGreaterThan(below.frame.minY, first.frame.maxY)
         attach(app, "在线配乐推荐网格")
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(waitForFocus(soundtrack, timeout: 15))
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-begin"], timeout: 15))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(soundtrack))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(waitForFocus(recommended, timeout: 15))
         XCTAssertTrue(recommended.isSelected)
@@ -1115,7 +1231,9 @@ final class EarthSlideshowUITests: XCTestCase {
         XCUIRemote.shared.press(.right)
         XCTAssertTrue(waitForFocus(second))
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(waitForFocus(soundtrack, timeout: 15))
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-begin"], timeout: 15))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(soundtrack))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(waitForFocus(recommended, timeout: 15))
         XCTAssertTrue(app.buttons[firstIDs[1]].isSelected)
@@ -1169,7 +1287,7 @@ final class EarthSlideshowUITests: XCTestCase {
         let turnOff = app.buttons["slideshow-music-off"]
         XCTAssertTrue(appleMusic.exists)
         XCTAssertTrue(turnOff.exists)
-        XCTAssertFalse(turnOff.isEnabled)
+        XCTAssertTrue(turnOff.isEnabled)
         let firstQuiet = onlineTrack(in: app, slug: "quiet-village-1")
         let secondQuiet = onlineTrack(in: app, slug: "quiet-village-2")
         XCTAssertTrue(firstQuiet.waitForExistence(timeout: 5))
@@ -1182,8 +1300,10 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertTrue(waitForFocus(secondQuiet))
         XCUIRemote.shared.press(.select)
 
-        XCTAssertTrue(waitForFocus(soundtrack))
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-begin"]))
         XCTAssertFalse(media.exists)
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(waitForFocus(soundtrack))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(waitForFocus(quiet, timeout: 15))
         XCTAssertTrue(quiet.isSelected)

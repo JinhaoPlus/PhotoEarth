@@ -21,7 +21,7 @@ enum SampleTravelIndex {
         for (id, city, coordinate, year, month, day, image) in stops {
             let date = calendar.date(from: DateComponents(year: year, month: month, day: day, hour: 12))!
             let label = try? JourneyPlaceCatalog.shared.label(coordinate, locale: AppLocalization.locale)
-            let count = JourneyVisitThreshold.defaultValue
+            let count = 5 // The playback fixture uses five distinct stock frames per stop.
             for ordinal in 1...count {
                 // A different scene shot one second later exercises the time limit independently of visual matching.
                 let assetID = (id == "tokyo-arrival" && ordinal == 2) ? "sample-banff-2" : "\(image)-\(ordinal)"

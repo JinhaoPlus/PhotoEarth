@@ -10,6 +10,7 @@ nonisolated struct EarthSlideshowScope: Hashable, Sendable {
         case country
         case currentView
         case collection
+        case anniversary
     }
 
     let id: String

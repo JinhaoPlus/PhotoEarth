@@ -75,6 +75,46 @@ struct EarthSlideshowTests {
         }
     }
 
+    @Test func highMotionSharesOneBudgetAcrossEffectsAndRevisits() {
+        var director = SlideshowTransitionDirector()
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        func page(_ n: Int, _ ratios: [CGFloat] = [1.5], favorite: Bool = false, dynamic: Bool = false) -> SlideshowPageDescriptor {
+            .init(ids: ratios.indices.map { "\(n)-\($0)" }, ratios: ratios, visitID: "trip",
+                  firstDate: date, lastDate: date, favorite: favorite, dynamic: dynamic)
+        }
+        func choose(_ a: SlideshowPageDescriptor, _ b: SlideshowPageDescriptor, manual: Bool = false, reduced: Bool = false) -> SlideshowEffect {
+            director.transition(from: a, to: b, manual: manual, reduced: reduced).kind
+        }
+        for n in 0..<15 {
+            #expect(choose(page(n), page(n + 1, [1.8])) == .dissolve)
+            #expect(choose(page(n), page(n + 1, [1.8])) == .dissolve)
+        }
+        let wide = page(16, [1.8])
+        #expect(choose(page(15), wide, manual: true) == .dissolve)
+        #expect(choose(page(15), wide, reduced: true) == .dissolve)
+        #expect(choose(page(15), page(99, dynamic: true)) == .dissolve)
+        #expect(choose(page(15), wide) == .panoramaGlide)
+        #expect(choose(page(15), wide) == .dissolve)
+        for n in 17..<32 {
+            #expect(!choose(page(n), page(n + 1, favorite: true)).isHighMotion)
+            #expect(choose(page(15), wide) == .dissolve)
+        }
+        #expect(choose(page(32), page(33, favorite: true)) == .focusPullback)
+        for n in 34..<49 { #expect(choose(page(n), page(n + 1)) == .dissolve) }
+        #expect(choose(page(49), page(50, [0.6, 0.6, 0.6])) == .centerOpen)
+    }
+
+    @Test func openingAPortraitTriptychCountsTheCenterPhotoFirst() {
+        let effect = EarthSlideshowTransition(kind: .centerOpen, duration: SlideshowEffect.centerOpen.duration)
+        let ratios: [CGFloat] = [0.6, 0.6, 0.6]
+        func visible(_ progress: Double) -> IndexSet {
+            effect.visibleTiles(at: progress, ratios: ratios, in: SlideshowCollageLayout.television)
+        }
+        #expect(visible(0).isEmpty)
+        #expect(visible(0.15) == IndexSet(integer: 1))
+        #expect(visible(1) == IndexSet(integersIn: 0..<3))
+    }
+
     @Test func frozenMembershipSurvivesIndexReplacementAndPagesTiedDatesWithoutGaps() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("slideshow-snapshot-\(UUID().uuidString)")

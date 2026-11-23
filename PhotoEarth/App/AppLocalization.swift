@@ -80,7 +80,7 @@ nonisolated enum AppLocalization {
     }
 
     static var unresolvedPlace: String {
-        string("place.unresolved", defaultValue: "Location pending")
+        string("place.unresolved", defaultValue: "Place name unavailable")
     }
 
     static func unknownPlace(near country: String?, locale: Locale = locale) -> String {
@@ -138,6 +138,11 @@ nonisolated enum AppLocalization {
 
     static func placeCount(_ count: Int, locale: Locale = locale) -> String {
         let format = string("count.place", defaultValue: "%lld places", locale: locale)
+        return String(format: format, locale: locale, arguments: [Int64(count)])
+    }
+
+    static func visitCount(_ count: Int, locale: Locale = locale) -> String {
+        let format = string("count.visit", defaultValue: "%lld visits", locale: locale)
         return String(format: format, locale: locale, arguments: [Int64(count)])
     }
 

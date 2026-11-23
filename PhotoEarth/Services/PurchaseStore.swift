@@ -72,6 +72,8 @@ final class PurchaseStore: ObservableObject {
         await loadProducts()
     }
 
+    func clearNotice() { notice = nil }
+
     func loadProducts() async {
         do {
             let fetched = try await Product.products(for: [Self.trialID, Self.lifetimeID])
@@ -140,9 +142,11 @@ final class PurchaseStore: ObservableObject {
         }
     }
 
-    func purchase(_ id: String) async {
-        guard !busy, let product = products[id] else { return }
-        guard id != Self.trialID || (access == .available && product.price == 0 && products[Self.lifetimeID] != nil) else { return }
+    enum PurchaseOutcome { case completed, cancelled, pending, unsuccessful }
+
+    func purchase(_ id: String) async -> PurchaseOutcome {
+        guard !busy, let product = products[id] else { return .unsuccessful }
+        guard id != Self.trialID || (access == .available && product.price == 0 && products[Self.lifetimeID] != nil) else { return .unsuccessful }
         busy = true
         notice = nil
         defer { busy = false }
@@ -151,11 +155,19 @@ final class PurchaseStore: ObservableObject {
             case .success(.verified(let tx)) where tx.productID == id:
                 await refreshAccess()
                 await tx.finish()
-            case .pending: notice = .pending
-            case .userCancelled: break
-            default: notice = .failed
+                return .completed
+            case .pending:
+                notice = .pending
+                return .pending
+            case .userCancelled:
+                return .cancelled
+            default: break
             }
-        } catch { notice = .failed }
+        } catch {
+            if let storeError = error as? StoreKitError, case .userCancelled = storeError { return .cancelled }
+        }
+        notice = .failed
+        return .unsuccessful
     }
 
     func restore() async {

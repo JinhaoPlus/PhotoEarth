@@ -26,6 +26,7 @@ struct PlaceCard: View {
     var loadsImage = true
     var usesManagedThumbnail = false
     var thumbnail: OverviewThumbnail?
+    var waitingForSelection = false
     var coverUnavailable = false
     let action: () -> Void
 
@@ -87,7 +88,7 @@ struct PlaceCard: View {
     private var photo: some View {
         ZStack(alignment: .topTrailing) {
             if usesManagedThumbnail {
-                OverviewThumbnailView(thumbnail: thumbnail, isArrival: isArrival, isFocused: isFocused, coverUnavailable: coverUnavailable)
+                OverviewThumbnailView(thumbnail: thumbnail, isArrival: isArrival, isFocused: isFocused, waitingForSelection: waitingForSelection, coverUnavailable: coverUnavailable)
             } else if loadsImage, let assetID = latestAssetID ?? place.coverAssetID {
                 PhotoAssetImage(assetID: assetID, targetSize: isArrival ? CGSize(width: 640, height: 384) : CGSize(width: 640, height: 400))
             } else {
@@ -123,7 +124,14 @@ private struct OverviewThumbnailView: View {
     let thumbnail: OverviewThumbnail?
     let isArrival: Bool
     let isFocused: Bool
+    let waitingForSelection: Bool
     let coverUnavailable: Bool
+
+    private var phase: CoverDisplayPhase {
+        if thumbnail?.image != nil { return .displayed }
+        if coverUnavailable || thumbnail?.status == .unavailable { return .idle }
+        return waitingForSelection || thumbnail != nil ? .waiting : .idle
+    }
     var body: some View {
         // The fixed surface owns layout. A wide aspect-fill image must not
         // change the button's preferred size or the native scroll focus frame.
@@ -136,21 +144,14 @@ private struct OverviewThumbnailView: View {
                             .clipped()
                     }
                 } else {
-                    WaitingCoverView(usesGlassBackground: !isArrival)
-                    if !isArrival, isFocused {
-                        VStack(spacing: 10) {
-                            if thumbnail?.status == .cloud || thumbnail?.status == .unavailable || coverUnavailable {
-                                Image(systemName: thumbnail?.status == .cloud ? "icloud" : "photo")
-                                    .font(.system(size: 34, weight: .light))
-                            }
-                            if thumbnail?.status == .cloud { Text(AppLocalization.string("photo.loading_icloud", defaultValue: "Loading from iCloud")).font(.system(size: 18)) }
-                            else if thumbnail?.status == .unavailable || coverUnavailable { Text(AppLocalization.string("photo.preview_unavailable", defaultValue: "Photo not loaded")).font(.system(size: 18)) }
-                        }
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.65), radius: 3, y: 1)
+                    if phase == .idle { WaitingCoverView(usesGlassBackground: !isArrival) }
+                    if !isArrival, isFocused, phase == .idle, coverUnavailable || thumbnail?.status == .unavailable {
+                        Label(AppLocalization.string("photo.preview_unavailable", defaultValue: "Photo not loaded"), systemImage: "photo")
+                            .font(.system(size: 18))
                     }
                 }
             }
+            .overlay { CoverLoadingOverlay(phase: phase, focused: isFocused, usesGlassBackground: !isArrival) }
             .clipped()
             .accessibilityHidden(true)
     }

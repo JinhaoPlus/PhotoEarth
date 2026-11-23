@@ -1,7 +1,7 @@
 # Asset credits
 
 - `BlueMarble.png`: NASA/Goddard Space Flight Center Scientific Visualization Studio, “Blue Marble - A Seamless Image Mosaic of the Earth (WMS),” visualization ID 2915. Blue Marble Next Generation data courtesy of Reto Stockli (NASA/GSFC) and NASA Earth Observatory. Source: <https://svs.gsfc.nasa.gov/2915>
-- `SampleIceland.png`: AI-generated fictional demo cover created for Photo Earth. It does not depict a real user or a specific recorded trip.
+- `SampleIceland.png`: AI-generated fictional demo cover created for PHOTO EARTH. It does not depict a real user or a specific recorded trip.
 - The offline world city atlas includes data from Natural Earth 1:10m Populated Places 5.1.2. Natural Earth vector data is public domain. Source: <https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/>; terms: <https://www.naturalearthdata.com/about/terms-of-use/>.
 
 ## Fictional travel demo photographs

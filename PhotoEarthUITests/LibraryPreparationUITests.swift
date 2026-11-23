@@ -29,7 +29,7 @@ final class LibraryPreparationUITests: XCTestCase {
         XCTAssertTrue(globe.waitForExistence(timeout: 10))
         app.enterHomeContent()
         XCTAssertTrue(focused(globe))
-        XCTAssertTrue(app.staticTexts["Sample Journey"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Sample Trip"].waitForExistence(timeout: 5))
         XCTAssertFalse(connect.exists)
         attach(app, "Explicit public sample — welcome navigation completed")
     }
@@ -48,7 +48,7 @@ final class LibraryPreparationUITests: XCTestCase {
         let pause = app.buttons["preparation-pause"]
         XCTAssertTrue(focused(pause))
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(app.staticTexts["照片整理已暂停"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["图库扫描已暂停"].waitForExistence(timeout: 5))
         attach(app, "Paused preparation")
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(progress.waitForExistence(timeout: 8))
@@ -58,7 +58,7 @@ final class LibraryPreparationUITests: XCTestCase {
         // scan intentionally removes it from the home screen.
         XCTAssertTrue(focused(pause))
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(app.staticTexts["照片整理已暂停"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["图库扫描已暂停"].waitForExistence(timeout: 5))
         XCUIRemote.shared.press(.menu)
         let globe = app.buttons["overview-explore-button"]
         XCTAssertTrue(globe.waitForExistence(timeout: 8))
@@ -71,7 +71,7 @@ final class LibraryPreparationUITests: XCTestCase {
         XCTAssertTrue(focused(entry))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(progress.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["照片整理已暂停"].exists)
+        XCTAssertTrue(app.staticTexts["图库扫描已暂停"].exists)
         attach(app, "Shared scan details")
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(globe.waitForExistence(timeout: 5))
@@ -114,6 +114,7 @@ final class LibraryPreparationUITests: XCTestCase {
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focused(globe))
         app.openSidebarDestination("tab-settings")
+        app.enterSettingsCategory("photos")
         let update = app.buttons["settings-scan"]
         XCTAssertTrue(update.waitForExistence(timeout: 5))
         XCTAssertTrue(focused(update))
@@ -133,13 +134,13 @@ final class LibraryPreparationUITests: XCTestCase {
         let completePlaces = app.buttons["settings-complete-places"]
         if completePlaces.exists && completePlaces.hasFocus { XCUIRemote.shared.press(.down) }
         let rebuild = app.buttons["settings-rebuild"]
-        XCTAssertTrue(focused(rebuild))
+        XCTAssertTrue(focused(rebuild), app.debugDescription)
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(progress.waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["已有地名会保留。"].waitForExistence(timeout: 15))
         attach(app, "Rebuild preserves globe and names")
         XCUIRemote.shared.press(.menu)
-        XCTAssertTrue(focused(rebuild))
+        XCTAssertTrue(focused(rebuild), app.debugDescription)
     }
 
     @MainActor func testMinimumItemsBackDiscardsDraftAndSaveAppliesIt() {
@@ -149,6 +150,7 @@ final class LibraryPreparationUITests: XCTestCase {
         app.launch()
         app.enterHomeContent()
         app.openSidebarDestination("tab-settings")
+        app.enterSettingsCategory("photos")
         let minimum = app.buttons["settings-journey-minimum"]
         XCTAssertTrue(minimum.waitForExistence(timeout: 5))
         XCTAssertEqual(minimum.label, "每次到访的最低数量")

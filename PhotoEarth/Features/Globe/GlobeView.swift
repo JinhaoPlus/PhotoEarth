@@ -11,6 +11,45 @@ struct GlobeView: View {
         case photoWall
     }
 
+    private enum LibraryAction {
+        case collection(PlaceCollection, JourneyEventContext.Entry)
+        case globeWall(PlaceCollection?)
+        case anniversary(AnniversaryAccessRequest)
+        case slideshow(EarthSlideshowCoordinator, JourneyEventContext.Music)
+
+        var title: String {
+            switch self {
+            case .collection(let collection, _): collection.titleWithCountryFlag
+            case .globeWall(let city): city?.title ?? AppLocalization.string("memory_strip.title", defaultValue: "Photos in this view")
+            case .anniversary(let day): day.title
+            case .slideshow(let show, _):
+                if let ids = show.selectedJourneyIDs {
+                    if ids.count == 1, let journey = show.availableJourneys.first(where: { ids.contains($0.id) }) {
+                        journey.routeTitle
+                    } else { SlideshowJourneyPicker.selectionCount(ids.count) }
+                } else { String(localized: "preview.playAll") }
+            }
+        }
+
+        var fixedPlaces: PlaceCollection? {
+            switch self {
+            case .collection(let collection, _): collection
+            case .globeWall(let city): city
+            default: nil
+            }
+        }
+    }
+
+    @EnvironmentObject private var purchases: PurchaseStore
+    @AppStorage("photoEarth.freeJourneyID") private var freeJourneyID = ""
+    @State private var requestedAction: LibraryAction?
+    @State private var presentsOffer = false
+    @State private var scopeCheck: Task<Void, Never>?
+    @State private var scopeReadFailed = false
+    @State private var showsTrialEndNotice = false
+    @State private var checkedViewport: PhotoViewportSnapshot?
+    @State private var checkedReader: SQLiteTravelIndexStore?
+
     @ObservedObject var model: AppModel
     var locationDestination: PhotoGlobeDestination?
     var closeLocationExploration: (() -> Void)?
@@ -43,10 +82,10 @@ struct GlobeView: View {
     @State private var selectedPhoto: PhotoAssetRecord?
     @State private var selectedPhotoPreview: UIImage?
     @State private var destination: Destination = .home
+    @State private var anniversaryDetail: AnniversaryDetailSelection?
     @State private var presentsDirectHome = false
-    @State private var anniversaryDay: AnniversaryDay?
     private var showsSidebarContent: Bool {
-        layer == .overview && navigationVisible && collection == nil && anniversaryDay == nil && slideshow == nil
+        layer == .overview && navigationVisible && collection == nil && slideshow == nil
     }
 
     @State private var collection: PlaceCollection?
@@ -76,7 +115,6 @@ struct GlobeView: View {
     @State private var isInitialGlobeReady = false
     @State private var didPrepareOverview = false
     @State private var overviewReturnCamera: GlobeCameraState?
-    @AppStorage("photoEarth.showsGlobeHints") private var showsGlobeHints = true
     @AppStorage("photoEarth.waitsForInitialGlobeRender") private var waitsForInitialGlobeRenderExperiment = false
 
     private var places: [TravelPlace] { model.index?.places ?? [] }
@@ -207,7 +245,8 @@ struct GlobeView: View {
                     .accessibilityHidden(true)
                     .allowsHitTesting(false)
 
-                    GlobeExploreChrome(experience: experience, showsControlHint: showsControlHint && showsGlobeHints && !model.isExploringPublicGlobe, cityTitle: exploreCity?.title)
+                    GlobeExploreChrome(experience: experience, showsControlHint: showsControlHint && !model.isExploringPublicGlobe,
+                                       cityTitle: exploreCity?.title)
                         .transition(.opacity)
                         .opacity(showsControls ? 0 : 1)
                         .accessibilityHidden(showsControls)
@@ -285,7 +324,9 @@ struct GlobeView: View {
                 }
 
                 if let slideshow {
-                    EarthSlideshowView(coordinator: slideshow) {
+                    EarthSlideshowView(coordinator: slideshow, requestPlayback: slideshow.scope.kind == .library ? { music in
+                        request(.slideshow(slideshow, music))
+                    } : nil) {
                         finishWallSlideshow()
                     }
                     .zIndex(7)
@@ -297,14 +338,39 @@ struct GlobeView: View {
         .ignoresSafeArea()
     }
 
-    var body: some View {
+    private var presentedScene: some View {
         scene
-        .fullScreenCover(item: $anniversaryDay) { day in
-            AnniversaryWall(model: model, day: day, controlGlobe: controlSlideshowGlobe, restoreGlobe: restoreGlobeAfterSlideshow) {
-                anniversaryDay = nil
+        .disabled(anniversaryDetail != nil)
+        .accessibilityHidden(anniversaryDetail != nil)
+        .overlay {
+            if let anniversaryDetail {
+                AnniversaryPhotoDetail(selection: anniversaryDetail, model: model) { self.anniversaryDetail = nil }
             }
-            .presentationBackground(.clear)
         }
+        .sheet(isPresented: $presentsOffer, onDismiss: finishPurchaseOffer) {
+            PurchaseOffers(store: purchases, requestedTitle: requestedAction?.title)
+        }
+        .overlay {
+            if scopeCheck != nil { ProgressView().allowsHitTesting(false) }
+        }
+        .overlay(alignment: .bottom) {
+            if showsTrialEndNotice {
+                let message = String(localized: "purchase.playbackEnded")
+                Text(message)
+                    .font(.callout)
+                    .padding(.horizontal, 28).padding(.vertical, 14)
+                    .floatingSurface(in: Capsule())
+                    .padding(.bottom, 60)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("trial-ended-notice")
+                    .task {
+                        AccessibilityNotification.Announcement(message).post()
+                        do { try await Task.sleep(for: .seconds(6)) } catch { return }
+                        showsTrialEndNotice = false
+                    }
+            }
+        }
+        .alert(AppLocalization.string("error.wall.index", defaultValue: "The photo index is temporarily unavailable. Try again."), isPresented: $scopeReadFailed) {}
         .fullScreenCover(item: $collection, onDismiss: finishCollectionDismissal) { selected in
             CollectionPhotoWall(model: model, collection: selected, controlGlobe: { target, reducedMotion in
                 controlSlideshowGlobe(target, reducedMotion)
@@ -315,19 +381,44 @@ struct GlobeView: View {
                 .id(selected.id)
                 .presentationBackground(.clear)
         }
+        .onChange(of: purchases.access, accessChanged)
+    }
+
+    private func accessChanged(_ previous: PurchaseStore.Access, _ current: PurchaseStore.Access) {
+        guard previous.permitsLibrary, !current.permitsLibrary, !model.isUsingSampleData else { return }
+        let closesCollection = collection.map { !isFreeCollection($0) } == true
+        let closesWall = layer == .photoWall && wallCollection.map(isFreeCollection) != true
+        let closesHomePlayback = layer != .photoWall && slideshow?.hasStartedPlayback == true
+            && !(slideshow.map(canPlayForFree) ?? false)
+        if case .trial = previous, current == .expired,
+           closesCollection || closesWall || closesHomePlayback || model.slideshowPresentation.current?.scope.kind == .anniversary,
+           model.slideshowPresentation.current?.hasStartedPlayback == true {
+            showsTrialEndNotice = true
+        }
+        if closesCollection { collection = nil }
+        if closesWall { closePhotoWall() }
+        if closesHomePlayback {
+            slideshow?.cancel()
+            finishWallSlideshow()
+        }
+    }
+
+    var body: some View {
+        presentedScene
         .onChange(of: model.pendingTopShelfRoute, initial: true) { _, _ in openPendingShelfAction() }
         .onChange(of: showsHome && scenePhase == .active && !showsInitialGlobeCover && model.scanScope == nil
                   ? model.analyticsLibrary : nil, initial: true) { _, mode in
             if let mode { ProductAnalytics.shared.capture(.homePresented, context: .init(library: mode)) }
         }
         .onChange(of: navigationVisible) { _, visible in
-            if visible { openPendingShelfAction() } else { anniversaryDay = nil }
+            if visible { openPendingShelfAction() }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.38), value: layer)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.28), value: selectedPhoto?.id)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.22), value: showsControls)
         .onAppear(perform: prepareOverview)
         .onDisappear {
+            cancelScopeCheck()
             wallGeneration = UUID()
             wallTask?.cancel()
             wallCountTask?.cancel()
@@ -344,6 +435,10 @@ struct GlobeView: View {
             }
         }
         .onChange(of: model.index?.contentRevision) { _, _ in
+            if scopeCheck != nil {
+                cancelScopeCheck()
+                if layer == .explore { experience.resumeDirectManipulation() }
+            }
             refreshMapContent()
             experience.refreshPhotos() // Drop candidates captured under the previous filter policy.
             // Metadata updates never relocate the user's browsing camera.
@@ -385,7 +480,12 @@ struct GlobeView: View {
             if model.isPreparationPresented { refreshMapContent() }
         }
         .onChange(of: model.excludedAssetIDs) { previous, removed in
-            if !removed.isSubset(of: previous) { anniversaryDay = nil }
+            if !removed.isSubset(of: previous) {
+                if scopeCheck != nil {
+                    cancelScopeCheck()
+                    if layer == .explore { experience.resumeDirectManipulation() }
+                }
+            }
             experience.refreshPhotos()
             slideshow?.removeAssets(removed.subtracting(previous))
             collectionWallSession?.exclude(removed, app: model)
@@ -404,6 +504,11 @@ struct GlobeView: View {
                 hasPresentedLibrary = true
                 experience.transitionCamera(to: userLocation ?? fallbackCenter, distance: GlobeCameraState.orbitalDistance,
                                             animated: false, overviewFraming: 1)
+            }
+            if phase != .globe {
+                cancelScopeCheck()
+                requestedAction = nil
+                presentsOffer = false
             }
             if phase == .denied {
                 wallTask?.cancel(); wallCountTask?.cancel(); wallReader = nil
@@ -485,12 +590,140 @@ struct GlobeView: View {
         }
     }
 
+    private func isFreeCollection(_ collection: PlaceCollection) -> Bool {
+        !freeJourneyID.isEmpty && model.index?.singleJourneyID(for: collection.placeIDs) == freeJourneyID
+    }
+
+    private func canPlayForFree(_ show: EarthSlideshowCoordinator) -> Bool {
+        guard let id = show.singlePlaybackJourneyID else { return false }
+        return show.availableJourneys.count == 1 || id == freeJourneyID
+    }
+
+    private func request(_ action: LibraryAction) {
+        guard !presentsOffer, scopeCheck == nil else { return }
+        guard !purchases.access.permitsLibrary, !model.isUsingSampleData, !model.isExploringPublicGlobe else {
+            perform(action)
+            return
+        }
+        if let selection = action.fixedPlaces {
+            authorize(action, journey: model.index?.singleJourneyID(for: selection.placeIDs))
+        } else {
+            switch action {
+            case .globeWall(nil):
+                guard let snapshot = experience.capturePhotoWallViewport() else {
+                    experience.resumeDirectManipulation()
+                    scopeReadFailed = true
+                    return
+                }
+                checkedViewport = snapshot
+                checkPhotoScope(action) { reader, offset in
+                    try await model.photoPage(in: snapshot, offset: offset, limit: 48, reader: reader)
+                }
+            case .anniversary(let day):
+                scopeCheck = Task {
+                    do {
+                        let journey = try await day.journey(in: model, chosen: freeJourneyID)
+                        try Task.checkCancellation()
+                        scopeCheck = nil
+                        if day.isCurrent() { authorize(action, journey: journey) }
+                    } catch {
+                        guard !Task.isCancelled else { return }
+                        scopeCheck = nil
+                        scopeReadFailed = true
+                    }
+                }
+            case .slideshow(let show, _):
+                if show.availableJourneys.isEmpty {
+                    perform(action) // Let the existing empty or failed show display its result.
+                } else if !freeJourneyID.isEmpty && canPlayForFree(show) {
+                    perform(action)
+                } else {
+                    authorize(action, journey: show.singlePlaybackJourneyID)
+                }
+            default:
+                break
+            }
+        }
+    }
+
+    /// A day or map region can contain just the free journey. Read the same frozen
+    /// selection as the wall and stop as soon as a second journey is encountered.
+    private func checkPhotoScope(_ action: LibraryAction,
+                                 page: @escaping (SQLiteTravelIndexStore?, Int) async throws -> PhotoQueryPage) {
+        scopeCheck = Task { @MainActor in
+            do {
+                let reader = try await model.makePhotoReadSnapshot()
+                guard let index = model.index else { throw TravelIndexStoreError.invalidSnapshot }
+                let content = try await index.journeyScope(chosen: freeJourneyID, excluding: model.excludedAssetIDs) { offset in
+                    try await page(reader, offset)
+                }
+                try Task.checkCancellation()
+                checkedReader = reader
+                scopeCheck = nil
+                switch content {
+                case .empty: perform(action)
+                case .journey(let id): authorize(action, journey: id)
+                case .requiresUnlock: authorize(action, journey: nil)
+                }
+            } catch {
+                guard !Task.isCancelled else { return }
+                cancelScopeCheck()
+                if layer == .explore { experience.resumeDirectManipulation(); focusGlobe() }
+                scopeReadFailed = true
+            }
+        }
+    }
+
+    private func cancelScopeCheck() {
+        scopeCheck?.cancel()
+        scopeCheck = nil
+        checkedViewport = nil
+        checkedReader = nil
+    }
+
+    private func authorize(_ action: LibraryAction, journey: String?) {
+        if purchases.access.permitsLibrary {
+            perform(action)
+        } else if let journey, freeJourneyID.isEmpty || freeJourneyID == journey {
+            if freeJourneyID.isEmpty { freeJourneyID = journey }
+            perform(action)
+        } else {
+            purchases.clearNotice()
+            requestedAction = action
+            if layer == .explore { experience.pauseDirectManipulation() }
+            presentsOffer = true
+        }
+    }
+
+    private func finishPurchaseOffer() {
+        let action = requestedAction
+        requestedAction = nil
+        guard model.phase == .globe, !model.isPreparationPresented, let action else { return }
+        if purchases.access.permitsLibrary {
+            perform(action)
+        } else {
+            cancelScopeCheck()
+            if layer == .explore { experience.resumeDirectManipulation(); focusGlobe() }
+        }
+    }
+
+    private func perform(_ action: LibraryAction) {
+        switch action {
+        case .collection(let selection, let entry): openCollection(selection, entry: entry)
+        case .globeWall: openPhotoWall()
+        case .anniversary(let day): if day.isCurrent() { day.open() }
+        case .slideshow(let show, let music):
+            if slideshow === show { show.beginPlayback(music: music) }
+        }
+    }
+
     private func showSidebar() { presentsDirectHome = false }
 
     private var overviewTab: some View {
         GlobeOverviewView(
                         content: model.overview,
                         isUsingSampleData: model.isUsingSampleData,
+                        showsFreeJourneyHint: freeJourneyID.isEmpty && !purchases.access.permitsLibrary && !model.isUsingSampleData,
                         enterGlobe: { enterExplore(at: userLocation ?? fallbackCenter) },
                         startSlideshow: places.isEmpty ? nil : { startHomeSlideshow() },
                         openPlace: { place in
@@ -516,6 +749,7 @@ struct GlobeView: View {
         TabView(selection: Binding(get: { destination }, set: { next in
             guard destination != next else { return }
             if destination == .home { overviewReturnCamera = experience.camera }
+            cancelScopeCheck()
             destination = next
             ProductAnalytics.shared.capture(.sidebarSelected, value: next.rawValue, context: .init(library: model.analyticsLibrary))
             if next == .home, layer == .overview { restoreHomeCamera() }
@@ -539,12 +773,13 @@ struct GlobeView: View {
                                  isActive: destination == .countries && navigationVisible && collection == nil && scenePhase == .active, openPhotos: openCollection)
                     .modifier(LibraryPreparationChrome(model: model))
             } label: {
-                Label(AppLocalization.string("sidebar.countries", defaultValue: "Countries & Cities"), systemImage: "map")
+                Label(AppLocalization.string("sidebar.countries", defaultValue: "Places"), systemImage: "map")
             }
             .accessibilityIdentifier("tab-countries")
             Tab(value: Destination.anniversary) {
                 OnThisDayView(model: model, isActive: destination == .anniversary && navigationVisible && scenePhase == .active,
-                              selectedDay: $anniversaryDay)
+                              detail: $anniversaryDetail, requestAccess: { request(.anniversary($0)) }, controlGlobe: controlSlideshowGlobe,
+                              restoreGlobe: restoreGlobeAfterSlideshow)
                     .modifier(LibraryPreparationChrome(model: model))
             } label: {
                 Label(AppLocalization.string("sidebar.anniversary", defaultValue: "On This Day"), systemImage: "calendar")
@@ -572,7 +807,6 @@ struct GlobeView: View {
 
     private func applyPendingShelfAction() async {
         guard let action = await model.takeTopShelfAction() else { return }
-        anniversaryDay = nil
         mapReviewOrigin = nil
         slideshow?.cancel()
         slideshow = nil
@@ -586,7 +820,7 @@ struct GlobeView: View {
         case .journey(let selected):
             if layer == .explore { leaveExplore() }
             ProductAnalytics.shared.capture(.topShelfOpened, value: "city")
-            openCollection(selected, entry: .topShelf)
+            request(.collection(selected, .topShelf))
         case .globe:
             ProductAnalytics.shared.capture(.topShelfOpened, value: "globe")
             collection = nil
@@ -595,7 +829,7 @@ struct GlobeView: View {
     }
 
     private func openCollection(_ selected: PlaceCollection) {
-        openCollection(selected, entry: destination == .recent ? .recent : .countries)
+        request(.collection(selected, destination == .recent ? .recent : .countries))
     }
 
     private func openCollection(_ selected: PlaceCollection, entry: JourneyEventContext.Entry) {
@@ -739,7 +973,7 @@ struct GlobeView: View {
             guard layer == .explore, !showsControls else { return }
             switch action {
             case .singlePress:
-                if !model.isExploringPublicGlobe { openPhotoWall() }
+                if !model.isExploringPublicGlobe { request(.globeWall(exploreCity)) }
             }
         }, nearPhotoQuery: { [weak appModel] snapshot, onPreview in
             guard let appModel else { throw CancellationError() }
@@ -766,6 +1000,7 @@ struct GlobeView: View {
     }
 
     private func leaveExplore() {
+        cancelScopeCheck()
         if let closeLocationExploration {
             experience.deactivate()
             closeLocationExploration()
@@ -793,7 +1028,8 @@ struct GlobeView: View {
     private func openPhotoWall() {
         guard layer == .explore else { return }
         mapReviewOrigin = nil
-        wallSnapshot = experience.capturePhotoWallViewport()
+        wallSnapshot = checkedViewport ?? experience.capturePhotoWallViewport()
+        checkedViewport = nil
         wallCollection = exploreCity
         collectionWallSession?.cancel()
         collectionWallSession = wallSnapshot == nil || wallCollection == nil ? nil : CollectionPhotoWallSession()
@@ -801,7 +1037,8 @@ struct GlobeView: View {
         wallRecords = []
         wallRecordIDs = []
         wallCountScheduling = PhotoWallCountScheduling()
-        wallReader = nil
+        wallReader = checkedReader
+        checkedReader = nil
         wallHasReadSession = false
         frozenWallPlaces = PhotoWallPlaces(); wallResolvedLabels = [:]
         wallError = wallSnapshot == nil ? PhotoWallSelectionError.unavailableViewport.localizedDescription : nil
@@ -839,7 +1076,8 @@ struct GlobeView: View {
             defer { scheduling.setPaused(false, for: .page) }
             do {
                 if !wallHasReadSession {
-                    let reader = try await model.makePhotoReadSnapshot()
+                    let reader: SQLiteTravelIndexStore?
+                    if let wallReader { reader = wallReader } else { reader = try await model.makePhotoReadSnapshot() }
                     let summaries = try await reader?.placeSummariesForReading() ?? places
                     guard !Task.isCancelled, layer == .photoWall, wallGeneration == generation else { return }
                     wallReader = reader

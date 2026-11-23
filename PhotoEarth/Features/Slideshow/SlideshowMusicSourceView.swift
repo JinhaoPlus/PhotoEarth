@@ -20,6 +20,7 @@ struct SlideshowMusicSourceView: View {
         case online
         case appleMusic
         case clearMusic
+        case browseOnline
     }
 
     private struct TrackSelection {
@@ -55,7 +56,9 @@ struct SlideshowMusicSourceView: View {
             HStack(spacing: TVControlLayout.actionSpacing) {
                 sourceSwitch
                 Spacer()
-                clearMusicButton
+                if controller.automaticMusicEnabled, source == .online || controller.accessState == .available {
+                    clearMusicButton
+                }
             }
             .focusSection()
 
@@ -135,11 +138,9 @@ struct SlideshowMusicSourceView: View {
                 title: AppLocalization.string("slideshow.music.online", defaultValue: "Online Music"),
                 symbol: "waveform",
                 focus: .online,
-                identifier: "slideshow-music-source-online"
-            ) {
-                source = .online
-                if case .loaded = catalog { pickerFocus = onlineFocus }
-            }
+                identifier: "slideshow-music-source-online",
+                action: browseOnlineMusic
+            )
             sourceButton(
                 .appleMusic, title: "Apple Music", symbol: "music.note",
                 focus: .appleMusic, identifier: "slideshow-music-source-apple"
@@ -254,32 +255,60 @@ struct SlideshowMusicSourceView: View {
 
     @ViewBuilder
     private var appleMusicContent: some View {
-        if controller.accessState == .available {
+        if controller.isConnecting || controller.accessState == .checking {
+            ProgressView(AppLocalization.string("slideshow.music.checking", defaultValue: "Checking Apple Music…"))
+        } else if controller.accessState == .available {
             AppleMusicSelectionView(controller: controller, didSelect: dismiss)
+        } else if controller.accessState == .notSubscribed {
+            VStack(spacing: 18) {
+                Image(systemName: "music.note")
+                    .font(.system(size: 52, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+                Text(AppLocalization.string("slideshow.music.subscription_required",
+                                            defaultValue: "With an Apple Music subscription, you can choose songs from its catalog"))
+                    .font(.title2.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("slideshow-music-apple-status")
+                Text(AppLocalization.string("slideshow.music.subscription_alternative",
+                                            defaultValue: "PHOTO EARTH’s online music is available without a subscription."))
+                    .font(.system(size: 27))
+                    .foregroundStyle(.secondary)
+                Button(AppLocalization.string("slideshow.music.browse_online", defaultValue: "Browse Online Music"),
+                       action: browseOnlineMusic)
+                    .buttonStyle(.borderedProminent)
+                    .focused($pickerFocus, equals: .browseOnline)
+                    .accessibilityIdentifier("slideshow-music-browse-online")
+                    .padding(.top, 16)
+            }
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear { pickerFocus = .browseOnline }
         } else {
             VStack(alignment: .leading, spacing: 20) {
-                if controller.isConnecting || controller.accessState == .checking {
-                    ProgressView(AppLocalization.string("slideshow.music.checking", defaultValue: "Checking Apple Music…"))
-                } else {
-                    if let appleMusicStatus {
-                        Text(appleMusicStatus)
-                            .font(.system(size: 24))
-                            .foregroundStyle(.secondary)
-                            .accessibilityIdentifier("slideshow-music-apple-status")
-                    }
-                    if controller.accessState != .restricted {
-                        Button(
-                            controller.accessState == .needsAuthorization
-                                ? AppLocalization.string("slideshow.music.connect", defaultValue: "Connect Apple Music")
-                                : AppLocalization.string("common.retry", defaultValue: "Try Again"),
-                            action: connectAppleMusic
-                        )
-                        .buttonStyle(.bordered)
-                    }
+                if let appleMusicStatus {
+                    Text(appleMusicStatus)
+                        .font(.system(size: 24))
+                        .foregroundStyle(.secondary)
+                        .accessibilityIdentifier("slideshow-music-apple-status")
+                }
+                if controller.accessState == .needsAuthorization || controller.accessState == .temporarilyUnavailable {
+                    Button(
+                        controller.accessState == .needsAuthorization
+                            ? AppLocalization.string("slideshow.music.connect", defaultValue: "Connect Apple Music")
+                            : AppLocalization.string("common.retry", defaultValue: "Try Again"),
+                        action: connectAppleMusic
+                    )
+                    .buttonStyle(.bordered)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
+    }
+
+    private func browseOnlineMusic() {
+        source = .online
+        pickerFocus = onlineFocus
     }
 
     private func connectAppleMusic() {
@@ -433,17 +462,15 @@ struct SlideshowMusicSourceView: View {
 
     private var clearMusicButton: some View {
         Button {
-            controller.clearMusic()
+            controller.turnOffMusic()
             dismiss()
         } label: {
-            Label(
-                AppLocalization.string("slideshow.music.turn_off", defaultValue: "Turn Off Soundtrack"),
-                systemImage: "speaker.slash"
-            )
+            Label(AppLocalization.string("slideshow.music.turn_off", defaultValue: "Turn Off Soundtrack"),
+                  systemImage: "speaker.slash")
         }
         .buttonStyle(.bordered)
         .focused($pickerFocus, equals: .clearMusic)
-        .disabled(controller.selectedChoice == nil || isPreparingSelection)
+        .disabled(isPreparingSelection)
         .accessibilityIdentifier("slideshow-music-off")
     }
 
@@ -468,11 +495,11 @@ struct SlideshowMusicSourceView: View {
     private func loadCatalog() async {
         catalog = .loading
         do {
-            let snapshot = try await OnlineSlideshowCatalog.load()
+            let snapshot = try await controller.onlineCatalog()
             try Task.checkCancellation()
-            let playlists = controller.recommendations.playlists(for: snapshot.playlists)
+            let playlists = snapshot.playlists
             browsedPlaylistID = (playlists.first { $0.id == selectedPlaylistID } ?? playlists.first)?.id
-            catalog = .loaded(.init(playlists: playlists, isCached: snapshot.isCached))
+            catalog = .loaded(snapshot)
         } catch {
             guard !Task.isCancelled else { return }
             let code = (error as? URLError)?.code
@@ -515,14 +542,12 @@ struct SlideshowMusicSourceView: View {
 
     private var appleMusicStatus: String? {
         switch controller.accessState {
-        case .notSubscribed:
-            AppLocalization.string("slideshow.music.subscription_required", defaultValue: "Apple Music subscription required")
         case .denied:
             AppLocalization.string("slideshow.music.access_denied", defaultValue: "Allow Apple Music access in Settings")
         case .restricted:
             AppLocalization.string("slideshow.music.restricted", defaultValue: "Apple Music is restricted on this Apple TV")
         case .temporarilyUnavailable:
-            AppLocalization.string("slideshow.music.retry", defaultValue: "Retry Apple Music")
+            AppLocalization.string("slideshow.music.retry", defaultValue: "Apple Music is temporarily unavailable.")
         default:
             nil
         }

@@ -6,7 +6,7 @@ import XCTest
 @MainActor final class TVHomeShelfLayoutUITests: XCTestCase {
     private let board = XCUIApplication(bundleIdentifier: "com.apple.PineBoard")
     private let remote = XCUIRemote.shared
-    private let appNames = ["PhotoEarth", "Photo Earth", "照片地球"]
+    private let appName = "PHOTO EARTH"
     private let editNames = ["Edit Home Screen", "Edit Home Screen Layout", "编辑主屏幕布局", "编辑主屏幕", "編輯主畫面佈局", "編輯主畫面"]
     private let bundleID = "com.doupi.PhotoEarth.PhotoEarth"
 
@@ -91,13 +91,13 @@ import XCTest
 
     private var icon: XCUIElement {
         board.descendants(matching: .icon).matching(NSPredicate(
-            format: "label IN %@ OR identifier == %@", appNames, bundleID
+            format: "label == %@ OR identifier == %@", appName, bundleID
         )).firstMatch
     }
 
     private var photoEarthIsFocused: Bool {
         guard board.state == .runningForeground, let focused = focusedElement else { return false }
-        return focused.identifier == bundleID || appNames.contains(focused.label) || (icon.exists && isFocused(icon))
+        return focused.identifier == bundleID || focused.label == appName || (icon.exists && isFocused(icon))
     }
 
     private func isFocused(_ element: XCUIElement) -> Bool {
@@ -155,7 +155,7 @@ import XCTest
     private func focusedCaptionIsPhotoEarth() throws -> Bool {
         // A named, focused AX icon takes precedence over the visual handoff.
         if let selected = focusedElement, selected.elementType == .icon, !selected.label.isEmpty,
-           !appNames.contains(selected.label), selected.identifier != bundleID { return false }
+           selected.label != appName, selected.identifier != bundleID { return false }
         guard let image = XCUIScreen.main.screenshot().image.cgImage else { return false }
         let request = VNRecognizeTextRequest()
         request.recognitionLevel = .accurate
@@ -165,7 +165,7 @@ import XCTest
         try VNImageRequestHandler(cgImage: image).perform([request])
         return request.results?.contains {
             guard let label = $0.topCandidates(1).first?.string else { return false }
-            return appNames.contains(label.trimmingCharacters(in: .whitespacesAndNewlines))
+            return label.trimmingCharacters(in: .whitespacesAndNewlines) == appName
         } == true
     }
 

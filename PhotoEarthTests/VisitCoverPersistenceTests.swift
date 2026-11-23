@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 import Testing
 @testable import PhotoEarth
 
@@ -70,6 +71,7 @@ struct VisitCoverPersistenceTests {
         // Updated pixels may have the same PhotoKit metadata, even on a cold launch.
         let edited = try #require(snapshot.photos.first { $0.id == "b" })
         #expect(try await !store.stageMetadata(.init(records: [edited]), run: run))
+        #expect(try await !store.stageMetadata(.init(records: [edited]), run: run))
         _ = try await store.commitDisplayChanges(run: run, token: Data([1]), sourcePhotoCount: 3, authorization: "test")
         try await store.saveVisitCover("a", for: first, revision: revision, generation: oldGeneration,
                                        expires: .distantFuture, excluding: [])
@@ -101,5 +103,51 @@ struct VisitCoverPersistenceTests {
         _ = try await store.activateMetadata(run: full, sourcePhotoCount: 1, token: Data([3]), fullCheck: true,
                                                authorization: "test", configuration: .init(), progress: { _, _ in })
         #expect(try await store.savedVisitCovers(for: [first, second], keeping: [first: "a", second: "z"], excluding: []).isEmpty)
+    }
+
+    @Test func incrementalReplayOfRepeatedEditsUpgradesExistingIndexAndPublishesNewPhotos() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("index.sqlite")
+        let store = SQLiteTravelIndexStore(databaseURL: url)
+        let snapshot = fixture()
+        try await store.save(snapshot)
+        let editedVisit = try await record("a", in: snapshot, store: store)
+        let untouchedVisit = try await record("z", in: snapshot, store: store)
+
+        // Reopen an index that still has the trigger installed by the previous build.
+        var connection: OpaquePointer?
+        try #require(sqlite3_open(url.path, &connection) == SQLITE_OK)
+        do {
+            defer { sqlite3_close(connection) }
+            let legacyTrigger = """
+                DROP TRIGGER IF EXISTS record_staged_cover_edit_v2;
+                CREATE TRIGGER IF NOT EXISTS record_staged_cover_edit AFTER UPDATE OF latitude ON scan_photos
+                BEGIN
+                    INSERT OR IGNORE INTO scan_cover_updates(asset_id) VALUES (NEW.id);
+                END;
+                """
+            try #require(sqlite3_exec(connection, legacyTrigger, nil, nil, nil) == SQLITE_OK)
+        }
+
+        let reopened = SQLiteTravelIndexStore(databaseURL: url)
+        let run = try await reopened.beginMetadataScan(copyCurrent: true)
+        let old = try #require(snapshot.photos.first { $0.id == "b" })
+        let added = photo("new", longitude: 10, time: 250)
+        let edited = photo("new", longitude: 10, time: 260)
+        for batch in [[old, added], [old, added], [edited]] {
+            _ = try await reopened.stageMetadata(.init(records: batch, removedIDs: batch.map(\.id)), run: run)
+        }
+        let token = Data([4])
+        let index = try await reopened.activateMetadata(run: run, sourcePhotoCount: 4, token: token,
+                                                       fullCheck: false, authorization: "test",
+                                                       configuration: .init(), progress: { _, _ in })
+        #expect(index.locatedPhotoCount == 4)
+        let wall = try await reopened.photoPage(for: [editedVisit], offset: 0, limit: 48)
+        #expect(wall.records.map(\.id) == ["new", "b", "a"])
+        #expect(wall.records.first?.creationDate == edited.creationDate)
+        let covers = try await reopened.savedVisitCovers(for: [editedVisit, untouchedVisit], excluding: [])
+        #expect(covers.mapValues(\.assetID) == [untouchedVisit: "z"])
+        #expect(try await reopened.loadSyncState().token == token)
     }
 }

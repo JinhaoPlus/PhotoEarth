@@ -11,7 +11,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wähle Musik aus Apple Music für deine Diashow aus."
+            "value" : "Mit Zugriff auf Apple Music kannst du Musik für deine Diashow auswählen."
           }
         },
         "en" : {
@@ -64,49 +64,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth verwendet den ungefähren Standort des Apple TV, um den Globus in deiner Nähe zu öffnen."
+            "value" : "PHOTO EARTH nutzt den ungefähren Standort deines Apple TV, um beim Öffnen des Globus deine Umgebung zu zeigen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth uses the Apple TV's approximate location to start the globe near you."
+            "value" : "PHOTO EARTH uses the approximate location of this Apple TV to show your area when the globe opens."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth usa la ubicación aproximada del Apple TV para iniciar el globo cerca de ti."
+            "value" : "PHOTO EARTH usa la ubicación aproximada del Apple TV para mostrar tu zona al abrir el globo."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth utilise la position approximative de l’Apple TV pour ouvrir le globe près de vous."
+            "value" : "PHOTO EARTH utilise la position approximative de l’Apple TV pour centrer le globe sur votre région au démarrage."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth usa la posizione approssimativa di Apple TV per aprire il globo vicino a te."
+            "value" : "PHOTO EARTH usa la posizione approssimativa di Apple TV per mostrare la tua zona quando apri il globo."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo EarthはApple TVのおおよその位置情報を使用して、現在地付近から地球を表示します。"
+            "value" : "PHOTO EARTHはApple TVのおおよその位置情報を使って、地球儀を開くときに現在地の周辺を表示します。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth 使用 Apple TV 的大致位置，让地球从你所在的区域开始。"
+            "value" : "PHOTO EARTH 使用这台 Apple TV 的大致位置，在打开地球时显示你所在的区域。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth 使用 Apple TV 的大致位置，讓地球從你所在的區域開始。"
+            "value" : "PHOTO EARTH 會使用這部 Apple TV 的大致位置，在地球上顯示你所在的區域。"
           }
         }
       }
@@ -117,49 +117,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth uses capture dates, locations, and camera information to build your travel globe on this Apple TV."
+            "value" : "PHOTO EARTH uses capture dates, locations, and camera information to build your travel globe on this Apple TV."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth 使用拍摄日期、地点和相机信息，在这台 Apple TV 上生成你的旅行地球。"
+            "value" : "PHOTO EARTH 使用拍摄日期、地点和相机信息，在这台 Apple TV 上生成你的旅行地球。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth 使用拍攝日期、地點和相機資訊，在這部 Apple TV 上將你的旅程呈現在地球儀上。"
+            "value" : "PHOTO EARTH 使用拍攝日期、地點和相機資訊，在這部 Apple TV 上將你的旅程呈現在地球儀上。"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth は、撮影日、撮影場所、カメラ情報を使って、この Apple TV 上で旅の記録を地球儀にまとめます。"
+            "value" : "PHOTO EARTH は、撮影日、撮影場所、カメラ情報を使って、この Apple TV 上で旅の記録を地球儀にまとめます。"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth erstellt deinen Reiseglobus auf diesem Apple TV anhand von Aufnahmedatum, Standort und Kameradaten."
+            "value" : "PHOTO EARTH erstellt deinen Reiseglobus auf diesem Apple TV anhand von Aufnahmedatum, Standort und Kameradaten."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth crée le globe de vos voyages sur cette Apple TV à partir des dates et lieux de prise de vue et des données de l’appareil photo."
+            "value" : "PHOTO EARTH crée le globe de vos voyages sur cette Apple TV à partir des dates et lieux de prise de vue et des données de l’appareil photo."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth usa las fechas de captura, las ubicaciones y los datos de la cámara para crear tu globo de viajes en este Apple TV."
+            "value" : "PHOTO EARTH usa las fechas y los lugares de captura y los datos de la cámara para situar tus viajes en el globo. El análisis se realiza en este Apple TV."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth usa le date di scatto, le posizioni e i dati della fotocamera per creare il globo dei tuoi viaggi su questa Apple TV."
+            "value" : "PHOTO EARTH usa le date di scatto, le posizioni e i dati della fotocamera per creare il globo dei tuoi viaggi su questa Apple TV."
           }
         }
       }

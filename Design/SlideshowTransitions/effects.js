@@ -5,6 +5,9 @@ window.PhotoEarthTransitions = (() => {
     settle: { name: '轻推入场', ms: 780, startScale: 0.982, description: '新照片从略小的位置向前靠近，停在完整构图上。适合一张值得多看一眼的静态照片。' },
     reveal: { name: '柔边揭幕', ms: 820, feather: 0.50, description: '一道很宽的柔边从左向右带出新景，两张照片都留在原位。适合同一站里隔了一段时间的新场景。' },
     backdrop: { name: '背景先行', ms: 800, backgroundEnd: 0.65, photoStart: 0.20, description: '背景先换成下一张的色调，前景照片稍后叠入。适合横图转竖图或竖图转横图。' },
+    panoramaGlide: { name: '横移接景', ms: 820, description: '前一张横图微微向左让位，宽幅新景从右侧接入并停稳。' },
+    focusPullback: { name: '退镜定格', ms: 780, description: '收藏照片从略近的视角退回完整构图，随后静止。' },
+    centerOpen: { name: '中缝展幅', ms: 820, description: '拼图从中央向两侧展开，各格照片始终留在原位。' },
     stagger: { name: '拼图错拍', ms: 820, offsetMs: 85, description: '相邻两页的格线对齐时，从左到右依次换照片。格线和照片位置固定，每格只做叠化。' }
   };
   const smooth = t => t * t * (3 - 2 * t);
@@ -17,6 +20,15 @@ window.PhotoEarthTransitions = (() => {
     if (reduced || manual || a.dynamic || b.dynamic || a.visit !== b.visit || a.day !== b.day) return 'dissolve';
     // At least two ordinary transitions between accents.
     if (recent.slice(-2).some(id => id !== 'dissolve')) return 'dissolve';
+    const highMotion = ['panoramaGlide', 'focusPullback', 'centerOpen'];
+    if (recent.length >= 15 && !recent.slice(-15).some(id => highMotion.includes(id)) && a.ratios.length === 1) {
+      if (b.ratios.length > 1) return 'centerOpen';
+      const old = a.ratios[0], next = b.ratios[0];
+      if (old > 0 && next > 0 && (old < 1) === (next < 1)) {
+        if (b.favorite) return 'focusPullback';
+        if (old >= 1 && next >= 1.7) return 'panoramaGlide';
+      }
+    }
     if (sameGrid(a, b)) return 'stagger';
     if (a.ratios.length !== 1 || b.ratios.length !== 1) return 'dissolve';
     if ((a.ratios[0] < 1) !== (b.ratios[0] < 1)) return 'backdrop';
@@ -33,6 +45,15 @@ window.PhotoEarthTransitions = (() => {
     switch (id) {
       case 'settle':
         frame.scale = effect.startScale + (1 - effect.startScale) * (1 - Math.pow(1 - p, 3));
+        break;
+      case 'panoramaGlide':
+        frame.glide = { oldX: -0.08 * blend, nextX: 0.12 * (1 - blend) };
+        break;
+      case 'focusPullback':
+        frame.scale = 1 + 0.12 * (1 - blend);
+        break;
+      case 'centerOpen':
+        frame.openWidth = 1.06 * blend;
         break;
       case 'reveal':
         frame.mask = { edge: (1 + effect.feather) * blend, feather: effect.feather };

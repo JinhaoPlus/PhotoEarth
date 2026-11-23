@@ -104,6 +104,10 @@ final class MapReviewUITests: XCTestCase {
         XCUIRemote.shared.press(.playPause)
         let zoom = app.buttons["map-review-zoom-in"]
         let zoomFocused = focus(zoom)
+        let drag = app.descendants(matching: .any)["map-review-controls-pan-hint"].firstMatch
+        XCTAssertTrue(drag.exists)
+        XCTAssertLessThan(drag.frame.maxY, app.frame.height / 4)
+        XCTAssertGreaterThan(drag.frame.minX, app.frame.midX)
         let dock = XCTAttachment(screenshot: app.screenshot())
         dock.name = "Direct map review zoom dock"; dock.lifetime = .keepAlways; add(dock)
         if !zoomFocused { print(app.debugDescription) }

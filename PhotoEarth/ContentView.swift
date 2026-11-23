@@ -14,14 +14,10 @@ struct ContentView: View {
 
     @EnvironmentObject private var purchases: PurchaseStore
     @Binding var incomingURL: URL?
-    let sampleOnly: Bool
-    let leaveSample: (() -> Void)?
 
-    init(incomingURL: Binding<URL?> = .constant(nil), sampleOnly: Bool = false, leaveSample: (() -> Void)? = nil) {
+    init(incomingURL: Binding<URL?> = .constant(nil)) {
         _incomingURL = incomingURL
-        self.sampleOnly = sampleOnly
-        self.leaveSample = leaveSample
-        _model = StateObject(wrappedValue: AppModel(sampleOnly: sampleOnly))
+        _model = StateObject(wrappedValue: AppModel())
     }
 
     private var globeAcceptsInput: Bool { model.phase == .globe || model.phase == .scanning || model.isExploringPublicGlobe }
@@ -44,14 +40,14 @@ struct ContentView: View {
                 if model.canBrowsePreparedLibrary {
                     MessageView(symbol: "globe.asia.australia",
                                 title: AppLocalization.string("ready.title", defaultValue: "Your Travel Globe Is Ready"),
-                                message: AppLocalization.string("ready.message", defaultValue: "Remaining place names will continue updating."),
+                                message: AppLocalization.string("ready.message", defaultValue: "Missing place names will be added as they become available."),
                                 primaryTitle: AppLocalization.string("ready.enter", defaultValue: "Enter My Globe"), primaryAction: model.closePreparation,
                                 secondaryTitle: AppLocalization.string("ready.progress", defaultValue: "View Preparation Progress"), secondaryAction: model.showPreparation)
                 } else if model.canReturnToPreparation {
                     MessageView(symbol: "photo.on.rectangle",
                                 title: model.preparationProgress.title, message: model.preparationProgress.countText,
                                 primaryTitle: AppLocalization.string("ready.progress", defaultValue: "View Preparation Progress"), primaryAction: model.showPreparation,
-                                secondaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Journey"), secondaryAction: model.useSampleData)
+                                secondaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Trip"), secondaryAction: model.useSampleData)
                 } else {
                     WelcomeView(begin: { Task { await model.requestAccessAndScan() } }, showDemo: model.useSampleData)
                         .onAppear { ProductAnalytics.shared.capture(.welcomePresented) }
@@ -65,9 +61,9 @@ struct ContentView: View {
                     symbol: "location.slash",
                     title: AppLocalization.string("empty_library.title", defaultValue: "No Travel Photos Found"),
                     message: AppLocalization.string("empty_library.message", defaultValue: "Check the albums included in your scan and the location information in Photos."),
-                    primaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Journey"),
+                    primaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Trip"),
                     primaryAction: model.useSampleData,
-                    secondaryTitle: model.usesLivePhotoLibrary ? AppLocalization.string("scan.scope.title", defaultValue: "Scan Scope") : AppLocalization.string("library.rescan", defaultValue: "Scan Again"),
+                    secondaryTitle: model.usesLivePhotoLibrary ? AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings") : AppLocalization.string("library.rescan", defaultValue: "Scan Again"),
                     secondaryAction: {
                         if model.usesLivePhotoLibrary { model.showScanScope() }
                         else { Task { await model.rescan() } }
@@ -77,8 +73,8 @@ struct ContentView: View {
                 MessageView(
                     symbol: "lock.shield",
                     title: AppLocalization.string("permission.title", defaultValue: "Photo Access Required"),
-                    message: AppLocalization.string("permission.message", defaultValue: "In Settings > General > Privacy & Security > Photos, allow Photo Earth to access your photos."),
-                    primaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Journey"),
+                    message: AppLocalization.string("permission.message", defaultValue: "In Settings > General > Privacy & Security > Photos, allow PHOTO EARTH to access your photos."),
+                    primaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Trip"),
                     primaryAction: model.useSampleData,
                     secondaryTitle: nil,
                     secondaryAction: nil
@@ -90,7 +86,7 @@ struct ContentView: View {
                     message: message,
                     primaryTitle: AppLocalization.string("common.retry", defaultValue: "Try Again"),
                     primaryAction: { Task { await model.rescan() } },
-                    secondaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Journey"),
+                    secondaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Trip"),
                     secondaryAction: model.useSampleData
                 )
             }
@@ -103,18 +99,16 @@ struct ContentView: View {
         })) { presentation in
             TravelScanScopeView(model: model, presentation: presentation)
         }
-        .environment(\.leavePurchaseSample, leaveSample)
         .onChange(of: incomingURL, initial: true) { _, url in
-            guard let url, !sampleOnly else { return }
+            guard let url else { return }
             model.requestTopShelfURL(url)
             incomingURL = nil
         }
         .task {
-            if sampleOnly { model.useSampleData() }
-            else { await model.start() }
+            await model.start()
         }
-        .onDisappear {
-            if sampleOnly || !purchases.access.permitsLibrary { model.closeLibrarySession() }
+        .onChange(of: purchases.access.permitsLibrary, initial: true) { _, full in
+            model.setFullShelfAccess(full)
         }
         .onChange(of: scenePhase, initial: true) { _, phase in
             if phase == .background { reportedForeground = false }
@@ -124,8 +118,9 @@ struct ContentView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if !sampleOnly { Task { await model.setSceneActive(phase == .active) } }
+            Task { await model.setSceneActive(phase == .active) }
         }
+        .environment(\.slideshowPresentation, model.slideshowPresentation)
         .preferredColorScheme(.dark)
     }
 }

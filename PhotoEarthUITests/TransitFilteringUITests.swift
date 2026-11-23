@@ -22,6 +22,7 @@ final class TransitFilteringUITests: XCTestCase {
             XCTAssertTrue(app.staticTexts["疑似途经照片已隐藏"].waitForExistence(timeout: 5))
         }
         app.openSidebarDestination("tab-settings")
+        app.enterSettingsCategory("photos")
         let scan = app.buttons["settings-scan"]
         XCTAssertTrue(scan.waitForExistence(timeout: 8))
         let toggle = app.descendants(matching: .any)["settings-hide-transit"].firstMatch

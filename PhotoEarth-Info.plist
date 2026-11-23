@@ -7,11 +7,11 @@
 	<key>PostHogHost</key>
 	<string>$(POSTHOG_HOST)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Photo Earth</string>
+	<string>PHOTO EARTH</string>
 	<key>NSAppleMusicUsageDescription</key>
 	<string>Choose music from Apple Music to play during your slideshow.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Photo Earth uses the Apple TV's approximate location to start the globe near you.</string>
+	<string>PHOTO EARTH uses the approximate location of this Apple TV to show your area when the globe opens.</string>
 	<key>GCSupportedGameControllers</key>
 	<array>
 		<dict>
