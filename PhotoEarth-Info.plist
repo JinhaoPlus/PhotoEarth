@@ -9,7 +9,7 @@
 	<key>CFBundleDisplayName</key>
 	<string>Photo Earth</string>
 	<key>NSAppleMusicUsageDescription</key>
-	<string>Photo Earth accesses Apple Music only when you choose background music for a slideshow.</string>
+	<string>Choose music from Apple Music to play during your slideshow.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Photo Earth uses the Apple TV's approximate location to start the globe near you.</string>
 	<key>GCSupportedGameControllers</key>

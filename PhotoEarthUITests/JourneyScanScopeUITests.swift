@@ -67,7 +67,7 @@ final class JourneyScanScopeUITests: XCTestCase {
         XCUIRemote.shared.press(.menu)
         let settingsScope = app.buttons["settings-scan-scope"]
         XCTAssertTrue(waitForFocus(settingsScope))
-        XCTAssertTrue(app.staticTexts["settings-index-summary"].label.contains("4 张照片"))
+        XCTAssertTrue(app.staticTexts["settings-index-summary"].label.contains("4 项"))
         // The album fixture has one surviving short visit when both albums are
         // excluded. Keep the independent transit policy out of this assertion.
         let transit = app.descendants(matching: .any)["settings-hide-transit"].firstMatch
@@ -140,7 +140,7 @@ final class JourneyScanScopeUITests: XCTestCase {
             settle()
         }
         XCTAssertTrue(summary.waitForExistence(timeout: 8))
-        XCTAssertTrue(summary.label.contains("\(expectedPhotos) 张照片"), "Expected \(expectedPhotos) indexed items. Got \(summary.label)")
+        XCTAssertTrue(summary.label.contains("\(expectedPhotos) 项"), "Expected \(expectedPhotos) indexed items. Got \(summary.label)")
         let scope = app.buttons["settings-scan-scope"]
         XCTAssertTrue(scope.waitForExistence(timeout: 5))
         XCTAssertTrue(seek(scope, direction: .up))

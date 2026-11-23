@@ -15,6 +15,31 @@ nonisolated struct EarthSlideshowSegment: Identifiable, Equatable, Sendable {
         startDate = self.visits[0].startDate
         endDate = self.visits.map(\.endDate).max() ?? startDate
     }
+
+    func coverAssetID(excluding excluded: Set<String>) -> String? {
+        visits.lazy.compactMap(\.coverAssetID).first { !excluded.contains($0) }
+    }
+
+    static func scoped(to places: [TravelPlace], journeys: [TravelJourney]) -> [Self] {
+        var remaining = Dictionary(places.filter { $0.photoCount > 0 }.map { ($0.id, $0) },
+                                   uniquingKeysWith: { first, _ in first })
+        var scoped: [Self] = []
+        for journey in journeys {
+            let visits = journey.placeIDs.compactMap { remaining.removeValue(forKey: $0) }
+            if !visits.isEmpty {
+                scoped.append(.init(id: journey.id, visits: visits))
+            }
+        }
+        // Older indexes can have visits without journey membership.
+        for visit in remaining.values {
+            scoped.append(.init(id: "visit:" + visit.id, visits: [visit]))
+        }
+        return scoped.sorted {
+            if $0.startDate != $1.startDate { return $0.startDate > $1.startDate }
+            if $0.endDate != $1.endDate { return $0.endDate > $1.endDate }
+            return $0.id < $1.id
+        }
+    }
 }
 
 /// Read the newest journey first, then finish each stop in capture order.
@@ -43,24 +68,11 @@ nonisolated struct SlideshowPageSequence {
     private(set) var state: State
 
     init(places: [TravelPlace], journeys: [TravelJourney] = []) {
-        var remaining = Dictionary(places.filter { $0.photoCount > 0 }.map { ($0.id, $0) },
-                                   uniquingKeysWith: { first, _ in first })
-        var scoped: [EarthSlideshowSegment] = []
-        for journey in journeys {
-            let visits = journey.placeIDs.compactMap { remaining.removeValue(forKey: $0) }
-            if !visits.isEmpty {
-                scoped.append(.init(id: journey.id, visits: visits))
-            }
-        }
-        // Some older indexes have visits with no journey membership.
-        for visit in remaining.values {
-            scoped.append(.init(id: "visit:" + visit.id, visits: [visit]))
-        }
-        segments = scoped.sorted {
-            if $0.startDate != $1.startDate { return $0.startDate > $1.startDate }
-            if $0.endDate != $1.endDate { return $0.endDate > $1.endDate }
-            return $0.id < $1.id
-        }
+        self.init(segments: EarthSlideshowSegment.scoped(to: places, journeys: journeys))
+    }
+
+    init(segments: [EarthSlideshowSegment]) {
+        self.segments = segments
         var indexes: [String: Int] = [:]
         for (index, segment) in segments.enumerated() {
             for visit in segment.visits { indexes[visit.id] = index }

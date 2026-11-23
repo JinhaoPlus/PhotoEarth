@@ -45,8 +45,17 @@ final class GlobeScaleUITests: XCTestCase {
         remote.press(.select)
         let globe = app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch
         XCTAssertTrue(globe.waitForExistence(timeout: 10))
-        let arrived = NSPredicate { _, _ in self.distance(globe).map { abs($0 - 800_000) < 15_000 } == true }
+        let arrived = NSPredicate { _, _ in self.distance(globe).map { (1_499...800_001).contains($0) } == true }
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: arrived, object: nil)], timeout: 12), .completed)
+        let markers = app.descendants(matching: .image).matching(NSPredicate(format: "identifier BEGINSWITH 'map-review-pin-'"))
+        XCTAssertTrue(markers.firstMatch.waitForExistence(timeout: 15))
+        if demo { XCTAssertGreaterThan(markers.count, 1, "The demo city should show distinct photo locations on arrival") }
+        if demo {
+            let landing = try XCTUnwrap(distance(globe))
+            XCTAssertTrue((45_000...55_000).contains(landing), "Frame the demo shooting locations on arrival")
+        }
+        try awaitMapTiles(in: app)
+        capture(app, "City-arrival-photo-locations")
         remote.press(.playPause)
         let zoomIn = app.buttons["globe-zoom-in"]
         let zoomOut = app.buttons["globe-zoom-out"]
@@ -57,7 +66,10 @@ final class GlobeScaleUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["earth-native-streets"].firstMatch.waitForExistence(timeout: 90))
         remote.press(.left)
         XCTAssertTrue(waitForFocus(zoomOut))
-        remote.press(.select)
+        for _ in 0..<22 {
+            if (distance(controls) ?? 0) > 800_000 { break }
+            remote.press(.select)
+        }
         XCTAssertTrue(waitForStyle(style, "卫星"))
         try awaitMapTiles(in: app, satellite: true)
         capture(app, "01-Orbital-satellite")
@@ -77,10 +89,9 @@ final class GlobeScaleUITests: XCTestCase {
         XCTAssertTrue(waitForFocus(app.buttons["globe-use-current-view"]))
         remote.press(.select)
         XCTAssertTrue(waitForFocus(globe))
-        let exactCount = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label ENDSWITH %@", "张照片"), object: count)
+        let exactCount = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND label MATCHES %@", "[0-9,]+ 项"), object: count)
         XCTAssertEqual(XCTWaiter.wait(for: [exactCount], timeout: 15), .completed)
         let total = try XCTUnwrap(Int(count.label.filter(\.isNumber)))
-        let markers = app.descendants(matching: .image).matching(NSPredicate(format: "identifier BEGINSWITH 'map-review-pin-'"))
         XCTAssertTrue(markers.firstMatch.waitForExistence(timeout: 12))
         let counts = markers.allElementsBoundByIndex.compactMap { Int($0.label.filter(\.isNumber)) }
         XCTAssertEqual(counts.reduce(0, +), total, "Native annotation groups must account for the same visible assets as the filmstrip")

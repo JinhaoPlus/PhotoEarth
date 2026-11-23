@@ -6,7 +6,7 @@
          </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
-   <TestAction buildConfiguration="Debug" shouldUseLaunchSchemeArgsEnv="YES" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB">
+   <TestAction buildConfiguration="Debug" shouldUseLaunchSchemeArgsEnv="NO" selectedDebuggerIdentifier="Xcode.DebuggerFoundation.Debugger.LLDB" selectedLauncherIdentifier="Xcode.DebuggerFoundation.Launcher.LLDB">
       <Testables>
          <TestableReference skipped="NO">
             <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="95F0D1C1304A56C200392F9A" BuildableName="PhotoEarthTests.xctest" BlueprintName="PhotoEarthTests" ReferencedContainer="container:PhotoEarth.xcodeproj" />
@@ -20,6 +20,9 @@
       <BuildableProductRunnable runnableDebuggingMode="0">
          <BuildableReference BuildableIdentifier="primary" BlueprintIdentifier="95F0D1B2304A56C100392F9A" BuildableName="PhotoEarth.app" BlueprintName="PhotoEarth" ReferencedContainer="container:PhotoEarth.xcodeproj" />
       </BuildableProductRunnable>
+      <EnvironmentVariables>
+         <EnvironmentVariable key="PHOTOEARTH_UI_OWNED_FIXTURE" value="1" isEnabled="YES" />
+      </EnvironmentVariables>
       <StoreKitConfigurationFileReference identifier="../PhotoEarthUITests/Purchases.storekit" />
    </LaunchAction>
    <ProfileAction buildConfiguration="Release">

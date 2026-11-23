@@ -26,7 +26,7 @@ final class RecentVisitFocusUITests: XCTestCase {
         XCTAssertTrue(title.label.contains("March First") && title.label.contains("Focus Fixture"),
                       "The city and country share one title")
         let summary = app.staticTexts["library-visit-summary-sample-focus-march-first"]
-        XCTAssertTrue(summary.label.contains("2025") && summary.label.contains("5 张照片"),
+        XCTAssertTrue(summary.label.contains("2025") && summary.label.contains("5 项"),
                       "Each visit remains identifiable by its full spoken date and photo count")
         attach(app, "Recent visit captions in their month")
 

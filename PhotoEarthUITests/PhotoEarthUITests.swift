@@ -22,7 +22,7 @@ final class PhotoEarthUITests: XCTestCase {
         app.enterHomeContent()
 
         XCTAssertTrue(app.staticTexts["PHOTO EARTH"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["最近抵达的城市"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["最近到访的城市"].waitForExistence(timeout: 5))
         let enterGlobe = app.buttons.matching(
             NSPredicate(format: "label CONTAINS '滚动地球'")
         ).firstMatch
@@ -98,7 +98,7 @@ final class PhotoEarthUITests: XCTestCase {
         for _ in 0..<40 { XCUIRemote.shared.press(.right) }
         let empty = app.staticTexts["memory-horizon-empty"]
         XCTAssertTrue(empty.waitForExistence(timeout: 15))
-        XCTAssertEqual(empty.label, "当前画面内没有找到照片")
+        XCTAssertEqual(empty.label, "当前画面没有照片")
         XCTAssertFalse(app.staticTexts["memory-horizon-count"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["memory-horizon-photos"].firstMatch.exists)
         XCTAssertLessThan(horizon.frame.height, populatedHeight - 60)
@@ -147,7 +147,7 @@ final class PhotoEarthUITests: XCTestCase {
             XCTAssertTrue(localPhoto.waitForExistence(timeout: 8))
             let identifiers = Set(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'viewport-photo-'")).allElementsBoundByIndex.map(\.identifier))
             XCTAssertFalse(identifiers.isEmpty)
-            XCTAssertTrue(app.staticTexts["\(expectedPhotoCount) 张照片"].waitForExistence(timeout: 3),
+            XCTAssertTrue(app.staticTexts["\(expectedPhotoCount) 项"].waitForExistence(timeout: 3),
                           "A city wall reports its full count, not a page size")
             XCTAssertNotEqual(identifiers, previous)
             let excludedCity = city == "rio" ? "reykjavik" : "rio"
@@ -169,7 +169,7 @@ final class PhotoEarthUITests: XCTestCase {
         app.launch()
         app.enterHomeContent()
 
-        XCTAssertTrue(app.staticTexts["最近抵达的城市"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["最近到访的城市"].waitForExistence(timeout: 8))
         XCUIRemote.shared.press(.down)
         let recentPlace = try XCTUnwrap(waitForFocusedPlaceButton(in: app))
         XCTAssertTrue(recentPlace.hasFocus)

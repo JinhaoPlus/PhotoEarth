@@ -68,7 +68,7 @@ struct PlaceCard: View {
             "place_card.accessibility",
             defaultValue: "%1$@, %2$@ on your most recent visit",
             label.compactName,
-            AppLocalization.photoCount(place.photoCount)
+            AppLocalization.itemCount(place.photoCount)
         ))
         .accessibilityHint(AppLocalization.string("place_card.hint", defaultValue: "Start exploring the globe from this place"))
     }

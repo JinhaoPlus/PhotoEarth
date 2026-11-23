@@ -10,10 +10,12 @@ final class PhotoWallViewportCapture {
     }
 
     private weak var mapView: MKMapView?
+    private weak var cityStreets: CityStreetMapTransition?
     private var generation = UUID()
     private(set) var isFrozen = false
 
-    func attach(_ mapView: MKMapView) {
+    func attach(_ mapView: MKMapView, cityStreets: CityStreetMapTransition? = nil) {
+        self.cityStreets = cityStreets
         guard self.mapView !== mapView else { return }
         release()
         self.mapView = mapView
@@ -25,13 +27,14 @@ final class PhotoWallViewportCapture {
     }
 
     func freeze() -> Capture? {
-        guard let mapView else { return nil }
+        guard let mapView = cityStreets?.visibleMap ?? mapView else { return nil }
         generation = UUID()
         let generation = generation
         isFrozen = true
         guard let snapshot = MapViewportSampler.photoSnapshot(in: mapView, isCurrent: { [weak self] in
             self?.isFrozen == true && self?.generation == generation
         }) else { release(); return nil }
+        cityStreets?.freeze()
         let native = mapView.camera
         return Capture(snapshot: snapshot, camera: GlobeCameraState(
             center: GeoCoordinate(latitude: native.centerCoordinate.latitude, longitude: native.centerCoordinate.longitude),

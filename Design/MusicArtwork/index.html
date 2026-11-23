@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hans">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photo Earth · 配乐封面</title>
+<style>
+* { box-sizing: border-box }
+:root { color-scheme: dark; font-family: "Helvetica Neue", "PingFang SC", sans-serif; color: #f4f0ea; background:#17181b }
+body { max-width:1440px; margin:0 auto; padding:30px 42px 34px }
+header { display:flex; align-items:baseline; justify-content:space-between; border-bottom:1px solid #ffffff26; padding-bottom:16px; margin-bottom:18px }
+h1 { font-size:clamp(26px,3vw,38px); margin:0; letter-spacing:-.04em; font-weight:600 }
+header span { font-size:15px; color:#b6b2ae; letter-spacing:.08em }
+main { display:grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap:24px 32px }
+h2 { margin:0 0 9px; font-size:18px; font-weight:550 }
+.sleeves { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
+button, input, select { font:inherit }
+.cover { border:0; background:none; color:inherit; text-align:left; padding:0; cursor:zoom-in; min-width:0 }
+.cover canvas { width:100%; display:block; aspect-ratio:1; border-radius:5px }
+.cover span { display:block; font-size:14px; line-height:1.4; margin-top:6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis }
+button:focus-visible { outline:2px solid white; outline-offset:3px }
+dialog { max-width: min(420px,95vw); width:100%; border:1px solid #4f4e4a; border-radius:15px; padding:18px; background:#222327; color:inherit }
+dialog::backdrop { background:#09090dd4 }
+dialog canvas { width:100%; height:auto; display:block; border-radius:7px; margin:12px 0 }
+dialog select, input { background:#343539; color:#fff; border:1px solid #65656a; border-radius:5px; padding:6px 9px; }
+dialog input { width:100%; margin-top:5px }
+dialog label { font-size:14px; color:#d8d3cd }
+.close { float:right; padding:5px 12px; color:inherit; border:1px solid #686767; border-radius:5px; background:none; cursor:pointer }
+@media(max-width:850px) { body{padding:22px} main{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px} }
+@media(max-width:540px) { body{padding:16px} main{grid-template-columns:1fr} }
+</style>
+<header><h1>配乐封面</h1><span>Photo Earth</span></header>
+<main id="gallery"></main>
+<dialog id="editor" aria-label="试作配乐封面">
+    <button class="close" type="button">关闭</button>
+    <select aria-label="音乐类型" id="genre"></select>
+    <canvas width="600" height="600" id="large" aria-label="封面预览"></canvas>
+    <label for="title">试试其他曲名</label><input id="title" maxlength="120">
+</dialog>
+<script src="artwork.js"></script>
+<script>
+const samples = [
+    ["quiet-moments","静谧时光","First Snow","Quiet Village 1"],
+    ["open-road","旅途氛围","Night Driving","Windows Down"],
+    ["piano","钢琴","Goldberg Variations: Aria","Goldberg Variation 13"],
+    ["jazz","爵士","Midnight Cruiser","Barriers"],
+    ["lofi","Lo-Fi 节拍","Morning Coffee","Laundry On The Wire"],
+    ["ambient","空灵氛围","An Ocean in Outer Space","Trees In The Fog"],
+    ["cinematic","叙事配乐","Dangerous Voyage","New Sunrise"],
+    ["synthwave","复古电子","Night Life","Retro Synths"],
+    ["chiptune","复古游戏","Sunny Afternoon","Asteroids"]
+];
+const editor = document.getElementById("editor");
+const genre = document.getElementById("genre");
+const titleInput = document.getElementById("title");
+function update() { drawCover(document.getElementById("large"), genre.value, titleInput.value); }
+for (const [id, name, ...titles] of samples) {
+    genre.add(new Option(name, id));
+    const section = document.createElement("section");
+    const heading = document.createElement("h2");
+    heading.textContent = name;
+    section.append(heading);
+    const sleeves = document.createElement("div"); sleeves.className = "sleeves";
+    for (const title of titles) {
+        const button = document.createElement("button"); button.type = "button"; button.className = "cover";
+        const canvas = document.createElement("canvas"); canvas.width = canvas.height = 460;
+        canvas.setAttribute("aria-hidden","true"); drawCover(canvas, id, title);
+        const caption = document.createElement("span"); caption.textContent = title;
+        button.append(canvas,caption);
+        button.onclick = () => { genre.value = id; titleInput.value = title; update(); editor.showModal(); };
+        sleeves.append(button);
+    }
+    section.append(sleeves); document.getElementById("gallery").append(section);
+}
+genre.onchange = update;
+titleInput.oninput = update;
+editor.querySelector("button").onclick = () => editor.close();
+editor.onclick = event => { if (event.target === editor && !editor.matches(":hover")) editor.close(); };
+</script>
+</html>

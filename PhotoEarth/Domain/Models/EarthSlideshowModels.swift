@@ -17,25 +17,8 @@ nonisolated struct EarthSlideshowScope: Hashable, Sendable {
     let kind: Kind
 }
 
-nonisolated enum EarthSlideshowTransitionKind: String, Hashable, Sendable {
-    case dissolve
-    /// A time-directed dissolve with only a few points of visual drift. It is
-    /// deliberately not a full-frame slide transition.
-    case directional
-    /// A dissolve with a restrained pull-back to reconcile different framing.
-    case settle
-    /// A slower dissolve carrying a quiet date imprint over the photographs.
-    case dateReveal
-}
-
-nonisolated struct EarthSlideshowTransition: Hashable, Sendable {
-    let kind: EarthSlideshowTransitionKind
-    let duration: TimeInterval
-}
-
 nonisolated struct EarthSlideshowItem: Identifiable, Hashable, Sendable {
     let record: PhotoAssetRecord
-    let transition: EarthSlideshowTransition
 
     var id: String { record.id }
 }
@@ -53,11 +36,42 @@ nonisolated struct EarthSlideshowConfiguration: Hashable, Sendable {
     var livePhotoDuration: TimeInterval = 3.8
     var dynamicEndHold: TimeInterval = 0.18
     var chapterTitleDuration: TimeInterval = 1.2
-    var earthIntroDuration: TimeInterval = 3.4
+    var earthIntroDuration: TimeInterval = 2.0
     var earthBridgeDuration: TimeInterval = 2.8
     var earthEndingDuration: TimeInterval = 3.4
 
     static let standard = EarthSlideshowConfiguration()
+}
+
+/// Playback can return to older capture times when it moves between journeys.
+nonisolated struct SlideshowPhotoSpacing {
+    private static let interval: TimeInterval = 60
+    private var datesByMinute: [Int: Date] = [:]
+
+    private func minute(of date: Date) -> Int {
+        Int(floor(date.timeIntervalSinceReferenceDate / Self.interval))
+    }
+
+    func allows(_ record: PhotoAssetRecord) -> Bool {
+        guard record.mediaKind != .video else { return true }
+        let date = record.creationDate
+        let minute = minute(of: date)
+        // There can be at most one selected photo in each of these buckets.
+        for bucket in (minute - 1)...(minute + 1) {
+            if let other = datesByMinute[bucket], abs(date.timeIntervalSince(other)) < Self.interval {
+                return false
+            }
+        }
+        return true
+    }
+
+    mutating func admit(_ record: PhotoAssetRecord) -> Bool {
+        guard allows(record) else { return false }
+        if record.mediaKind != .video {
+            datesByMinute[minute(of: record.creationDate)] = record.creationDate
+        }
+        return true
+    }
 }
 
 nonisolated struct PhotoSimilarityConfiguration: Hashable, Sendable {
@@ -125,7 +139,7 @@ nonisolated enum EarthSlideshowPlanError: LocalizedError, Equatable, Sendable {
         case .empty:
             AppLocalization.string(
                 "slideshow.error.empty",
-                defaultValue: "No playable memories are available in this photo wall."
+                defaultValue: "No photos or videos are available for this slideshow."
             )
         case .unavailable:
             AppLocalization.string(

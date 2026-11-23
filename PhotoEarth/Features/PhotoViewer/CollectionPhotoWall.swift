@@ -12,6 +12,8 @@ struct CollectionPhotoWall: View {
     @State private var session = CollectionPhotoWallSession()
     @State private var focusedPhotoID: String?
     @State private var selectedPhoto: PhotoAssetRecord?
+    @State private var focusedJourney: CollectionPhotoWallSession.Journey?
+    @State private var detailJourney: CollectionPhotoWallSession.Journey?
     @State private var preview: UIImage?
     @State private var resolvedLabels: [String: PlaceDisplayLabel] = [:]
     @State private var slideshow: EarthSlideshowCoordinator?
@@ -28,7 +30,14 @@ struct CollectionPhotoWall: View {
         return resolvedLabels[id] ?? stored
     }
 
+    private var actionJourney: CollectionPhotoWallSession.Journey? {
+        if let focusedJourney, focusedJourney.page.totalPhotoCount != 0 { return focusedJourney }
+        return session.journeys.first { $0.page.totalPhotoCount != 0 }
+    }
+
     var body: some View {
+        let actionPage = actionJourney?.page ?? session
+        let detailPage = detailJourney?.page ?? session
         ZStack {
             ViewportPhotoWall(records: session.records, isLoading: session.isLoading, hasMore: session.nextOffset != nil,
                               placeLabel: placeLabel, selectPhoto: { photo, image in
@@ -37,7 +46,7 @@ struct CollectionPhotoWall: View {
                               }, loadMore: loadMore, close: close,
                               isActive: selectedPhoto == nil && slideshow == nil && mapReviewOrigin == nil,
                               selectedPhotoID: $focusedPhotoID, errorMessage: session.pagingError,
-                              title: collection.title,
+                              title: collection.titleWithCountryFlag,
                               canRetry: session.nextOffset != nil,
                               emptyHint: nil,
                               totalPhotoCount: session.totalPhotoCount,
@@ -45,10 +54,16 @@ struct CollectionPhotoWall: View {
                               retryPhotoCount: { session.refreshCount(app: model) },
                               showsPhotoPlaceNames: !collection.representsSingleCity,
                               startSlideshow: startSlideshow,
-                              openMapReview: { mapReviewOrigin = session.membership?.reviewOrigin },
+                              openMapReview: { mapReviewOrigin = actionPage.membership?.reviewOrigin },
                               canOpenMapReview: session.membership?.reviewOrigin != nil,
                               labelStates: model.placeLabelStates,
-                              resolvePlaceLabels: resolveLabels, analyticsLibrary: model.analyticsLibrary)
+                              resolvePlaceLabels: resolveLabels, analyticsLibrary: model.analyticsLibrary,
+                              cityJourneys: collection.groupsPhotosByJourney ? CityJourneyWallInput(
+                                  model: model, session: session, focusJourney: { focusedJourney = $0 }, select: { journey, photo, image in
+                                      detailJourney = journey
+                                      selectedPhoto = photo
+                                      preview = image
+                                  }) : nil)
                 .opacity(slideshow == nil && mapReviewOrigin == nil ? 1 : 0)
                 .disabled(selectedPhoto != nil || slideshow != nil || mapReviewOrigin != nil)
                 .accessibilityHidden(selectedPhoto != nil || slideshow != nil || mapReviewOrigin != nil)
@@ -63,18 +78,25 @@ struct CollectionPhotoWall: View {
                 PhotoDetailView(record: photo, placeLabel: photo.placeID.flatMap(placeLabel),
                                 initialImage: preview,
                                 resolvePlaceLabel: { await resolveLabels([photo.placeID].compactMap { $0 }) },
-                                records: session.records,
-                                hasMorePhotos: session.nextOffset != nil,
-                                isLoadingMorePhotos: session.isLoading,
-                                pagingError: session.pagingError,
-                                loadMorePhotos: loadMore,
+                                records: detailPage.records,
+                                hasMorePhotos: detailPage.nextOffset != nil,
+                                isLoadingMorePhotos: detailPage.isLoading,
+                                pagingError: detailPage.pagingError,
+                                loadMorePhotos: {
+                                    if let detailJourney { detailJourney.load(app: model) } else { loadMore() }
+                                },
                                 selectRecord: { next in
                                     selectedPhoto = next
                                     focusedPhotoID = next.id
+                                    if let detailJourney, !detailJourney.page.records.prefix(CollectionPhotoWallSession.Journey.previewLimit)
+                                        .contains(where: { $0.id == next.id }) {
+                                        detailJourney.isExpanded = true
+                                    }
                                     preview = nil
                                 },
                                 locationLibrary: model) {
                     selectedPhoto = nil
+                    detailJourney = nil
                     preview = nil
                 }
             }
@@ -125,7 +147,7 @@ struct CollectionPhotoWall: View {
               let membership = session.membership, !membership.matchingVisits.isEmpty else { return }
         let scope = EarthSlideshowScope(
             id: collection.id,
-            title: collection.title,
+            title: collection.journeyDateText.map { "\(collection.title) · \($0)" } ?? collection.title,
             kind: slideshowScopeKind
         )
         let coordinator = model.makeEarthSlideshow(scope: scope, places: membership.matchingVisits,

@@ -77,7 +77,7 @@ struct SettingsView: View {
                 .font(.system(size: 26))
             if let index = model.index {
                 Text(AppLocalization.format("settings.index_summary", defaultValue: "%1$@ · %2$@",
-                                            AppLocalization.photoCount(index.visiblePhotoCount),
+                                            AppLocalization.itemCount(index.visiblePhotoCount),
                                             AppLocalization.placeCount(index.places.count)))
                     .font(.system(size: 23)).foregroundStyle(.secondary)
                     .accessibilityIdentifier("settings-index-summary")
@@ -113,7 +113,7 @@ struct SettingsView: View {
                 )
                 caption(AppLocalization.string("settings.transit_help", defaultValue: "Hide brief stops and photos taken in transit. Favorites stay visible."))
                 if model.hidesTransitPhotos, let index = model.index {
-                    Text(AppLocalization.format("settings.transit_count", defaultValue: "%lld photos hidden",
+                    Text(AppLocalization.format("settings.transit_count", defaultValue: "%lld items hidden",
                                                 Int64(index.hiddenTransitPhotoCount)))
                         .font(.system(size: 23)).foregroundStyle(.secondary)
                         .accessibilityIdentifier("settings-transit-count")
@@ -169,7 +169,7 @@ struct SettingsView: View {
         let value = Int(draft).flatMap { range.contains($0) ? $0 : nil }
         return VStack(alignment: .leading, spacing: 32) {
             Text(journeyMinimumTitle).font(.system(size: 52, weight: .light))
-            caption(AppLocalization.string("journey.minimum.note", defaultValue: "Choose how many photos or videos with a location a visit needs to appear in Recently Visited, on the app’s Home screen, and in Top Shelf. Enter a number from 1 to 1,000."))
+            caption(AppLocalization.string("journey.minimum.note", defaultValue: "Count photos and videos with a location for each visit. This minimum applies to Home, Recently Visited, and the Apple TV Home Screen."))
             HStack(spacing: TVControlLayout.actionSpacing) {
                 ForEach(JourneyVisitThreshold.presets, id: \.self) { count in
                     Button(AppLocalization.number(count)) { journeyMinimumText = String(count) }
@@ -178,10 +178,16 @@ struct SettingsView: View {
                 }
             }
             .focusSection()
-            TextField(AppLocalization.string("journey.minimum.custom", defaultValue: "Custom Number"), text: $journeyMinimumText)
-                .keyboardType(.numberPad)
-                .frame(width: 320)
-                .accessibilityIdentifier("settings-journey-minimum-custom")
+            let rangeText = AppLocalization.format("journey.minimum.range", defaultValue: "%1$@–%2$@",
+                                                   AppLocalization.number(range.lowerBound), AppLocalization.number(range.upperBound))
+            HStack(spacing: 20) {
+                TextField(AppLocalization.string("journey.minimum.custom", defaultValue: "Custom Number"), text: $journeyMinimumText)
+                    .keyboardType(.numberPad)
+                    .frame(width: 320)
+                    .accessibilityHint(rangeText)
+                    .accessibilityIdentifier("settings-journey-minimum-custom")
+                Text(rangeText).foregroundStyle(.secondary).accessibilityHidden(true)
+            }
             Button(AppLocalization.string("common.save", defaultValue: "Save")) {
                 guard let value else { return }
                 model.setMinimumJourneyItems(value)
@@ -215,7 +221,7 @@ struct SettingsView: View {
             .focused($focusedControl, equals: .complete)
             .accessibilityIdentifier("settings-complete-places")
         }
-        Button(AppLocalization.string("settings.rebuild", defaultValue: "Rebuild Travel Index")) {
+        Button(AppLocalization.string("settings.rebuild", defaultValue: "Rescan Photos and Videos")) {
             returnScanAction = .rebuild
             Task { await model.updateLibrary(.rebuild) }
         }

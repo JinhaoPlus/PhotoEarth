@@ -33,8 +33,7 @@ import XCTest
         XCTAssertTrue(focused(begin), app.debugDescription)
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(app.descendants(matching: .any)["slideshow-media"].firstMatch.waitForExistence(timeout: 25), app.debugDescription)
-        XCUIRemote.shared.press(.menu)
-        if !photo.exists { XCUIRemote.shared.press(.menu) }
+        app.confirmSlideshowExit()
         XCTAssertTrue(photo.waitForExistence(timeout: 8))
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focused(first), app.debugDescription)

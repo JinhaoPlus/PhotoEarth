@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct SlideshowMusicSourceView: View {
+    private static let trackColumns = Array(repeating: GridItem(.flexible(), spacing: 20, alignment: .top), count: 5)
+
     private enum Source { case online, appleMusic }
 
     private enum CatalogState {
@@ -23,6 +25,7 @@ struct SlideshowMusicSourceView: View {
     private struct TrackSelection {
         let playlist: OnlineSlideshowPlaylist
         let track: OnlineSlideshowPlaylist.Track
+        let explicitTrackChoice: Bool
     }
 
     @ObservedObject var controller: SlideshowMusicController
@@ -33,6 +36,7 @@ struct SlideshowMusicSourceView: View {
     @State private var catalog = CatalogState.loading
     @State private var retry = 0
     @State private var browsedPlaylistID: String?
+    @State private var lastGridTrackID: OnlineSlideshowPlaylist.Track.ID?
     @State private var pendingSelection: TrackSelection?
     @State private var selectionFailed = false
     @State private var connectionTask: Task<Void, Never>?
@@ -88,18 +92,40 @@ struct SlideshowMusicSourceView: View {
         .onChange(of: isPreparingSelection) { _, preparing in
             if preparing { pickerFocus = .preparingSelection }
         }
-        .onChange(of: pickerFocus) { _, focus in
-            if case .playlist(let id) = focus, browsedPlaylistID != id {
-                browsedPlaylistID = id
-                selectionFailed = false
-            }
-        }
+        .onChange(of: pickerFocus, updateBrowserFocus)
         .onDisappear { connectionTask?.cancel() }
         .onExitCommand {
             pendingSelection = nil
             cancel()
         }
         .accessibilityElement(children: .contain)
+    }
+
+    private func updateBrowserFocus(_ previous: PickerFocus?, _ focus: PickerFocus?) {
+        switch focus {
+        case .playlist(let id):
+            // A grid row can overlap several sidebar categories. Left returns to its own category.
+            if case .track = previous, let browsedPlaylistID, id != browsedPlaylistID {
+                pickerFocus = .playlist(browsedPlaylistID)
+            } else if browsedPlaylistID != id {
+                browsedPlaylistID = id
+                lastGridTrackID = nil
+                selectionFailed = false
+            }
+        case .track(let id):
+            if case .playlist(let category) = previous,
+               case .loaded(let snapshot) = catalog,
+               let playlist = snapshot.playlists.first(where: { $0.id == category }) {
+                let selected = category == selectedPlaylistID ? controller.onlineTrackID : nil
+                if let entry = lastGridTrackID ?? selected ?? playlist.tracks.first?.id, entry != id {
+                    pickerFocus = .track(entry)
+                    return
+                }
+            }
+            lastGridTrackID = id
+        default:
+            break
+        }
     }
 
     private var sourceSwitch: some View {
@@ -189,19 +215,12 @@ struct SlideshowMusicSourceView: View {
             .font(.system(size: 32, weight: .semibold))
             .accessibilityAddTraits(.isHeader)
             .accessibilityIdentifier("slideshow-music-catalog-status")
-            Text(offline
-                ? AppLocalization.string(
-                    "slideshow.music.online.offline_help",
-                    defaultValue: "Reconnect and try again, or press Back."
-                )
-                : AppLocalization.string(
-                    "slideshow.music.online.retry_help",
-                    defaultValue: "Try again, or press Back."
-                )
-            )
-            .font(.system(size: 23))
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
+            if offline {
+                Text(AppLocalization.string("slideshow.music.online.offline_help", defaultValue: "Reconnect to play music."))
+                    .font(.system(size: 23))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
             retryCatalogButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -284,7 +303,7 @@ struct SlideshowMusicSourceView: View {
             Divider().overlay(.white.opacity(0.1))
 
             if let active {
-                trackList(active)
+                trackGrid(active)
                     .id(active.id)
                     .focusSection()
             }
@@ -299,7 +318,7 @@ struct SlideshowMusicSourceView: View {
             if isPlaying && controller.playbackError == nil {
                 dismiss()
             } else if let track = playlist.tracks.first {
-                chooseTrack(track, in: playlist)
+                chooseTrack(track, in: playlist, explicitTrackChoice: false)
             }
         } label: {
             HStack(spacing: 16) {
@@ -319,7 +338,7 @@ struct SlideshowMusicSourceView: View {
             .font(.system(size: 26, weight: .semibold))
             .frame(minHeight: 56)
             .padding(.horizontal, 16)
-            .modifier(SlideshowMusicRowAppearance(focused: pickerFocus == target, highlighted: isBrowsing))
+            .modifier(SlideshowBrowserRowAppearance(focused: pickerFocus == target, highlighted: isBrowsing))
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
@@ -329,7 +348,7 @@ struct SlideshowMusicSourceView: View {
         .accessibilityIdentifier("slideshow-online-playlist-\(playlist.id)")
     }
 
-    private func trackList(_ playlist: OnlineSlideshowPlaylist) -> some View {
+    private func trackGrid(_ playlist: OnlineSlideshowPlaylist) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Text(AppLocalization.format(
                 "slideshow.music.online.track_count",
@@ -343,12 +362,14 @@ struct SlideshowMusicSourceView: View {
 
             ScrollViewReader { scroll in
                 ScrollView {
-                    LazyVStack(spacing: 4) {
+                    LazyVGrid(columns: Self.trackColumns, spacing: 18) {
                         ForEach(playlist.tracks) { track in
                             trackButton(track, in: playlist)
                                 .id(track.id)
                         }
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
                 }
                 .task {
                     guard playlist.id == selectedPlaylistID, let trackID = controller.onlineTrackID else { return }
@@ -362,39 +383,52 @@ struct SlideshowMusicSourceView: View {
 
     private func trackButton(_ track: OnlineSlideshowPlaylist.Track, in playlist: OnlineSlideshowPlaylist) -> some View {
         let target = PickerFocus.track(track.id)
-        let isSelected = track.id == controller.onlineTrackID
+        let isSelected = playlist.id == selectedPlaylistID && track.id == controller.onlineTrackID
         return Button {
-            chooseTrack(track, in: playlist)
+            chooseTrack(track, in: playlist, explicitTrackChoice: true)
         } label: {
-            HStack(spacing: 18) {
-                Text(track.title)
-                    .font(.system(size: 26, weight: .semibold))
-                    .lineLimit(1)
-                Spacer(minLength: 12)
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "play.circle")
-                    .font(.system(size: 25))
-                    .opacity(isSelected || pickerFocus == target ? 1 : 0)
-                    .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 8) {
+                OnlineTrackArtwork(title: track.title, theme: track.themeID)
+                    .aspectRatio(1, contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+                    .overlay {
+                        if pickerFocus == target {
+                            RoundedRectangle(cornerRadius: 14).strokeBorder(.white, lineWidth: 5)
+                        }
+                    }
+                    .overlay(alignment: .bottomTrailing) {
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 27, weight: .semibold))
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, .black.opacity(0.8))
+                                .padding(9)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                Text(verbatim: track.title)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white.opacity(pickerFocus == target ? 1 : 0.86))
+                    .lineLimit(2, reservesSpace: true)
+                    .truncationMode(.tail)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(minHeight: 56)
-            .padding(.horizontal, 18)
-            .modifier(SlideshowMusicRowAppearance(focused: pickerFocus == target, highlighted: isSelected))
+            .contentShape(.rect)
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
         .focused($pickerFocus, equals: target)
         .disabled(isPreparingSelection)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityLabel(Text(verbatim: track.title))
         .accessibilityIdentifier("slideshow-online-track-\(track.id.deletingLastPathComponent().lastPathComponent)")
     }
 
-    private func chooseTrack(_ track: OnlineSlideshowPlaylist.Track, in playlist: OnlineSlideshowPlaylist) {
-        if track.id == controller.onlineTrackID && controller.playbackError == nil {
-            dismiss()
-        } else {
-            selectionFailed = false
-            pendingSelection = TrackSelection(playlist: playlist, track: track)
-        }
+    private func chooseTrack(_ track: OnlineSlideshowPlaylist.Track, in playlist: OnlineSlideshowPlaylist,
+                             explicitTrackChoice: Bool) {
+        selectionFailed = false
+        pendingSelection = TrackSelection(playlist: playlist, track: track, explicitTrackChoice: explicitTrackChoice)
     }
 
     private var clearMusicButton: some View {
@@ -436,8 +470,9 @@ struct SlideshowMusicSourceView: View {
         do {
             let snapshot = try await OnlineSlideshowCatalog.load()
             try Task.checkCancellation()
-            browsedPlaylistID = (snapshot.playlists.first { $0.id == selectedPlaylistID } ?? snapshot.playlists.first)?.id
-            catalog = .loaded(snapshot)
+            let playlists = controller.recommendations.playlists(for: snapshot.playlists)
+            browsedPlaylistID = (playlists.first { $0.id == selectedPlaylistID } ?? playlists.first)?.id
+            catalog = .loaded(.init(playlists: playlists, isCached: snapshot.isCached))
         } catch {
             guard !Task.isCancelled else { return }
             let code = (error as? URLError)?.code
@@ -459,7 +494,8 @@ struct SlideshowMusicSourceView: View {
 
     private func selectPendingTrack() async {
         guard let pendingSelection else { return }
-        let selected = await controller.selectOnline(pendingSelection.playlist, startingAt: pendingSelection.track.id)
+        let selected = await controller.selectOnline(pendingSelection.playlist, startingAt: pendingSelection.track.id,
+                                                     explicitTrackChoice: pendingSelection.explicitTrackChoice)
         guard !Task.isCancelled else { return }
         self.pendingSelection = nil
         if selected {
@@ -480,7 +516,7 @@ struct SlideshowMusicSourceView: View {
     private var appleMusicStatus: String? {
         switch controller.accessState {
         case .notSubscribed:
-            AppLocalization.string("slideshow.music.subscription_required", defaultValue: "Subscription required")
+            AppLocalization.string("slideshow.music.subscription_required", defaultValue: "Apple Music subscription required")
         case .denied:
             AppLocalization.string("slideshow.music.access_denied", defaultValue: "Allow Apple Music access in Settings")
         case .restricted:
@@ -493,7 +529,7 @@ struct SlideshowMusicSourceView: View {
     }
 }
 
-private struct SlideshowMusicRowAppearance: ViewModifier {
+struct SlideshowBrowserRowAppearance: ViewModifier {
     let focused: Bool
     let highlighted: Bool
 

@@ -11,49 +11,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth greift nur dann auf Apple Music zu, wenn du Hintergrundmusik für eine Diashow auswählst."
+            "value" : "Wähle Musik aus Apple Music für deine Diashow aus."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth accesses Apple Music only when you choose background music for a slideshow."
+            "value" : "Choose music from Apple Music to play during your slideshow."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth accede a Apple Music solo cuando eliges música de fondo para una presentación."
+            "value" : "Elige música de Apple Music para tu presentación."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth accède à Apple Music uniquement lorsque vous choisissez une musique de fond pour un diaporama."
+            "value" : "Choisissez de la musique sur Apple Music pour accompagner votre diaporama."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth accede ad Apple Music solo quando scegli la musica di sottofondo per una presentazione."
+            "value" : "Scegli musica da Apple Music per la tua presentazione."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earthは、スライドショーのBGMを選択した場合にのみApple Musicにアクセスします。"
+            "value" : "Apple MusicからスライドショーのBGMを選べます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "仅当你为放映选择背景音乐时，Photo Earth 才会访问 Apple Music。"
+            "value" : "从 Apple Music 选取音乐，为放映配乐。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "僅當你為放映選擇背景音樂時，Photo Earth 才會存取 Apple Music。"
+            "value" : "從 Apple Music 選取音樂，為放映配樂。"
           }
         }
       }

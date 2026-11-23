@@ -218,6 +218,37 @@ struct PhotoWallPaginationTests {
         #expect(session.totalPhotoCount == 98)
     }
 
+    @Test @MainActor func cityJourneyPreviewAndLaterPagesShareOneSnapshot() async throws {
+        let directory = temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let store = SQLiteTravelIndexStore(databaseURL: directory.appendingPathComponent("index.sqlite"))
+        let photos = (0..<107).map { photo($0, coordinate: GeoCoordinate(latitude: 0, longitude: 0)) }
+        let original = snapshot(photos)
+        try await store.save(original)
+        let app = AppModel(photoLibrary: PreparationFixtureLibrary(records: photos), indexStore: store,
+                           preferencesStore: LocalPreferenceStore(), clusterer: TravelClusterer())
+        var city = try #require(PlaceCollection.recent(original.index.places).first)
+        city.groupsPhotosByJourney = true
+        let wall = CollectionPhotoWallSession()
+        defer { wall.cancel() }
+        wall.loadMore(app: app, collection: city)
+        try await waitUntil { !wall.isLoading }
+        let trip = try #require(wall.journeys.first)
+        #expect(trip.page.records.isEmpty)
+        trip.load(app: app, limit: CollectionPhotoWallSession.Journey.previewLimit)
+        try await waitUntil { !trip.page.isLoading }
+        #expect(trip.page.records == Array(photos.prefix(5)))
+        try await store.save(snapshot([photos[0]]))
+        wall.exclude([photos[2].id, photos[98].id], app: app)
+        try await waitUntil { trip.page.totalPhotoCount == 105 && wall.totalPhotoCount == 105 }
+        for _ in 0..<3 {
+            trip.load(app: app)
+            try await waitUntil { !trip.page.isLoading }
+        }
+        #expect(trip.page.nextOffset == nil)
+        #expect(trip.page.records == photos.filter { $0 != photos[2] && $0 != photos[98] })
+    }
+
     @MainActor private func waitUntil(_ condition: () -> Bool) async throws {
         let deadline = ContinuousClock.now.advanced(by: .seconds(3))
         while !condition(), ContinuousClock.now < deadline {

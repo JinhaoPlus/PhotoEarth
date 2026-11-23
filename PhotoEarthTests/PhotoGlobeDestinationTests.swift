@@ -15,9 +15,9 @@ struct PhotoGlobeDestinationTests {
         #expect(destination.camera.center == photo.coordinate)
         #expect(destination.camera.distance == GlobeCameraState.regionalDistance)
         #expect(destination.marker.coverAssetID == nil)
-        #expect(destination.previewCamera.center == photo.coordinate)
-        #expect(destination.detailPreviewCamera.center == photo.coordinate)
-        #expect(destination.detailPreviewCamera.distance < destination.previewCamera.distance)
+        #expect(destination.explorationOpeningCamera.center == photo.coordinate)
+        #expect(destination.miniatureCamera(from: nil).center == photo.coordinate)
+        #expect(destination.miniatureCamera(from: nil).distance == 2_500)
         #expect(PhotoGlobeDestination(record: record(latitude: .nan, longitude: 0)) == nil)
         #expect(PhotoGlobeDestination(record: record(latitude: 20, longitude: 181)) == nil)
     }
@@ -35,14 +35,14 @@ struct PhotoGlobeDestinationTests {
         #expect(places.allSatisfy { $0.id != PhotoGlobeDestination.markerID })
     }
 
-    @Test(arguments: [0.0, 35, 64, 83, -34, -83]) @MainActor
+    @Test(arguments: [0.0, 35, 64, 83, 83.1, -34, -83, -83.1]) @MainActor
     func stationaryMiniatureProjectsTheActualPhotoInsideItsBounds(latitude: Double) async throws {
         let destination = try #require(PhotoGlobeDestination(record: record(latitude: latitude, longitude: 179)))
         let map = MKMapView(frame: CGRect(x: 0, y: 0, width: 208, height: 152))
-        map.preferredConfiguration = MKImageryMapConfiguration(elevationStyle: .realistic)
+        map.preferredConfiguration = PhotoMapStyle.standard.configuration(realisticTerrain: false)
         map.insetsLayoutMarginsFromSafeArea = false
         map.layoutMargins = UIEdgeInsets(top: 16, left: 20, bottom: 16, right: 20)
-        let camera = destination.detailPreviewCamera
+        let camera = destination.miniatureCamera(from: nil)
         map.setCamera(MKMapCamera(lookingAtCenter: CLLocationCoordinate2D(latitude: camera.center.latitude,
                                                                           longitude: camera.center.longitude),
                                  fromDistance: camera.distance, pitch: camera.presentationPitch, heading: 0), animated: false)
@@ -69,6 +69,9 @@ struct PhotoGlobeDestinationTests {
         }
         let preview = try #require(findMap(controller.view))
         let map = preview.mapView
+        #expect(map.preferredConfiguration is MKStandardMapConfiguration)
+        #expect(map.overlays.isEmpty)
+        #expect(abs(map.camera.centerCoordinateDistance - 2_500) < 25)
         #expect(!map.isUserInteractionEnabled && !map.showsUserLocation)
         #expect(map.annotations.isEmpty)
         #expect(map.transform.a < 1 && map.transform.a == map.transform.d)
@@ -80,6 +83,102 @@ struct PhotoGlobeDestinationTests {
         let nativePoint = map.convert(CLLocationCoordinate2D(latitude: destination.coordinate.latitude,
                                                              longitude: destination.coordinate.longitude), toPointTo: preview)
         #expect(hypot(marker.center.x - nativePoint.x, marker.center.y - nativePoint.y) < 1)
+    }
+
+    @Test(arguments: [PhotoLocationMap.Style.detail, .slideshow]) @MainActor
+    func nearbyShotsMoveAcrossTheInsetWithoutReframingRepeatedGPS(style: PhotoLocationMap.Style) throws {
+        let start = try #require(PhotoGlobeDestination(record: record(latitude: 41.39, longitude: 2.16)))
+        let next = try #require(PhotoGlobeDestination(record: record(latitude: 41.3918, longitude: 2.16)))
+        let preview = PhotoLocationMapView(style: style)
+        preview.frame.size = style == .detail ? CGSize(width: 208, height: 152) : CGSize(width: 280, height: 176)
+        func show(_ photo: PhotoGlobeDestination, visible: Bool = true) {
+            preview.configure(photo, isVisible: visible, allowsMotion: false)
+            preview.layoutIfNeeded()
+        }
+        show(start)
+        let original = CLLocationCoordinate2D(latitude: start.coordinate.latitude, longitude: start.coordinate.longitude)
+        let wide = GlobeCameraState(center: next.coordinate, distance: 100_000)
+        preview.mapView.setCamera(wide.nativeCamera, animated: false)
+        let atOldScale = preview.mapView.convert(original, toPointTo: preview)
+        show(next)
+        let atNewScale = preview.mapView.convert(original, toPointTo: preview)
+        let center = preview.locationLight.center
+        #expect(abs(atOldScale.y - center.y) < 3)
+        #expect(abs(atNewScale.y - center.y) > 25)
+        #expect((475...525).contains(preview.mapView.camera.centerCoordinateDistance))
+        let settled = preview.mapView.camera.centerCoordinateDistance
+        show(start, visible: false)
+        show(next)
+        #expect(abs(preview.mapView.camera.centerCoordinateDistance - settled) < 1)
+        #expect(!preview.locationLight.isHidden)
+    }
+
+    @Test func crossCityStepsAreCappedAndDatelineNeighborsStayLocal() throws {
+        let start = GeoCoordinate(latitude: 0, longitude: 179.999)
+        let near = try #require(PhotoGlobeDestination(record: record(latitude: 0, longitude: -179.999)))
+        let far = try #require(PhotoGlobeDestination(record: record(latitude: 0, longitude: 2)))
+        #expect((500...600).contains(near.miniatureCamera(from: start).distance))
+        #expect(far.miniatureCamera(from: start).distance == 25_000)
+    }
+
+    @Test(arguments: [PhotoLocationMap.Style.detail, .slideshow]) @MainActor
+    func miniatureTravelsBetweenPhotosAndHonorsReducedMotion(style: PhotoLocationMap.Style) async throws {
+        let start = try #require(PhotoGlobeDestination(record: record(latitude: 35, longitude: 158)))
+        let next = try #require(PhotoGlobeDestination(record: record(latitude: 34, longitude: -170)))
+        let last = try #require(PhotoGlobeDestination(record: record(latitude: 36, longitude: 140)))
+        let preview = PhotoLocationMapView(style: style)
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 280, height: 176))
+        let controller = UIViewController()
+        window.rootViewController = controller
+        window.isHidden = false
+        defer { window.isHidden = true; window.rootViewController = nil }
+        preview.frame = controller.view.bounds
+        controller.view.addSubview(preview)
+
+        func distance(from destination: PhotoGlobeDestination) -> Double {
+            let center = preview.mapView.centerCoordinate
+            return GlobeMath.angularDistanceDegrees(from: destination.coordinate,
+                to: GeoCoordinate(latitude: center.latitude, longitude: center.longitude))
+        }
+        preview.configure(start, isVisible: true, allowsMotion: true)
+        preview.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(150))
+        #expect(distance(from: start) < 0.05)
+        #expect(preview.mapView.preferredConfiguration is MKStandardMapConfiguration)
+        #expect(preview.mapView.overlays.isEmpty)
+        #expect(abs(preview.mapView.camera.centerCoordinateDistance - 2_500) < 25)
+        preview.configure(next, isVisible: false, allowsMotion: true)
+        preview.layoutIfNeeded()
+        #expect(distance(from: start) < 0.05 && preview.locationLight.isHidden)
+
+        preview.configure(next, isVisible: true, allowsMotion: true)
+        preview.layoutIfNeeded()
+        var sawIntermediatePosition = false
+        let clock = ContinuousClock()
+        let deadline = clock.now.advanced(by: .seconds(4))
+        while clock.now < deadline && distance(from: next) > 0.05 {
+            if distance(from: start) > 0.1 && distance(from: next) > 0.1 {
+                sawIntermediatePosition = true
+            }
+            try await Task.sleep(for: .milliseconds(16))
+        }
+        #expect(sawIntermediatePosition && distance(from: next) < 0.05)
+        #expect(!preview.locationLight.isHidden)
+        preview.configure(start, isVisible: true, allowsMotion: true)
+        preview.layoutIfNeeded()
+        try await Task.sleep(for: .milliseconds(100))
+        let interruptedCenter = preview.mapView.centerCoordinate
+        preview.configure(last, isVisible: true, allowsMotion: true)
+        preview.layoutIfNeeded()
+        #expect(abs(preview.mapView.centerCoordinate.latitude - interruptedCenter.latitude) < 0.01)
+        #expect(abs(preview.mapView.centerCoordinate.longitude - interruptedCenter.longitude) < 0.01)
+        try await Task.sleep(for: .milliseconds(120))
+        #expect(distance(from: last) > 0.1)
+        preview.configure(last, isVisible: true, allowsMotion: false)
+        preview.layoutIfNeeded()
+        #expect(distance(from: last) < 0.05)
+        try await Task.sleep(for: .milliseconds(450))
+        #expect(distance(from: last) < 0.05)
     }
 
     private func record(latitude: Double, longitude: Double, placeID: String? = nil) -> PhotoAssetRecord {

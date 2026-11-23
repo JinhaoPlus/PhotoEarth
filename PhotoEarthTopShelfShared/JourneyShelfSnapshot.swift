@@ -154,7 +154,7 @@ nonisolated enum JourneyShelfKeychain {
     }
 
     static func setPurchaseAccess(until: Date?) {
-        guard var query = query(account: "purchase-access") else { return }
+        guard var query = query(account: purchaseAccessAccount) else { return }
         guard let until else {
             SecItemDelete(query as CFDictionary)
             return
@@ -168,8 +168,14 @@ nonisolated enum JourneyShelfKeychain {
         }
     }
 
+#if DEBUG
+    private static let purchaseAccessAccount = "debug-purchase-access"
+#else
+    private static let purchaseAccessAccount = "purchase-access"
+#endif
+
     static var permitsPersonalShelf: Bool {
-        guard var query = query(account: "purchase-access") else { return false }
+        guard var query = query(account: purchaseAccessAccount) else { return false }
         query[kSecReturnData as String] = true
         var result: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,

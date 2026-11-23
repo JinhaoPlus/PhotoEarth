@@ -4,15 +4,19 @@ import Foundation
 import UIKit
 
 struct OnlineSlideshowPlaylist: Identifiable, Sendable {
+    // A period keeps this local ID outside the remote catalog slug space.
+    static let recommendedID = "local.recommended"
+
     struct Presentation: Decodable, Sendable {
         let titles: [String: String]
         let symbol: String?
     }
 
-    struct Track: Identifiable, Sendable {
+    struct Track: Identifiable, Equatable, Sendable {
         let title: String
         let artist: String
         let url: URL
+        let themeID: String
         var id: URL { url }
     }
 
@@ -28,6 +32,8 @@ struct OnlineSlideshowPlaylist: Identifiable, Sendable {
             }
         }
         return switch id {
+        case Self.recommendedID:
+            AppLocalization.string("slideshow.music.recommended", defaultValue: "Recommended")
         case "quiet-moments":
             AppLocalization.string("slideshow.music.online.quiet_moments", defaultValue: "Quiet Moments")
         case "open-road":
@@ -58,6 +64,7 @@ struct OnlineSlideshowPlaylist: Identifiable, Sendable {
             return symbol
         }
         return switch id {
+        case Self.recommendedID: "sparkles.rectangle.stack"
         case "quiet-moments": "moon.stars"
         case "open-road": "road.lanes"
         case "piano": "pianokeys"
@@ -213,7 +220,8 @@ enum OnlineSlideshowCatalog {
                     title: track.title, artist: track.artist,
                     url: root.appendingPathComponent("tracks", isDirectory: true)
                         .appendingPathComponent(track.stream, isDirectory: true)
-                        .appendingPathComponent("index.m3u8")
+                        .appendingPathComponent("index.m3u8"),
+                    themeID: playlist.id
                 )
             }
             return OnlineSlideshowPlaylist(id: playlist.id, tracks: tracks, presentation: playlist.presentation)
@@ -229,6 +237,7 @@ enum OnlineSlideshowCatalog {
 
 @MainActor
 final class OnlineSlideshowMusicDriver: SlideshowMusicPlaying {
+    private let makePlayer: @MainActor () -> AVPlayer
     private var player: AVPlayer?
     private var tracks: [OnlineSlideshowPlaylist.Track] = []
     private var index = 0
@@ -241,6 +250,12 @@ final class OnlineSlideshowMusicDriver: SlideshowMusicPlaying {
     private var failureObservation: AnyCancellable?
     private var failed = false
     private var playbackRequested = false
+    private var volumeTarget: Float = 1
+    private var volumeTask: Task<Void, Never>?
+
+    init(makePlayer: @escaping @MainActor () -> AVPlayer = { AVPlayer() }) {
+        self.makePlayer = makePlayer
+    }
 
     var currentTrackID: OnlineSlideshowPlaylist.Track.ID? {
         tracks.indices.contains(index) ? tracks[index].id : nil
@@ -289,6 +304,28 @@ final class OnlineSlideshowMusicDriver: SlideshowMusicPlaying {
         return publish()
     }
 
+    func setDucked(_ ducked: Bool) {
+        let target: Float = ducked ? 0.5 : 1
+        guard target != volumeTarget else { return }
+        volumeTarget = target
+        volumeTask?.cancel()
+        volumeTask = nil
+        guard let player else { return }
+        guard player.timeControlStatus == .playing, player.volume != target else {
+            player.volume = target
+            return
+        }
+
+        let start = player.volume
+        volumeTask = Task { @MainActor [weak player] in
+            for step in 1...8 {
+                do { try await Task.sleep(for: .milliseconds(20)) } catch { return }
+                guard !Task.isCancelled, let player else { return }
+                player.volume = start + (target - start) * Float(step) / 8
+            }
+        }
+    }
+
     func stop() {
         preparation = UUID()
         itemGeneration = UUID()
@@ -300,6 +337,9 @@ final class OnlineSlideshowMusicDriver: SlideshowMusicPlaying {
         endObservation = nil
         failureObservation = nil
         timeControlObservation = nil
+        volumeTask?.cancel()
+        volumeTask = nil
+        volumeTarget = 1
         player?.pause()
         player?.replaceCurrentItem(with: nil)
         player = nil
@@ -320,7 +360,7 @@ final class OnlineSlideshowMusicDriver: SlideshowMusicPlaying {
         let track = tracks[index]
         return SlideshowMusicPlaybackSnapshot(
             isPlaying: player?.timeControlStatus == .playing,
-            nowPlaying: SlideshowMusicNowPlaying(title: track.title, subtitle: track.artist, artworkURL: nil),
+            nowPlaying: SlideshowMusicNowPlaying(title: track.title, subtitle: track.artist, artworkURL: nil, onlineTrack: track),
             failed: failed
         )
     }
@@ -341,8 +381,12 @@ final class OnlineSlideshowMusicDriver: SlideshowMusicPlaying {
         itemGeneration = generation
         let item = AVPlayerItem(asset: asset ?? AVURLAsset(url: tracks[index].url))
         item.preferredForwardBufferDuration = 8
-        let player = self.player ?? AVPlayer()
-        self.player = player
+        if player == nil {
+            let newPlayer = makePlayer()
+            newPlayer.volume = volumeTarget
+            player = newPlayer
+        }
+        guard let player else { return }
         player.pause()
         player.replaceCurrentItem(with: item)
         timeControlObservation = player.observe(\.timeControlStatus, options: [.new]) { [weak self] _, _ in

@@ -22,6 +22,8 @@ These photographs illustrate fictional sample journeys. Dates, visit records, fa
 | `DemoParis.jpg` | Paris, France | [Léonard Cotte](https://unsplash.com/@ettocl) | [Photo R5scocnOOdM](https://unsplash.com/photos/pont-alexandre-iii-bridge-in-paris-R5scocnOOdM) |
 | `DemoNewYork.jpg` | New York, United States | [Michael Discenza](https://unsplash.com/@mdisc) | [Photo 5omwAMDxmkU](https://unsplash.com/photos/landscape-photo-of-new-york-empire-state-building-5omwAMDxmkU) |
 | `DemoBanff.jpg` | Banff, Canada | [Tevin Trinh](https://unsplash.com/@tevintrinh) | [Photo -QbVBqWlOJg](https://unsplash.com/photos/river-forest-and-mountains-during-day--QbVBqWlOJg) |
+开发用的 `Collage1` 至 `Collage7` 依次取自上表 Tokyo、Banff、Rio、Paris、Singapore、Istanbul、Cape Town 的中央竖幅，用于验证放映拼图和转场。
+
 # 构图比例验证素材
 
 `RatioLandscape.png`、`RatioPortrait.png`、`RatioPanorama.png` 由 `Scripts/generate-ratio-fixtures.swift` 绘制，为带完整边框、角标与圆形的程序化测试图，不含照片或私人内容。只通过 Debug 参数 `--demo --photo-ratio-fixture` 使用，分别验证 3:2、2:3 和 3:1 比例。

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hans">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>放映转场效果库 · Photo Earth</title>
+<style>
+:root{color-scheme:dark;--paper:#f0e9de;--muted:#b3ada3;--line:#393932;--accent:#e5b37b}
+*{box-sizing:border-box}body{margin:0;background:#151613;color:var(--paper);font:16px/1.55 "Avenir Next","PingFang SC",system-ui,sans-serif}
+main{max-width:1460px;margin:auto;padding:clamp(20px,4.5vw,78px)}header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:20px}
+.brand{font:italic 24px Georgia,serif;letter-spacing:-.04em}header a{font-size:14px;color:var(--muted)}h1{font:500 clamp(29px,4vw,55px)/1.15 "Songti SC",serif;margin:30px 0 28px;letter-spacing:-.035em}
+.workspace{display:grid;grid-template-columns:minmax(0,2.8fr) minmax(245px,1fr);gap:clamp(20px,3vw,50px);align-items:start}
+canvas{display:block;width:100%;aspect-ratio:16/9;background:#0b0c0b;border:1px solid #363730}
+.bar,.readout{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.readout{justify-content:space-between;margin:12px 0 6px}.readout strong{font-size:16px}.readout small{color:var(--muted);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent);margin:10px 0 18px}button{font:inherit;cursor:pointer;color:var(--paper);border:1px solid var(--line);background:#24251f;padding:8px 14px;border-radius:4px}button:hover{background:#31322a}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+button.primary{background:var(--paper);color:#1a1a18;border-color:var(--paper)}label{margin-left:auto;font-size:13px;color:var(--muted)}input[type=checkbox]{accent-color:var(--accent)}
+aside{border-top:1px solid var(--line)}aside button{width:100%;text-align:left;display:grid;grid-template-columns:1fr auto;align-items:center;background:transparent;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:14px 12px}aside button small{font:12px ui-monospace,monospace;color:var(--muted)}aside button[aria-pressed=true]{background:#2e2c24;box-shadow:inset 3px 0 var(--accent)}aside button[aria-pressed=true] span{color:var(--accent)}
+p{color:var(--muted);font-size:14px}#desc{margin:18px 4px}section.rules{margin-top:34px;border-top:1px solid var(--line);padding:18px 0}h2{font-size:17px;font-weight:600;margin:0}section.rules p{max-width:80ch;margin:6px 0}
+@media(max-width:780px){.workspace{grid-template-columns:1fr}.bar{gap:7px}.bar button{font-size:14px}h1{margin:22px 0}.workspace aside{display:grid;grid-template-columns:1fr 1fr}.workspace aside p{grid-column:1/-1}.rules{margin-top:18px}}
+</style>
+<main><header><div class="brand">Photo Earth</div><a href="#rules">编排规则 ↓</a></header>
+<h1>放映转场效果库</h1>
+<div class="workspace"><section aria-label="转场预览">
+<canvas id="screen" width="1280" height="720" aria-label="旅行照片转场预览"></canvas>
+<div class="readout"><strong id="now" aria-live="polite"></strong><small id="timing"></small></div>
+<input id="progress" type="range" min="0" max="1000" value="0" aria-label="转场进度">
+<div class="bar"><button id="sequence" class="primary">连续放映</button><button id="replay">重看转场</button><button id="next">下一页</button><label><input id="reduced" type="checkbox"> 减少动态效果</label></div>
+</section><aside id="library" aria-label="效果列表"><p id="desc"></p></aside></div>
+<section class="rules" id="rules"><h2>编排规则</h2><p>叠化负责大多数换页。两次有明显变化的转场之间，至少穿插两次普通叠化。横竖变化可先换背景，相同格线的拼图才逐格换片。跨日、跨站和动态素材使用普通叠化。</p>
+<p>点一个效果看单例，点「连续放映」看组合。「下一页」模拟手动翻页。拖动进度条可以停在任意一帧。</p></section>
+</main><script src="effects.js"></script><script src="preview.js"></script></html>

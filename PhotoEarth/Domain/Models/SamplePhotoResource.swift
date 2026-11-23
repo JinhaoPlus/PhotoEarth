@@ -55,6 +55,10 @@ nonisolated enum SamplePhotoResource {
               ordinal > 0 else { return nil }
         let prefix = String(assetID[..<separator])
 #if DEBUG
+        if prefix == "sample-collage", (1...7).contains(ordinal),
+           ProcessInfo.processInfo.arguments.contains(where: { ["--slideshow-collage-fixture", "--slideshow-transition-fixture"].contains($0) }) {
+            return Resource(name: "Collage\(ordinal)", width: ordinal <= 3 ? 540 : 720, height: 960)
+        }
         if ProcessInfo.processInfo.arguments.contains("--photo-ratio-fixture"), let resource = ratioResources[prefix] { return resource }
 #endif
         return resources[prefix]

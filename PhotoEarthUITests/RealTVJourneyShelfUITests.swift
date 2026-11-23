@@ -63,8 +63,8 @@ final class RealTVJourneyShelfUITests: XCTestCase {
                 matches = ["当前画面内照片", "photosinthecurrentview"].contains { scope.contains($0) }
                 if !matches {
                     let strip = try screenText(in: CGRect(x: 0, y: 0.60, width: 0.42, height: 0.36), image: image)
-                    matches = ["这片画面里照片", "这片画面照片", "当前画面暂无可展示照片", "当前画面内没有找到照片",
-                               "photosinthisview", "nophotopreviewsinthisview", "nophotosfoundinthisview"].contains { strip.contains($0) }
+                    matches = ["画面内的照片", "暂无照片预览", "当前画面没有照片",
+                               "photosinthisview", "nopreviewsavailable", "nophotosinthisview"].contains { strip.contains($0) }
                 }
             }
             if matches {

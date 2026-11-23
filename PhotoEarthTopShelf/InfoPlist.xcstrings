@@ -7,49 +7,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth shows previews from your recent journeys on the Apple TV Home Screen."
+            "value" : "Show cover photos from your recently visited cities on the Apple TV Home Screen."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth zeigt auf dem Home-Bildschirm deines Apple TV Vorschaubilder deiner letzten Reisen."
+            "value" : "Zeige Titelbilder aus kürzlich besuchten Städten auf dem Apple TV-Home-Bildschirm an."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth muestra vistas previas de tus viajes recientes en la pantalla de inicio del Apple TV."
+            "value" : "Muestra fotos de portada de las ciudades visitadas recientemente en la pantalla de inicio del Apple TV."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth affiche des aperçus de vos voyages récents sur l’écran d’accueil de votre Apple TV."
+            "value" : "Affichez les photos de couverture des villes visitées récemment sur l’écran d’accueil de l’Apple TV."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth mostra le anteprime dei tuoi viaggi recenti nella schermata Home di Apple TV."
+            "value" : "Mostra le foto di copertina delle città visitate di recente sulla schermata Home di Apple TV."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth は、Apple TV のホーム画面に最近の旅のプレビューを表示します。"
+            "value" : "最近訪れた都市のカバー写真をApple TVのホーム画面に表示します。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth 会在 Apple TV 主屏幕上显示你最近旅程的预览。"
+            "value" : "在 Apple TV 主屏幕上显示最近到访城市的封面照片。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Earth 會在 Apple TV 主畫面上顯示你近期旅程的預覽。"
+            "value" : "在 Apple TV 主畫面上顯示最近到訪城市的封面照片。"
           }
         }
       }

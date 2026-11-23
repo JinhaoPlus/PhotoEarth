@@ -16,9 +16,9 @@ struct GlobeInputAccessibility: ViewModifier {
     @ObservedObject var experience: GlobeExperienceModel
 
     func body(content: Content) -> some View {
-        content.accessibilityLabel(experience.supportsTouchPan
-            ? AppLocalization.string("globe.controls.touch_accessibility", defaultValue: "Explore the globe. Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls.")
-            : AppLocalization.string("globe.controls.accessibility", defaultValue: "Explore the globe. Use the direction buttons to turn it. Press the center button to view photos. Press Play/Pause to open zoom controls."))
+        content
+            .accessibilityLabel(AppLocalization.string("home.explore_globe", defaultValue: "Explore the Globe"))
+            .accessibilityHint(AppLocalization.globeInputHint(supportsTouchPan: experience.supportsTouchPan))
     }
 }
 

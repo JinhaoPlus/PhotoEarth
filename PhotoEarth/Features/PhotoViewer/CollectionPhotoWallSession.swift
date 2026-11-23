@@ -9,6 +9,29 @@ import Observation
     private(set) var totalPhotoCount: Int?
     private(set) var countErrorMessage: String?
     private(set) var membership: Membership?
+    private(set) var journeys: [Journey] = []
+    var visibleJourneys: [Journey] { journeys.filter { $0.page.totalPhotoCount != 0 } }
+
+    @MainActor @Observable final class Journey: Identifiable {
+        static let previewLimit = 5
+        let collection: PlaceCollection
+        let page: CollectionPhotoWallSession
+        var isExpanded = false
+        var id: String { collection.id }
+
+        init(collection: PlaceCollection, city: Membership) {
+            self.collection = collection
+            page = CollectionPhotoWallSession()
+            page.membership = Membership(reader: city.reader, places: city.places, placeIDs: collection.placeIDs,
+                                         matchingVisits: collection.places, photoCount: collection.photoCount,
+                                         reviewOrigin: .collection(placeIDs: collection.placeIDs, in: collection.places))
+            page.totalPhotoCount = collection.photoCount
+        }
+
+        func load(app: AppModel, limit: Int = PhotoWallPageSelection.pageSize) {
+            page.loadMore(app: app, collection: collection, limit: limit)
+        }
+    }
 
     struct Membership {
         let reader: SQLiteTravelIndexStore?
@@ -24,7 +47,7 @@ import Observation
     @ObservationIgnored private var pageTask: Task<Void, Never>?
     @ObservationIgnored private var countTask: Task<Void, Never>?
 
-    func loadMore(app: AppModel, collection: PlaceCollection) {
+    func loadMore(app: AppModel, collection: PlaceCollection, limit: Int = PhotoWallPageSelection.pageSize) {
         guard !isLoading, let offset = nextOffset else { return }
         isLoading = true
         pagingError = nil
@@ -37,25 +60,39 @@ import Observation
                     try Task.checkCancellation()
                     let members = Set(ids)
                     let visits = summaries.filter { members.contains($0.id) }
-                    membership = Membership(reader: reader, places: PhotoWallPlaces(summaries),
-                                            placeIDs: ids, matchingVisits: visits,
-                                            photoCount: visits.reduce(0) { $0 + $1.photoCount },
-                                            reviewOrigin: .collection(placeIDs: ids, in: summaries))
+                    let cityMembership = Membership(reader: reader, places: PhotoWallPlaces(summaries),
+                                                    placeIDs: ids, matchingVisits: visits,
+                                                    photoCount: visits.reduce(0) { $0 + $1.photoCount },
+                                                    reviewOrigin: .collection(placeIDs: ids, in: summaries))
+                    if collection.groupsPhotosByJourney {
+                        let trips = try await reader?.journeysForReading() ?? app.index?.journeys ?? []
+                        try Task.checkCancellation()
+                        let scopedCity = PlaceCollection(id: collection.id, title: collection.title,
+                                                         subtitle: collection.subtitle, places: visits)
+                        journeys = scopedCity.journeySegments(in: trips).map { Journey(collection: $0, city: cityMembership) }
+                    }
+                    membership = cityMembership
                     excludedAssetIDs.formUnion(app.excludedAssetIDs)
                     refreshCount(app: app)
+                    if collection.groupsPhotosByJourney {
+                        nextOffset = nil
+                        isLoading = false
+                        return
+                    }
                 }
                 guard let membership else { return }
                 var cursor = offset
+                let previousRecordCount = records.count
                 while true {
                     let page = try await app.photoPage(for: membership.placeIDs, offset: cursor,
-                                                       limit: PhotoWallPageSelection.pageSize, reader: membership.reader)
+                                                       limit: limit, reader: membership.reader)
                     try Task.checkCancellation()
                     exclude(app.excludedAssetIDs, app: app)
                     records.append(contentsOf: page.records.filter {
                         !excludedAssetIDs.contains($0.id) && recordIDs.insert($0.id).inserted
                     })
                     nextOffset = page.nextOffset
-                    guard records.isEmpty, let next = page.nextOffset, next > cursor else { break }
+                    guard records.count == previousRecordCount, let next = page.nextOffset, next > cursor else { break }
                     cursor = next
                     await Task.yield()
                     try Task.checkCancellation()
@@ -79,6 +116,9 @@ import Observation
         // Membership stays fixed while browsing. Revocations apply immediately;
         // newly available assets can enter a fresh session when the wall reopens.
         excludedAssetIDs.formUnion(newlyExcluded)
+        for journey in journeys where journey.page.nextOffset != 0 || journey.page.isLoading {
+            journey.page.exclude(newlyExcluded, app: app)
+        }
         records.removeAll { newlyExcluded.contains($0.id) }
         recordIDs.subtract(newlyExcluded)
         refreshCount(app: app)
@@ -102,12 +142,14 @@ import Observation
                 totalPhotoCount = membership.photoCount - removedCount
             } catch {
                 guard !Task.isCancelled else { return }
-                countErrorMessage = AppLocalization.string("error.wall.count", defaultValue: "Couldn’t count all photos.")
+                countErrorMessage = AppLocalization.string("error.wall.count", defaultValue: "Couldn’t count all items.")
             }
         }
     }
 
     func cancel() {
+        for journey in journeys { journey.page.cancel() }
+        journeys = []
         pageTask?.cancel()
         countTask?.cancel()
         pageTask = nil

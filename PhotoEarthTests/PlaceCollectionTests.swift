@@ -4,10 +4,10 @@ import Testing
 
 struct PlaceCollectionTests {
     private func place(_ id: String, city: String, country: String?, date: Double,
-                       coordinate: GeoCoordinate = GeoCoordinate(latitude: 0, longitude: 0)) -> TravelPlace {
+                       coordinate: GeoCoordinate = GeoCoordinate(latitude: 0, longitude: 0), cover: String? = nil) -> TravelPlace {
         TravelPlace(id: id, name: city, country: country, coordinate: coordinate,
                     startDate: Date(timeIntervalSince1970: date), endDate: Date(timeIntervalSince1970: date),
-                    photoCount: 2, coverAssetID: nil)
+                    photoCount: 2, coverAssetID: cover)
     }
 
     @Test func countryAndCityGroupsRetainAllClustersAndSeparateNamesAcrossCountries() throws {
@@ -28,11 +28,51 @@ struct PlaceCollectionTests {
         #expect(countries.last?.cities.count == 2)
     }
 
+    @Test func countryCoverFollowsTheNewestTripWithinThatCountry() throws {
+        let old = place("old", city: "Nice", country: "France", date: 10, cover: "old-cover")
+        let rome = place("rome", city: "Rome", country: "Italy", date: 20, cover: "rome-cover")
+        let paris = place("paris", city: "Paris", country: "France", date: 30, cover: "paris-cover")
+        let lyon = place("lyon", city: "Lyon", country: "France", date: 40, cover: "lyon-cover")
+        let journey = TravelJourney(id: "latest", title: "", startDate: rome.startDate, endDate: lyon.endDate,
+                                    placeIDs: [lyon.id, paris.id, rome.id])
+        let visits = [lyon, rome, old, paris]
+        func france(_ places: [TravelPlace], excluding: Set<String> = []) throws -> PlaceCollection {
+            try #require(PlaceCollection.countries(places, journeys: [journey], excluding: excluding)
+                .first { $0.title == "France" })
+        }
+
+        #expect(try france(visits).countryJourneyCoverAssetID == "paris-cover")
+        #expect(try france(visits, excluding: ["paris-cover"]).countryJourneyCoverAssetID == "lyon-cover")
+        #expect(try france(visits, excluding: ["paris-cover", "lyon-cover"]).countryJourneyCoverAssetID == nil)
+        let newer = place("new", city: "Paris", country: "France", date: 50, cover: "new-cover")
+        #expect(try france(visits + [newer]).countryJourneyCoverAssetID == "new-cover")
+    }
+
     @Test func recentArrivalTiesHaveStableOrder() {
         let places = [place("b", city: "B", country: "X", date: 20),
                       place("a", city: "A", country: "X", date: 20),
                       place("c", city: "C", country: "Y", date: 30)]
         #expect(PlaceCollection.recent(places).map(\.id) == ["c", "a", "b"])
+    }
+
+    @Test func citySegmentsUseJourneyMembershipAndKeepUnassignedVisits() throws {
+        let visits = [place("arrival", city: "Paris", country: "France", date: 10),
+                      place("lyon", city: "Lyon", country: "France", date: 20),
+                      place("return", city: "Paris", country: "France", date: 30),
+                      place("later", city: "Paris", country: "France", date: 40),
+                      place("legacy", city: "Paris", country: "France", date: 50)]
+        let city = PlaceCollection.city(containing: visits[0], in: visits)
+        let trips = [TravelJourney(id: "first", title: "", startDate: visits[0].startDate,
+                                   endDate: visits[2].endDate, placeIDs: ["arrival", "lyon", "return"]),
+                     TravelJourney(id: "second", title: "", startDate: visits[3].startDate,
+                                   endDate: visits[3].endDate, placeIDs: ["later"])]
+        let segments = city.journeySegments(in: trips)
+        #expect(segments.map(\.placeIDs) == [["legacy"], ["later"], ["return", "arrival"]])
+        #expect(segments.map(\.photoCount) == [2, 2, 4])
+        #expect(segments.last?.journeyDates == visits[0].startDate...visits[2].endDate)
+        for segment in segments {
+            #expect(try segment.matchingPlaceIDs(in: visits) == segment.placeIDs)
+        }
     }
 
     @Test func slideshowRecognizesLegacyRevisitsWithoutCombiningUnrelatedCities() {

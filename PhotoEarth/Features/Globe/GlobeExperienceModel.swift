@@ -60,12 +60,24 @@ final class GlobeExperienceModel: ObservableObject {
     private var isTouchPanning = false
     private var lastSurfaceContactTimestamp = -Double.infinity
     private var cameraFlight: GlobeCameraFlight?
-    @Published private(set) var pendingCityLanding: GlobeCameraState?
+    private enum CityFlightPhase {
+        case turning(landing: GlobeCameraState)
+        case descending
+    }
+    @Published private var cityFlightPhase: CityFlightPhase?
+    var isApproachingCity: Bool { cityFlightPhase != nil }
+    var pendingCityLanding: GlobeCameraState? {
+        guard case .turning(let landing) = cityFlightPhase else { return nil }
+        return landing
+    }
+    private static let cityDescentDuration = 2.5
     private var cityOrbitDeadline: CFTimeInterval?
-    var regionalFlightDestination: GlobeCameraState? {
-        if let pendingCityLanding { return pendingCityLanding }
-        guard let target = cameraFlight?.destination, target.distance == GlobeCameraState.regionalDistance else { return nil }
-        return target
+    var regionalBasemapTarget: GlobeCameraState? {
+        guard let target = pendingCityLanding ?? cameraFlight?.destination else { return nil }
+        if isApproachingCity {
+            return GlobeCameraState(center: target.center, distance: GlobeCameraState.regionalDistance)
+        }
+        return target.distance == GlobeCameraState.regionalDistance ? target : nil
     }
     private var wantsDirectManipulation = false
     private var zoomControlsPresented = false
@@ -153,23 +165,20 @@ final class GlobeExperienceModel: ObservableObject {
         )
     }
 
-    func approachCity(at center: GeoCoordinate, animated: Bool) {
+    func approachCity(at center: GeoCoordinate, distance: Double, animated: Bool) {
         cityOrbitDeadline = nil
         let origin = displayedCamera
-        let landing = GlobeCameraState(center: center, distance: GlobeCameraState.regionalDistance).mapConstrained()
+        let landing = GlobeCameraState(center: center, distance: distance).mapConstrained()
         let arc = GlobeMath.angularDistanceDegrees(from: origin.center, to: landing.center)
         if animated, arc > 0.05 {
             // Turn by the shorter longitude arc. Staying between the two
             // latitudes avoids MapKit squeezing a cross-polar flight out of orbit.
             let orbit = GlobeCameraState(center: landing.center, distance: origin.distance)
             beginFlight(to: orbit, duration: 0.55 + 1.65 * min(arc / 150, 1),
-                        animated: true, framing: 0)
-            if cameraFlight != nil {
-                pendingCityLanding = landing
-                return
-            }
+                        animated: true, framing: 0, cityPhase: .turning(landing: landing))
+            if cameraFlight != nil { return }
         }
-        beginFlight(to: landing, duration: 1.55, animated: animated, framing: 0)
+        beginFlight(to: landing, duration: Self.cityDescentDuration, animated: animated, framing: 0, cityPhase: .descending)
     }
 
     /// The offset traces a small arc around the original longitude. Keeping its
@@ -648,11 +657,11 @@ final class GlobeExperienceModel: ObservableObject {
     private func beginFlight(
         to destination: GlobeCameraState, duration: Double, animated: Bool, framing: Double? = nil,
         initialLogarithmicVelocity: Double = 0,
-        usesGreatCircle: Bool = false
+        usesGreatCircle: Bool = false, cityPhase: CityFlightPhase? = nil
     ) {
         let origin = displayedCamera
         let destination = nativeCameraFeedback.constrained(destination)
-        if pendingCityLanding != nil { pendingCityLanding = nil }
+        if cityFlightPhase != nil { cityFlightPhase = nil }
         resetInput()
         suspendedFramingTarget = nil
         let targetFraming = framing ?? framingTransition?.destination ?? overviewFraming
@@ -667,6 +676,7 @@ final class GlobeExperienceModel: ObservableObject {
                     origin: overviewFraming, destination: targetFraming, duration: duration
                 )
             }
+            if let cityPhase { cityFlightPhase = cityPhase }
             cameraFlight = GlobeCameraFlight(
                 origin: origin, destination: destination, duration: duration,
                 initialLogarithmicVelocity: initialLogarithmicVelocity,
@@ -727,7 +737,7 @@ final class GlobeExperienceModel: ObservableObject {
 
     private func markInput() {
         cameraFlight = nil
-        if pendingCityLanding != nil { pendingCityLanding = nil }
+        if cityFlightPhase != nil { cityFlightPhase = nil }
         if !isManipulating {
             isManipulating = true
             // No settled query can start again until this gesture ends.
@@ -781,7 +791,7 @@ final class GlobeExperienceModel: ObservableObject {
         touchOwnedByPress = false
         hardwareOwnsDirections = false
         cameraFlight = nil
-        if pendingCityLanding != nil { pendingCityLanding = nil }
+        if cityFlightPhase != nil { cityFlightPhase = nil }
         framingTransition = nil
         isManipulating = false
         displayLink?.invalidate()
@@ -928,10 +938,11 @@ final class GlobeExperienceModel: ObservableObject {
                 if cityOrbitDeadline == nil { cityOrbitDeadline = now + 0.85 }
                 if let cityOrbitDeadline, now < cityOrbitDeadline { return }
             }
-            beginFlight(to: landing, duration: 1.55, animated: !reduceMotion, framing: 0)
+            beginFlight(to: landing, duration: Self.cityDescentDuration, animated: !reduceMotion, framing: 0, cityPhase: .descending)
             return
         }
         cameraFlight = nil
+        if cityFlightPhase != nil { cityFlightPhase = nil }
         showZoomBoundary(for: zoomDirection)
         finishMotion()
     }

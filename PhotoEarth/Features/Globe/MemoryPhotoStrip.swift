@@ -78,7 +78,7 @@ struct MemoryPhotoStrip: View {
     }
 
     private var countTitle: String {
-        if let totalPhotoCount { return AppLocalization.photoCount(totalPhotoCount) }
+        if let totalPhotoCount { return AppLocalization.itemCount(totalPhotoCount) }
         return AppLocalization.format("memory_strip.preview_count", defaultValue: "Previews: %@", AppLocalization.number(records.count))
     }
 
@@ -87,8 +87,8 @@ struct MemoryPhotoStrip: View {
     private var emptyStatus: String {
         if queryFailed { return AppLocalization.string("memory_strip.failed", defaultValue: "Previews unavailable") }
         if !isVerifiedEmpty { return AppLocalization.string("memory_strip.searching", defaultValue: "Looking for photos in this view…") }
-        if totalPhotoCount == 0 { return AppLocalization.string("memory_strip.empty", defaultValue: "No photos found in this view") }
-        return AppLocalization.string("memory_strip.no_preview", defaultValue: "No photo previews in this view")
+        if totalPhotoCount == 0 { return AppLocalization.string("memory_strip.empty", defaultValue: "No photos in this view") }
+        return AppLocalization.string("memory_strip.no_preview", defaultValue: "No previews available")
     }
 
     var body: some View {
@@ -172,7 +172,7 @@ struct MemoryPhotoStrip: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("memory-horizon")
         .accessibilityValue(isReady && !isManipulating
-            ? (totalPhotoCount.map { AppLocalization.format("memory_strip.accessibility_ready", defaultValue: "%@ matched in the current view", AppLocalization.photoCount($0)) } ?? countTitle)
+            ? (totalPhotoCount.map { AppLocalization.format("memory_strip.accessibility_ready", defaultValue: "%@ matched in the current view", AppLocalization.itemCount($0)) } ?? countTitle)
             : AppLocalization.string("memory_strip.accessibility_refreshing", defaultValue: "Updating the current view"))
         .accessibilityHidden(isManipulating)
     }

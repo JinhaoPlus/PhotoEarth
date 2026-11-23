@@ -40,6 +40,44 @@ import Testing
         #expect(callbacks.count == 6)
     }
 
+    @Test func streetRendererFollowsFlightAndWallKeepsItsVisibleProjection() async throws {
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        let host = UIViewController()
+        window.rootViewController = host
+        let resident = MKMapView(frame: CGRect(x: 0, y: 0, width: 640, height: 360))
+        host.view.addSubview(resident)
+        window.isHidden = false
+        let handoff = CityStreetMapTransition()
+        defer { handoff.cancel(); window.isHidden = true }
+        let city = GeoCoordinate(latitude: 64, longitude: -22)
+        let regional = GlobeCameraState(center: city, distance: GlobeCameraState.regionalDistance)
+        let landing = GlobeCameraState(center: city, distance: GlobeCameraState.cityFallbackDistance)
+        var installs = 0
+        handoff.prepare(regional, in: resident)
+        handoff.blend(at: regional, flightFinished: false) { installs += 1 }
+        handoff.blend(at: landing, flightFinished: false) { installs += 1 }
+        #expect(installs == 0)
+        let streets = try #require(handoff.visibleMap)
+        #expect(abs(streets.camera.centerCoordinateDistance - landing.distance) < 1)
+        let capture = PhotoWallViewportCapture()
+        capture.attach(resident, cityStreets: handoff)
+        let frozen = try #require(capture.freeze())
+        #expect(abs(frozen.camera.distance - landing.distance) < 1)
+        handoff.residentDidRenderStreets()
+        #expect(handoff.visibleMap === streets && frozen.snapshot.isCurrent())
+        capture.release()
+        handoff.blend(at: landing, flightFinished: true) { installs += 1 }
+        let deadline = ContinuousClock.now + .seconds(3)
+        while installs == 0 && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(installs == 1)
+        handoff.residentDidRenderStreets()
+        #expect(!handoff.isPrepared)
+        #expect(capture.freeze() != nil)
+    }
+
     @Test func cityTurnsAtOrbitalScaleThenDescendsOverItsDestination() {
         let model = GlobeExperienceModel()
         defer { model.deactivate() }
@@ -47,18 +85,43 @@ import Testing
         let city = GeoCoordinate(latitude: 20, longitude: -140)
         let orbit = GlobeCameraState.orbitalDistance
         model.transitionCamera(to: start, distance: orbit, animated: false)
-        model.approachCity(at: city, animated: true)
+        model.approachCity(at: city, distance: GlobeCameraState.cityFallbackDistance, animated: true)
         model.advanceMotionFrame(elapsed: 0.4, reduceMotion: false)
         #expect(model.camera.center != start && model.camera.center != city)
         #expect(abs(model.camera.distance - orbit) < 0.01)
         model.advanceMotionFrame(elapsed: 1.5, reduceMotion: false)
         #expect(model.camera.center == city)
         #expect(abs(model.camera.distance - orbit) < 0.01)
-        model.advanceMotionFrame(elapsed: 0.5, reduceMotion: false)
+        model.advanceMotionFrame(elapsed: 1.25, reduceMotion: false)
         #expect(model.camera.center == city)
-        #expect(model.camera.distance < orbit && model.camera.distance > GlobeCameraState.regionalDistance)
-        model.advanceMotionFrame(elapsed: 2, reduceMotion: false)
-        #expect(model.camera == GlobeCameraState(center: city, distance: GlobeCameraState.regionalDistance))
+        #expect(abs(model.camera.distance - 1_000_000) < 1)
+        model.advanceMotionFrame(elapsed: 0.25, reduceMotion: false)
+        let firstMapDistance = model.camera.distance
+        #expect(firstMapDistance < GlobeCameraState.regionalDistance)
+        #expect(model.regionalBasemapTarget?.distance == GlobeCameraState.regionalDistance)
+        model.advanceMotionFrame(elapsed: 0.1, reduceMotion: false)
+        #expect(model.camera.distance < firstMapDistance)
+        #expect(model.isApproachingCity)
+        model.advanceMotionFrame(elapsed: 1, reduceMotion: false)
+        #expect(model.camera == GlobeCameraState(center: city, distance: GlobeCameraState.cityFallbackDistance))
+        #expect(!model.isApproachingCity)
+    }
+
+    @Test func zoomOutDuringStreetDescentCancelsCityLanding() {
+        let model = GlobeExperienceModel()
+        defer { model.deactivate() }
+        let city = GeoCoordinate(latitude: 35, longitude: 140)
+        model.transitionCamera(to: city, distance: GlobeCameraState.orbitalDistance, animated: false)
+        model.approachCity(at: city, distance: GlobeCameraState.cityFallbackDistance, animated: true)
+        model.advanceMotionFrame(elapsed: 1.5, reduceMotion: false)
+        let nearDistance = model.camera.distance
+        #expect(nearDistance < GlobeCameraState.regionalDistance && model.isApproachingCity)
+        model.zoomOut()
+        #expect(!model.isApproachingCity)
+        model.advanceMotionFrame(elapsed: 1, reduceMotion: false)
+        #expect(model.camera.distance > nearDistance)
+        model.transitionCamera(to: city, distance: GlobeCameraState.cityFallbackDistance, animated: true)
+        #expect(!model.isApproachingCity)
     }
 
     @Test func cityDescentWaitsForTheDestinationOrbitWhenTilesAreLate() {
@@ -69,7 +132,7 @@ import Testing
         model.transitionCamera(to: home.center, distance: home.distance, animated: false)
         model.nativeCameraFeedback.record(requested: home, actual: home)
         model.nativeCameraFeedback.renderedSatelliteCamera = home
-        model.approachCity(at: city, animated: true)
+        model.approachCity(at: city, distance: GlobeCameraState.cityFallbackDistance, animated: true)
         model.advanceMotionFrame(elapsed: 3, reduceMotion: false)
         #expect(model.pendingCityLanding != nil)
         #expect(model.camera.center == city)
@@ -77,8 +140,8 @@ import Testing
         model.nativeCameraFeedback.renderedSatelliteCamera = model.camera
         model.advanceMotionFrame(elapsed: 0.1, reduceMotion: false)
         #expect(model.pendingCityLanding == nil)
-        model.advanceMotionFrame(elapsed: 2, reduceMotion: false)
-        #expect(model.camera.distance == GlobeCameraState.regionalDistance)
+        model.advanceMotionFrame(elapsed: 2.5, reduceMotion: false)
+        #expect(model.camera.distance == GlobeCameraState.cityFallbackDistance)
     }
 
     @Test func cityFlightCanBeInterruptedOrCompletedWithReducedMotion() {
@@ -87,18 +150,18 @@ import Testing
         let city = GeoCoordinate(latitude: 35, longitude: 140)
         let home = GlobeCameraState(center: .init(latitude: 10, longitude: 20), distance: GlobeCameraState.orbitalDistance)
         model.transitionCamera(to: home.center, distance: home.distance, animated: false)
-        model.approachCity(at: city, animated: true)
+        model.approachCity(at: city, distance: GlobeCameraState.cityFallbackDistance, animated: true)
         model.advanceMotionFrame(elapsed: 0.3, reduceMotion: false)
         model.pauseDirectManipulation()
         model.transitionCamera(to: home.center, distance: home.distance, animated: false)
         model.advanceMotionFrame(elapsed: 3, reduceMotion: false)
         #expect(model.camera == home)
-        #expect(model.pendingCityLanding == nil)
+        #expect(!model.isApproachingCity)
 
-        model.approachCity(at: city, animated: true)
+        model.approachCity(at: city, distance: GlobeCameraState.cityFallbackDistance, animated: true)
         model.advanceMotionFrame(elapsed: 0.1, reduceMotion: true)
-        #expect(model.camera == GlobeCameraState(center: city, distance: GlobeCameraState.regionalDistance))
-        #expect(model.pendingCityLanding == nil)
+        #expect(model.camera == GlobeCameraState(center: city, distance: GlobeCameraState.cityFallbackDistance))
+        #expect(!model.isApproachingCity)
     }
 
     @Test func cityLandingAbsorbsMapKitRoundoffAndClearsPreviousStyleChoice() {
@@ -232,7 +295,7 @@ import Testing
         }
         apply()
         #expect(map.annotations.count == 1)
-        distance = 420_000
+        distance = GlobeCameraState.cityFallbackDistance
         apply()
         try await Task.sleep(for: .milliseconds(100))
         #expect(state.scale == GlobeScale(distance: map.camera.centerCoordinateDistance))

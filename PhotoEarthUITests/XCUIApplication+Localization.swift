@@ -37,6 +37,20 @@ extension XCUIApplication {
         XCTFail("Native sidebar did not focus the requested destination")
     }
 
+    @MainActor func confirmSlideshowExit(file: StaticString = #filePath, line: UInt = #line) {
+        XCUIRemote.shared.press(.menu)
+        let alert = alerts.firstMatch
+        XCTAssertTrue(alert.waitForExistence(timeout: 5), file: file, line: line)
+        // tvOS focuses the native button containing the identified SwiftUI action.
+        let stay = alert.buttons.containing(.button, identifier: "slideshow-exit-stay").firstMatch
+        let exit = alert.buttons.containing(.button, identifier: "slideshow-exit-confirm").firstMatch
+        XCTAssertTrue(stay.hasFocus, file: file, line: line)
+        XCUIRemote.shared.press(.right)
+        let focused = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasFocus == true"), object: exit)
+        XCTAssertEqual(XCTWaiter.wait(for: [focused], timeout: 5), .completed, file: file, line: line)
+        XCUIRemote.shared.press(.select)
+    }
+
     func useTestLanguage(_ language: String, locale: String) {
         launchEnvironment["PHOTOEARTH_UI_OWNED_FIXTURE"] = "1"
         launchArguments.append(contentsOf: [

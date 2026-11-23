@@ -19,14 +19,24 @@ nonisolated struct PhotoGlobeDestination: Equatable {
         GlobeCameraState(center: coordinate, distance: GlobeCameraState.regionalDistance).mapConstrained()
     }
 
-    var detailPreviewCamera: GlobeCameraState {
-        GlobeCameraState(center: coordinate, distance: 5_000_000).mapConstrained()
+    /// Frame the last step between visible photos, keeping the new photo at the center.
+    func miniatureCamera(from previous: GeoCoordinate?) -> GlobeCameraState {
+        let distance = previous.map {
+            let meters = GlobeMath.distanceKilometers(from: $0, to: coordinate) * 1_000
+            // A local step should move a noticeable fraction of the inset.
+            return min(25_000, max(400, meters * 2.5))
+        } ?? 2_500
+        var camera = GlobeCameraState(center: coordinate, distance: distance).mapConstrained()
+        if camera.center.latitude != coordinate.latitude {
+            // When MapKit limits the center near a pole, leave enough room for the real GPS light.
+            let offset = GlobeMath.distanceKilometers(from: camera.center, to: coordinate) * 1_000
+            camera.distance = min(camera.maximumMapDistance, max(camera.distance, offset * 8))
+        }
+        return camera
     }
 
-    var previewCamera: GlobeCameraState {
-        // Center the real photo, including at high latitude. Moving this view
-        // toward the equator can push MapKit's annotation outside the miniature.
-        // Native camera limits may show a close polar globe instead of a full disc.
+    var explorationOpeningCamera: GlobeCameraState {
+        // Enter the full-screen exploration from orbit over the photo.
         GlobeCameraState(center: coordinate, distance: 20_000_000).mapConstrained()
     }
 

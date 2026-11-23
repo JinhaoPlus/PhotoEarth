@@ -12,7 +12,7 @@ struct ViewportPhotoWall: View {
     var isActive = true
     @Binding var selectedPhotoID: String?
     var errorMessage: String?
-    var title = AppLocalization.string("wall.viewport.title", defaultValue: "Memories in This View")
+    var title = AppLocalization.string("memory_strip.title", defaultValue: "Photos in this view")
     var canRetry = true
     var emptyHint: String? = AppLocalization.string("wall.viewport.empty_message", defaultValue: "Return to the globe, turn toward a glowing place, or widen the view.")
     var totalPhotoCount: Int?
@@ -27,6 +27,8 @@ struct ViewportPhotoWall: View {
     var resolvePlaceLabels: ([String]) async -> Void = { _ in }
     var onInteraction: () -> Void = {}
     var analyticsLibrary: JourneyEventContext.Library?
+    var cityJourneys: CityJourneyWallInput?
+    @State private var journeyTopRequest = 0
     @State private var analyticsVisit = PhotoWallAnalyticsVisit()
 
     private var labelPlaceIDs: [String] {
@@ -68,7 +70,7 @@ struct ViewportPhotoWall: View {
     private var rows: [PhotoRowLayout.Row] { layout.rows }
     private var rowPositions: [String: Int] { layout.rowPositions }
     private var topReturnPhotoID: String? { isBelowPageTop ? rows.first?.id : nil }
-    private var usesStatusFocus: Bool { records.isEmpty && (isLoading || !hasMore) }
+    private var usesStatusFocus: Bool { !wallHasPhotos && (isLoading || !hasMore) }
 
     var body: some View {
         GeometryReader { geometry in
@@ -86,7 +88,12 @@ struct ViewportPhotoWall: View {
                 .padding(.top, 60)
                 .padding(.bottom, 26)
 
-            scrollingWall(width: width)
+            if let cityJourneys, showsJourneyRows {
+                CityJourneyPhotoRows(input: cityJourneys, width: width, mosaic: usesMosaic, isActive: isActive,
+                                     openedDetail: { analyticsVisit.openedDetail() }, topRequest: journeyTopRequest, selectedID: $selectedPhotoID, belowTop: $isBelowPageTop)
+            } else {
+                scrollingWall(width: width)
+            }
         }
         .background(wallBackdrop)
         .onChange(of: focusedPhotoID) { _, id in photoFocusChanged(to: id) }
@@ -167,11 +174,7 @@ struct ViewportPhotoWall: View {
             }
         }
         .onChange(of: records, initial: true) { _, _ in updateRows(width: width, recordsChanged: true) }
-        .onChange(of: usesMosaic) { _, _ in
-            updateRows(width: width)
-            restorationTargetID = selectedPhotoID
-            restoreFocus()
-        }
+        .onChange(of: usesMosaic) { _, _ in updateRows(width: width) }
         .onChange(of: width) { _, width in updateRows(width: width) }
         .onChange(of: rows.first?.id) { _, firstID in
             if firstID == nil { isReturningToTop = false }
@@ -229,7 +232,7 @@ struct ViewportPhotoWall: View {
 
     @ViewBuilder private var paginationFooter: some View {
         if isLoading {
-            ProgressView(AppLocalization.string("wall.loading", defaultValue: "Unfolding memories…"))
+            ProgressView(AppLocalization.string("wall.loading", defaultValue: "Loading…"))
                 .font(.system(size: 23))
                 .tint(.cyan)
                 .padding(.vertical, 40)
@@ -249,7 +252,7 @@ struct ViewportPhotoWall: View {
             // Load on near-end focus, with an explicit fallback button.
             Button(records.isEmpty
                 ? AppLocalization.string("wall.find_more", defaultValue: "Keep Finding Photos")
-                : AppLocalization.string("wall.show_more", defaultValue: "Unfold More Memories"), action: loadMore)
+                : AppLocalization.string("wall.show_more", defaultValue: "Show More"), action: loadMore)
                 .font(.system(size: 26, weight: .medium))
                 .buttonStyle(.glass)
                 .padding(.bottom, 60)
@@ -277,7 +280,7 @@ struct ViewportPhotoWall: View {
             Spacer()
             if countErrorMessage != nil, let retryPhotoCount {
                 Button(action: retryPhotoCount) {
-                    Label(AppLocalization.string("wall.count.retry", defaultValue: "Recount Photos"), systemImage: "arrow.clockwise")
+                    Label(AppLocalization.string("wall.count.retry", defaultValue: "Count Again"), systemImage: "arrow.clockwise")
                         .labelStyle(PageActionLabelStyle())
                 }
                 .buttonStyle(.glass)
@@ -285,7 +288,7 @@ struct ViewportPhotoWall: View {
             }
             if let openMapReview {
                 Button(action: openMapReview) {
-                    Label(AppLocalization.string("review.title", defaultValue: "Map Review"), systemImage: "map")
+                    Label(AppLocalization.string("review.title", defaultValue: "Photo Map"), systemImage: "map")
                         .labelStyle(PageActionLabelStyle())
                 }
                 .buttonStyle(.glass)
@@ -297,7 +300,7 @@ struct ViewportPhotoWall: View {
                     .disabled(!slideshowAvailable)
                     .accessibilityIdentifier("photo-wall-slideshow")
             }
-            if !records.isEmpty {
+            if wallHasPhotos {
                 Button { usesMosaic.toggle() } label: {
                     TwoOptionControlLabel(secondSelected: !usesMosaic, focused: isLayoutSwitchFocused,
                                           segmentSize: CGSize(width: 70, height: 70)) {
@@ -312,6 +315,15 @@ struct ViewportPhotoWall: View {
                 .buttonStyle(QuietPhotoButtonStyle())
                 .focusEffectDisabled()
                 .focused($isLayoutSwitchFocused)
+                .onMoveCommand { direction in
+                    if direction == .down {
+                        if cityJourneys != nil { journeyTopRequest += 1 }
+                        else {
+                            restorationTargetID = records.first?.id
+                            restoreFocus()
+                        }
+                    }
+                }
                 .accessibilityLabel(AppLocalization.string("wall.layout.title", defaultValue: "Photo wall layout"))
                 .accessibilityValue(usesMosaic
                     ? AppLocalization.string("wall.layout.mosaic", defaultValue: "Mosaic layout")
@@ -350,7 +362,13 @@ struct ViewportPhotoWall: View {
         // The wall needs at least one concrete record to freeze visit
         // membership. Keep the visible entry disabled during the first read
         // instead of accepting a press that cannot create a session yet.
-        startSlideshow != nil && totalPhotoCount != 0 && !records.isEmpty
+        startSlideshow != nil && totalPhotoCount != 0 && wallHasPhotos
+    }
+
+    private var showsJourneyRows: Bool { totalPhotoCount != 0 && cityJourneys?.session.journeys.isEmpty == false }
+
+    private var wallHasPhotos: Bool {
+        !records.isEmpty || showsJourneyRows
     }
 
     @ViewBuilder
@@ -384,11 +402,15 @@ struct ViewportPhotoWall: View {
 
     private var statusText: String {
         if let countErrorMessage { return countErrorMessage }
-        if let totalPhotoCount { return AppLocalization.photoCount(totalPhotoCount) }
-        return AppLocalization.string("wall.counting_all", defaultValue: "Counting all photos…")
+        if let totalPhotoCount { return AppLocalization.itemCount(totalPhotoCount) }
+        return AppLocalization.string("wall.counting_all", defaultValue: "Counting items…")
     }
 
     private func handleBack() {
+        if showsJourneyRows {
+            if isBelowPageTop { journeyTopRequest += 1 } else { close() }
+            return
+        }
         guard let firstID = topReturnPhotoID else {
             close()
             return
@@ -511,7 +533,7 @@ struct ViewportPhotoWall: View {
 
 /// Each wall cell hands its already decoded preview to the detail transition.
 /// It retains that reference only while the cell is onscreen.
-private struct ViewportPhotoCell: View {
+struct ViewportPhotoCell: View {
     let record: PhotoAssetRecord
     let dateText: String
     let placeName: String?

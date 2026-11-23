@@ -160,6 +160,21 @@ nonisolated final class SlideshowSnapshot: SlideshowPageReading, @unchecked Send
         }
     }
 
+    func record(visitID: String, date: Date, id: String) throws -> PhotoAssetRecord {
+        try lock.withLock {
+            let stmt = try statement("SELECT payload FROM media WHERE visit = ? AND date = ? AND id = ?")
+            defer { sqlite3_finalize(stmt) }
+            sqlite3_bind_text(stmt, 1, visitID, -1, transient)
+            sqlite3_bind_double(stmt, 2, date.timeIntervalSince1970)
+            sqlite3_bind_text(stmt, 3, id, -1, transient)
+            guard sqlite3_step(stmt) == SQLITE_ROW, let bytes = sqlite3_column_blob(stmt, 0) else {
+                throw EarthSlideshowPlanError.unavailable
+            }
+            let data = Data(bytes: bytes, count: Int(sqlite3_column_bytes(stmt, 0)))
+            return try JSONDecoder().decode(PhotoAssetRecord.self, from: data)
+        }
+    }
+
     func visitIDs() -> Set<String> { lock.withLock { visits } }
 
     private func statement(_ sql: String) throws -> OpaquePointer {

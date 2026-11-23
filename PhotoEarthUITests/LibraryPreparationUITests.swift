@@ -101,9 +101,18 @@ final class LibraryPreparationUITests: XCTestCase {
             globe.exists && !progress.exists
         }, object: nil)
         XCTAssertEqual(XCTWaiter.wait(for: [completed], timeout: 55), .completed)
-        app.enterHomeContent()
         XCTAssertTrue(focused(globe))
         attach(app, "Prepared home")
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch.waitForExistence(timeout: 8))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focused(globe))
+        XCUIRemote.shared.press(.down)
+        XCUIRemote.shared.press(.down)
+        let focusedCity = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'overview-place-' AND hasFocus == true")).firstMatch
+        XCTAssertTrue(focusedCity.waitForExistence(timeout: 5))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focused(globe))
         app.openSidebarDestination("tab-settings")
         let update = app.buttons["settings-scan"]
         XCTAssertTrue(update.waitForExistence(timeout: 5))
@@ -127,7 +136,7 @@ final class LibraryPreparationUITests: XCTestCase {
         XCTAssertTrue(focused(rebuild))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(progress.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["重新寻找照片里的足迹，同时保留已有的地点名称。"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["已有地名会保留。"].waitForExistence(timeout: 15))
         attach(app, "Rebuild preserves globe and names")
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focused(rebuild))
@@ -142,6 +151,7 @@ final class LibraryPreparationUITests: XCTestCase {
         app.openSidebarDestination("tab-settings")
         let minimum = app.buttons["settings-journey-minimum"]
         XCTAssertTrue(minimum.waitForExistence(timeout: 5))
+        XCTAssertEqual(minimum.label, "每次到访的最低数量")
         for _ in 0..<4 where !minimum.hasFocus { XCUIRemote.shared.press(.down) }
         XCTAssertTrue(focused(minimum))
         let original = minimum.value as? String

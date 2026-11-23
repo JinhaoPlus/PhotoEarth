@@ -147,7 +147,7 @@ final class MapReviewUITests: XCTestCase {
         for _ in 0..<40 { XCUIRemote.shared.press(.right) }
         let empty = app.staticTexts["memory-horizon-empty"]
         XCTAssertTrue(empty.waitForExistence(timeout: 15))
-        XCTAssertEqual(empty.label, "当前画面内没有找到照片")
+        XCTAssertEqual(empty.label, "当前画面没有照片")
         XCTAssertFalse(app.staticTexts["map-review-count"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["memory-horizon-photos"].firstMatch.exists)
         XCTAssertLessThan(horizon.frame.height, populatedHeight - 60,
@@ -256,7 +256,8 @@ final class MapReviewUITests: XCTestCase {
             if photo.exists { lastPhotoID = photo.identifier }
             let slideshow = app.buttons.matching(identifier: "photo-wall-slideshow")
                 .matching(NSPredicate(format: "isEnabled == true")).firstMatch
-            if slideshow.exists && slideshow.hasFocus { XCUIRemote.shared.press(.left) }
+            let layout = app.buttons["photo-wall-switch-layout"]
+            if (slideshow.exists && slideshow.hasFocus) || (layout.exists && layout.hasFocus) { XCUIRemote.shared.press(.left) }
             else { XCUIRemote.shared.press(.up) }
         }
         XCTAssertTrue(focus(entry))

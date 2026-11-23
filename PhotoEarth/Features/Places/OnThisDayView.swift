@@ -58,7 +58,7 @@ struct OnThisDayView: View {
                                         HStack(alignment: .firstTextBaseline) {
                                             Text(day.id.formatted(.dateTime.year().locale(AppLocalization.locale))).font(.title3.bold())
                                             Spacer()
-                                            Text(AppLocalization.photoCount(day.count)).foregroundStyle(.secondary)
+                                            Text(AppLocalization.itemCount(day.count)).foregroundStyle(.secondary)
                                         }
                                         .padding(.horizontal, 18).padding(.vertical, 12)
                                     }

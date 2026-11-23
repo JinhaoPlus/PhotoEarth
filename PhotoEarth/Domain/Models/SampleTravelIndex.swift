@@ -23,7 +23,8 @@ enum SampleTravelIndex {
             let label = try? JourneyPlaceCatalog.shared.label(coordinate, locale: AppLocalization.locale)
             let count = JourneyVisitThreshold.defaultValue
             for ordinal in 1...count {
-                let assetID = "\(image)-\(ordinal)"
+                // A different scene shot one second later exercises the time limit independently of visual matching.
+                let assetID = (id == "tokyo-arrival" && ordinal == 2) ? "sample-banff-2" : "\(image)-\(ordinal)"
                 let size = SamplePhotoResource.pixelDimensions(for: assetID)
                 photos.append(PhotoAssetRecord(id: assetID, coordinate: coordinate,
                     creationDate: date.addingTimeInterval(Double(ordinal)), pixelWidth: size?.width ?? 1600,
@@ -40,6 +41,48 @@ enum SampleTravelIndex {
         return TravelIndexSnapshot(index: TravelIndex(schemaVersion: TravelIndex.currentSchemaVersion,
             generatedAt: places[2].endDate, sourcePhotoCount: photos.count, locatedPhotoCount: photos.count,
             places: places, journeys: journeys), photos: photos)
+    }
+
+    static func makeCollageFixture(transitions: Bool = false) -> TravelIndexSnapshot {
+        let visit = make().index.places[0]
+        let ids = transitions ? ["sample-tokyo-1", "sample-rio-1", "sample-banff-1", "sample-singapore-1",
+                                 "sample-paris-1", "sample-new-york-1", "sample-sydney-1", "sample-collage-1",
+                                 "sample-reykjavik-1", "sample-collage-4", "sample-collage-5",
+                                 "sample-collage-6", "sample-collage-7"] : (1...6).map { "sample-collage-\($0)" } + ["sample-reykjavik-7", "sample-sydney-8"]
+        let date = Date(timeIntervalSince1970: 1_750_000_000)
+        let minutes = [0, 2, 4, 6, 60, 62, 64, 97, 130, 165, 167, 169, 171]
+        let start = Calendar.current.startOfDay(for: date).addingTimeInterval(9 * 3600)
+        let photos = ids.enumerated().map { index, id in
+            let size = SamplePhotoResource.pixelDimensions(for: id)!
+            let time = start.addingTimeInterval(Double(transitions ? minutes[index] : 2 * index) * 60)
+            return PhotoAssetRecord(id: id, coordinate: visit.coordinate, creationDate: time,
+                pixelWidth: size.width, pixelHeight: size.height, isFavorite: transitions && index == 1,
+                mediaKind: !transitions && index == 7 ? .livePhoto : .photo, placeID: visit.id)
+        }
+        let place = TravelPlace(id: visit.id, name: visit.name, country: visit.country, coordinate: visit.coordinate,
+                                startDate: start, endDate: photos.last!.creationDate, photoCount: photos.count, coverAssetID: ids[0])
+        return TravelIndexSnapshot(index: TravelIndex(schemaVersion: TravelIndex.currentSchemaVersion,
+            generatedAt: date, sourcePhotoCount: photos.count, locatedPhotoCount: photos.count,
+            places: [place], journeys: []), photos: photos)
+    }
+
+    static func makeFilmstripFixture() -> TravelIndexSnapshot {
+        let sample = make()
+        let visit = sample.index.places[0]
+        let scenes = [1: "reykjavik", 4: "banff", 6: "rio", 8: "sydney", 11: "singapore",
+                      13: "paris", 15: "new-york", 17: "cape-town", 19: "istanbul", 21: "tokyo"]
+        let photos = (1...300).map { ordinal in
+            let id = "sample-\(scenes[ordinal] ?? "filmstrip")-\(ordinal)"
+            return PhotoAssetRecord(id: id, coordinate: visit.coordinate,
+                creationDate: visit.startDate.addingTimeInterval(Double(ordinal) * 600),
+                pixelWidth: 1600, pixelHeight: 1000, isFavorite: false, placeID: visit.id)
+        }
+        let place = TravelPlace(id: visit.id, name: visit.name, country: visit.country, regionCode: visit.regionCode,
+                                coordinate: visit.coordinate, startDate: visit.startDate, endDate: photos.last!.creationDate,
+                                photoCount: photos.count, coverAssetID: photos[0].id)
+        return TravelIndexSnapshot(index: TravelIndex(schemaVersion: TravelIndex.currentSchemaVersion,
+            generatedAt: place.endDate, sourcePhotoCount: photos.count, locatedPhotoCount: photos.count,
+            places: [place], journeys: []), photos: photos)
     }
 
     /// Fictional coordinates/dates and credited stock images for map-review UI tests.

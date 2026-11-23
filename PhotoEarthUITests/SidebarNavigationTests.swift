@@ -25,7 +25,7 @@ final class SidebarNavigationTests: XCTestCase {
         XCTAssertTrue(monthTitle.label.contains("2025年2月"), "Recent visits must use a localized month heading")
         let visitSummary = app.descendants(matching: .any)["library-visit-summary-sample-reykjavik"].firstMatch
         XCTAssertTrue(visitSummary.waitForExistence(timeout: 5))
-        XCTAssertTrue(visitSummary.label.contains("张照片"), "A recent-visit card must identify the full range and photo count")
+        XCTAssertTrue(visitSummary.label.contains("项"), "A recent-visit card must identify the full range and photo count")
         attach(app, "Recent arrivals")
         XCTAssertTrue(focus(city))
         XCUIRemote.shared.press(.select)
@@ -46,17 +46,19 @@ final class SidebarNavigationTests: XCTestCase {
         XCTAssertTrue(brazil.waitForExistence(timeout: 5))
         XCTAssertLessThan(country.frame.minX, brazil.frame.minX, "Countries must appear newest first")
         XCTAssertTrue(focus(country))
+        XCTAssertEqual(app.staticTexts["library-place-title-country:region:IS"].label, "🇮🇸 冰岛")
         attach(app, "Countries")
         XCUIRemote.shared.press(.select)
         let allPhotos = app.buttons["library-country-photos"]
         XCTAssertTrue(allPhotos.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["🇮🇸 冰岛"].exists)
         attach(app, "Cities in a country")
         XCTAssertTrue(focus(allPhotos))
         XCTAssertEqual(allPhotos.label, "查看所有照片")
         XCTAssertFalse(app.buttons["library-countries-back"].exists)
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(photo.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["冰岛"].exists)
+        XCTAssertEqual(app.staticTexts["photo-wall-title"].label, "🇮🇸 冰岛")
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'viewport-photo-'")).allElementsBoundByIndex.allSatisfy {
             $0.identifier.hasPrefix("viewport-photo-sample-reykjavik-")
         })
@@ -110,6 +112,61 @@ final class SidebarNavigationTests: XCTestCase {
         XCTAssertEqual(hints.value as? String, original)
         app.openSidebarDestination("tab-home")
         XCTAssertTrue(focus(app.buttons["overview-explore-button"]))
+    }
+
+    @MainActor func testCityJourneysExpandAndCollapseOnTheSameWall() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--slideshow-journeys-fixture"]
+        app.useSimplifiedChineseTestLanguage()
+        app.launch()
+        app.enterHomeContent()
+        app.openSidebarDestination("tab-countries")
+
+        let remote = XCUIRemote.shared
+        XCTAssertTrue(focus(app.buttons["library-collection-country:region:JP"]))
+        attach(app, "Japan cover from the latest trip")
+        remote.press(.select)
+        XCTAssertTrue(focus(app.buttons["library-country-photos"]))
+        remote.press(.down)
+        let city = app.buttons["library-collection-country:region:JP/city:tokyo-return,tokyo-arrival,tokyo-older"]
+        XCTAssertTrue(focus(city))
+        remote.press(.select)
+        let first = app.buttons["viewport-photo-sample-rio-5"]
+        let lastOld = app.buttons["viewport-photo-sample-sydney-1"]
+        let hidden = app.buttons["viewport-photo-sample-tokyo-5"]
+        let toggle = app.buttons["journey-toggle-city-trip:tokyo-arrival"]
+        XCTAssertTrue(focus(first))
+        XCTAssertEqual(app.staticTexts["photo-wall-title"].label, "东京")
+        XCTAssertEqual(app.staticTexts["photo-wall-count"].label, "15 项")
+        XCTAssertTrue(lastOld.waitForExistence(timeout: 5))
+        XCTAssertFalse(hidden.exists)
+        XCTAssertFalse(app.buttons["journey-toggle-city-trip:tokyo-older"].exists)
+        attach(app, "Tokyo trips inline")
+        remote.press(.up)
+        XCTAssertTrue(focus(toggle))
+        remote.press(.select)
+        XCTAssertTrue(hidden.waitForExistence(timeout: 5))
+        XCTAssertTrue(toggle.label.contains("收起"))
+        attach(app, "Tokyo trip expanded")
+        remote.press(.select)
+        XCTAssertTrue(toggle.label.contains("展开"))
+        XCTAssertFalse(hidden.exists)
+        XCTAssertTrue(lastOld.exists)
+        remote.press(.down)
+        let fifthPhoto = app.buttons["viewport-photo-sample-rio-1"]
+        XCTAssertTrue(focus(fifthPhoto))
+        remote.press(.select)
+        XCTAssertTrue(app.descendants(matching: .any)["photo-detail-image"].firstMatch.waitForExistence(timeout: 5))
+        remote.press(.right)
+        remote.press(.menu)
+        XCTAssertTrue(focus(hidden), "Returning from the sixth photo reveals its row")
+        XCTAssertTrue(toggle.label.contains("收起"))
+        remote.press(.menu)
+        if !city.exists {
+            XCTAssertTrue(focus(first))
+            remote.press(.menu)
+        }
+        XCTAssertTrue(focus(city))
     }
 
     @MainActor func testBackFromScrolledCountriesReturnsToTopBeforeOpeningSidebar() {

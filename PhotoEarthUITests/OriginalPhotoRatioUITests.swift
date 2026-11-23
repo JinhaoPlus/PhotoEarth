@@ -77,7 +77,7 @@ final class OriginalPhotoRatioUITests: XCTestCase {
             }
         }
         XCTAssertTrue(focus(last))
-        XCTAssertTrue(app.staticTexts["60 张照片"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["60 项"].waitForExistence(timeout: 8))
         let selectedID = last.identifier
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(app.descendants(matching: .any)["photo-detail-image"].firstMatch.waitForExistence(timeout: 5))
@@ -116,19 +116,24 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         XCTAssertEqual(toggle.frame.height, app.buttons["photo-wall-map-review"].frame.height, accuracy: 1)
         XCTAssertEqual(toggle.frame.height, app.buttons["photo-wall-slideshow"].frame.height, accuracy: 1)
 
-        func toggleFromCurrentPhoto(expectedLayout: String) {
+        func focusLayoutSwitch() {
             XCUIRemote.shared.press(.up)
             for _ in 0..<2 where !toggle.hasFocus { XCUIRemote.shared.press(.right) }
             XCTAssertTrue(focus(toggle))
             XCTAssertEqual(toggle.label, "照片墙布局")
-            XCTAssertEqual(toggle.value as? String, expectedLayout)
-            attach(app, "Focused photo wall layout switch")
+        }
+
+        func selectLayout(_ expectedLayout: String) {
             XCUIRemote.shared.press(.select)
+            XCTAssertEqual(toggle.value as? String, expectedLayout)
+            XCTAssertTrue(focus(toggle))
         }
 
         attach(app, "Photo wall on entry with saved or default layout")
         if first.frame.width > second.frame.width {
-            toggleFromCurrentPhoto(expectedLayout: "拼贴布局")
+            focusLayoutSwitch()
+            selectLayout("原比例")
+            XCUIRemote.shared.press(.down)
             XCTAssertTrue(focus(first))
         }
         let nextRow = app.buttons["viewport-photo-sample-ratio-panorama-56"]
@@ -138,7 +143,18 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         XCTAssertEqual(nextRow.frame.minY, nextRowY, accuracy: 1)
         attach(app, "Original ratios with the date on the focused panorama")
 
-        toggleFromCurrentPhoto(expectedLayout: "原比例")
+        focusLayoutSwitch()
+        selectLayout("拼贴布局")
+        selectLayout("原比例")
+        selectLayout("拼贴布局")
+        attach(app, "Layout switch retains focus after repeated selection")
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(focus(app.buttons["photo-wall-slideshow"]))
+        XCUIRemote.shared.press(.right)
+        XCTAssertTrue(focus(toggle))
+        XCUIRemote.shared.press(.down)
+        XCTAssertTrue(focus(first))
+        XCUIRemote.shared.press(.right)
         XCTAssertTrue(focus(second))
         XCTAssertEqual(first.frame.width, 2 * second.frame.width + 4, accuracy: 2)
         XCTAssertEqual(second.frame.height, second.frame.width, accuracy: 1)
@@ -165,7 +181,9 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         let nextFirst = app.buttons["viewport-photo-sample-ratio-portrait-120"]
         XCTAssertTrue(focus(nextFirst))
         XCTAssertEqual(nextFirst.frame.width, mosaicWidth, accuracy: 1)
-        toggleFromCurrentPhoto(expectedLayout: "拼贴布局")
+        focusLayoutSwitch()
+        selectLayout("原比例")
+        XCUIRemote.shared.press(.down)
         XCTAssertTrue(focus(nextFirst))
         XCTAssertLessThan(nextFirst.frame.width, nextFirst.frame.height)
 

@@ -19,7 +19,7 @@ final class TransitFilteringUITests: XCTestCase {
         let globe = app.buttons["overview-explore-button"]
         XCTAssertTrue(globe.waitForExistence(timeout: 30))
         if allHidden {
-            XCTAssertTrue(app.staticTexts["途经照片已隐藏，你可以在设置中恢复显示。"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.staticTexts["疑似途经照片已隐藏"].waitForExistence(timeout: 5))
         }
         app.openSidebarDestination("tab-settings")
         let scan = app.buttons["settings-scan"]
@@ -28,27 +28,28 @@ final class TransitFilteringUITests: XCTestCase {
         let count = app.staticTexts["settings-transit-count"]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         XCTAssertTrue(count.waitForExistence(timeout: 5))
-        XCTAssertEqual(count.label, "已隐藏 1 张照片")
+        XCTAssertEqual(count.label, "已隐藏 1 项")
         let summary = app.staticTexts["settings-index-summary"]
-        XCTAssertTrue(summary.label.contains(allHidden ? "0 张照片" : "3 张照片"))
+        XCTAssertTrue(summary.label.contains(allHidden ? "0 项" : "3 项"))
         XCTAssertTrue(focused(scan))
         XCUIRemote.shared.press(.down)
         XCTAssertTrue(focused(toggle))
         attach(app, allHidden ? "All hidden — recovery remains available" : "Transit filter enabled")
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(waitForLabel(summary, containing: allHidden ? "1 张照片" : "4 张照片"))
+        XCTAssertTrue(waitForLabel(summary, containing: allHidden ? "1 项" : "4 项"))
         XCTAssertFalse(count.exists)
         XCTAssertTrue(focused(toggle))
         attach(app, "Original photos restored without rescanning")
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(count.waitForExistence(timeout: 5))
-        XCTAssertTrue(waitForLabel(summary, containing: allHidden ? "0 张照片" : "3 张照片"))
+        XCTAssertTrue(waitForLabel(summary, containing: allHidden ? "0 项" : "3 项"))
         XCTAssertTrue(focused(toggle))
         // Return through the native sidebar: the restored overview must reflect the policy.
-        XCUIRemote.shared.press(.menu)
-        for _ in 0..<3 { XCUIRemote.shared.press(.up) }
-        XCUIRemote.shared.press(.select)
+        app.openSidebarDestination("tab-home")
         XCTAssertTrue(globe.waitForExistence(timeout: 5))
+        if allHidden {
+            XCTAssertTrue(app.staticTexts["在设置中关闭「隐藏疑似途经照片」即可查看。"].exists)
+        }
     }
 
     @MainActor private func focused(_ element: XCUIElement) -> Bool {

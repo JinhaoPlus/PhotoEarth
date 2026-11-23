@@ -1885,6 +1885,10 @@ extension SQLiteTravelIndexStore {
         }
     }
 
+    func journeysForReading() throws -> [TravelJourney] {
+        try withDatabase(create: false) { try readJourneys($0) }
+    }
+
     func placeSummariesForReading() throws -> [TravelPlace] {
         try withDatabase(create: false) { try readPlaces($0) }
     }
@@ -2181,6 +2185,35 @@ extension SQLiteTravelIndexStore {
 }
 
 extension SQLiteTravelIndexStore {
+    func cityLandingFrame(placeIDs: [String], reference: Double, excluding: Set<String>) throws -> CityLandingFrame? {
+        try Task.checkCancellation()
+        return try withDatabase(create: false) { db in
+            try prepareSelectedPlaces(placeIDs, table: "review_places", database: db)
+            try prepareSelectedPlaces(Array(excluding), table: "review_excluded", database: db)
+            sqlite3_progress_handler(db, 1_000, { _ in Task.isCancelled ? 1 : 0 }, nil)
+            defer { sqlite3_progress_handler(db, 0, nil, nil) }
+            let statement = try prepare(db, mapReviewCTE + """
+                , positions AS (SELECT DISTINCT latitude, review_lon FROM review_cells),
+                ranked AS (
+                    SELECT latitude, review_lon, ROW_NUMBER() OVER (ORDER BY latitude) AS y,
+                           ROW_NUMBER() OVER (ORDER BY review_lon) AS x,
+                           COUNT(*) OVER () AS n FROM positions
+                ), bounds AS (SELECT *, n / ?8 AS trim FROM ranked)
+                SELECT MIN(latitude) FILTER (WHERE y > trim), MAX(latitude) FILTER (WHERE y <= n - trim),
+                       MIN(review_lon) FILTER (WHERE x > trim), MAX(review_lon) FILTER (WHERE x <= n - trim)
+                FROM bounds HAVING COUNT(*) > 0
+                """)
+            defer { sqlite3_finalize(statement) }
+            bindMapReview(grid: .world(around: reference), statement: statement)
+            sqlite3_bind_int(statement, 8, Int32(CityLandingFrame.locationsPerTrim))
+            let status = sqlite3_step(statement)
+            if status == SQLITE_DONE { return nil }
+            guard status == SQLITE_ROW else { throw databaseError(db) }
+            return CityLandingFrame(south: sqlite3_column_double(statement, 0), north: sqlite3_column_double(statement, 1),
+                                    west: sqlite3_column_double(statement, 2), east: sqlite3_column_double(statement, 3))
+        }
+    }
+
     /// SQL counts every eligible photo, returning at most 20 × 12 aggregate rows.
     func mapReviewClusters(placeID: String, grid: MapReviewGrid,
                            excluding: Set<String> = []) throws -> [MapReviewCluster] {

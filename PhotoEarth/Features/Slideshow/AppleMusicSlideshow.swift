@@ -54,6 +54,7 @@ struct SlideshowMusicNowPlaying: Equatable, Sendable {
     let title: String
     let subtitle: String?
     let artworkURL: URL?
+    var onlineTrack: OnlineSlideshowPlaylist.Track? = nil
 }
 
 struct SlideshowMusicPlaybackSnapshot: Equatable, Sendable {
@@ -115,7 +116,8 @@ final class SlideshowMusicController: ObservableObject {
     private let requestPermission: @MainActor () async -> SlideshowMusicAuthorizationState
     private let makeDriver: @MainActor () -> any SlideshowAppleMusicDriving
     private var driver: (any SlideshowAppleMusicDriving)?
-    private let onlineDriver = OnlineSlideshowMusicDriver()
+    let recommendations: OnlineMusicRecommendations
+    private let onlineDriver: OnlineSlideshowMusicDriver
     private var queue: (any SlideshowMusicPlaying)?
     private var preparingAppleDriver: (any SlideshowAppleMusicDriving)?
     private var selectionTask: Task<Bool, Never>?
@@ -132,10 +134,14 @@ final class SlideshowMusicController: ObservableObject {
 
     init(readAuthorization: @escaping @MainActor () -> SlideshowMusicAuthorizationState,
          requestPermission: @escaping @MainActor () async -> SlideshowMusicAuthorizationState,
-         makeDriver: @escaping @MainActor () -> any SlideshowAppleMusicDriving) {
+         makeDriver: @escaping @MainActor () -> any SlideshowAppleMusicDriving,
+         onlineDriver: OnlineSlideshowMusicDriver? = nil,
+         recommendations: OnlineMusicRecommendations? = nil) {
+        self.recommendations = recommendations ?? OnlineMusicRecommendations()
         self.readAuthorization = readAuthorization
         self.requestPermission = requestPermission
         self.makeDriver = makeDriver
+        self.onlineDriver = onlineDriver ?? OnlineSlideshowMusicDriver()
     }
 
     convenience init<Driver: SlideshowAppleMusicDriving & SlideshowMusicPermissionProviding>(driver: Driver) {
@@ -277,8 +283,14 @@ final class SlideshowMusicController: ObservableObject {
     }
 
     @discardableResult
-    func selectOnline(_ playlist: OnlineSlideshowPlaylist, startingAt trackID: OnlineSlideshowPlaylist.Track.ID) async -> Bool {
-        await prepareSelection { [self] token in
+    func selectOnline(_ playlist: OnlineSlideshowPlaylist, startingAt trackID: OnlineSlideshowPlaylist.Track.ID,
+                      explicitTrackChoice: Bool) async -> Bool {
+        guard let track = playlist.tracks.first(where: { $0.id == trackID }) else { return false }
+        if isUsingOnlineMusic, selectedChoice?.id == playlist.id, onlineTrackID == trackID, playbackError == nil {
+            if explicitTrackChoice { recommendations.recordChoice(track) }
+            return true
+        }
+        return await prepareSelection { [self] token in
             do {
                 let snapshot = try await onlineDriver.prepare(playlist, startingAt: trackID)
                 guard session == token, !Task.isCancelled else { return false }
@@ -286,6 +298,7 @@ final class SlideshowMusicController: ObservableObject {
                     id: playlist.id, title: playlist.displayTitle, subtitle: nil, kind: .playlist, artworkURL: nil
                 )
                 installQueue(onlineDriver, choice: choice, snapshot: snapshot)
+                if explicitTrackChoice { recommendations.recordChoice(track) }
                 return true
             } catch {
                 return false
@@ -362,14 +375,18 @@ final class SlideshowMusicController: ObservableObject {
         originalAudioActive: Bool,
         sceneActive: Bool
     ) {
-        guard self.slideshowPaused != slideshowPaused
-                || self.presentationActive != presentationActive
-                || self.originalAudioActive != originalAudioActive
-                || self.sceneActive != sceneActive else { return }
+        let transportChanged = self.slideshowPaused != slideshowPaused
+            || self.presentationActive != presentationActive
+            || self.sceneActive != sceneActive
+        guard transportChanged || self.originalAudioActive != originalAudioActive else { return }
         self.slideshowPaused = slideshowPaused
         self.presentationActive = presentationActive
         self.originalAudioActive = originalAudioActive
         self.sceneActive = sceneActive
+        if isUsingOnlineMusic {
+            onlineDriver.setDucked(originalAudioActive)
+            guard transportChanged else { return }
+        }
         pauseForOriginalAudioOrScheduleReconciliation()
     }
 
@@ -388,6 +405,7 @@ final class SlideshowMusicController: ObservableObject {
     }
 
     func stopAndReset() {
+        recommendations.resetSession()
         subscriptionTask?.cancel()
         subscriptionTask = nil
         cancelSelection()
@@ -467,6 +485,7 @@ final class SlideshowMusicController: ObservableObject {
             queue = driver
             observePlayback(driver)
         }
+        if isUsingOnlineMusic { onlineDriver.setDucked(originalAudioActive) }
         selectedChoice = choice
         wantsMusicPlayback = true
         playbackError = nil
@@ -502,7 +521,7 @@ final class SlideshowMusicController: ObservableObject {
 
     private func pauseForOriginalAudioOrScheduleReconciliation() {
         reconciliationTask?.cancel()
-        if originalAudioActive, let queue, preparingAppleDriver !== queue {
+        if originalAudioActive, !isUsingOnlineMusic, let queue, preparingAppleDriver !== queue {
             reconciliationTask = nil
             apply(queue.pause())
             return
@@ -522,7 +541,7 @@ final class SlideshowMusicController: ObservableObject {
         let shouldPlay = wantsMusicPlayback
             && !slideshowPaused
             && presentationActive
-            && !originalAudioActive
+            && (isUsingOnlineMusic || !originalAudioActive)
             && sceneActive
         do {
             let snapshot = shouldPlay ? try await queue.play() : queue.pause()
@@ -544,6 +563,9 @@ final class SlideshowMusicController: ObservableObject {
             playbackError = Self.onlineUnavailableMessage
         }
         if let nowPlaying = snapshot.nowPlaying {
+            if snapshot.isPlaying, let track = nowPlaying.onlineTrack {
+                recommendations.recordPlayback(track)
+            }
             self.nowPlaying = nowPlaying
         } else if let selectedChoice {
             nowPlaying = SlideshowMusicNowPlaying(

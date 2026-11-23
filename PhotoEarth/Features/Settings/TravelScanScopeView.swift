@@ -25,7 +25,7 @@ struct TravelScanScopeView: View {
                     .accessibilityValue(Text(AppLocalization.format("scan.scope.selected_count", defaultValue: "Excluded albums: %@", AppLocalization.number(preferences.excludedAlbums.count))))
                     .accessibilityIdentifier("scan-scope-save")
             }
-            Text(AppLocalization.string("scan.scope.subtitle", defaultValue: "Exclude albums from your globe and slideshow. Photos in these albums stay hidden even when they also belong to another album."))
+            Text(AppLocalization.string("scan.scope.subtitle", defaultValue: "Select albums to exclude. Their photos and videos stay hidden even if they also appear in other albums."))
                 .font(.caption).foregroundStyle(.secondary)
             if let failure { Text(failure).foregroundStyle(.secondary) }
             ScrollView {
@@ -97,7 +97,7 @@ struct TravelScanScopeView: View {
                 albums = try await Task.detached(priority: .utility) { try TravelScanScope.albums() }.value
                 fetchedAlbums = true
             }
-            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Unable to read this selection. Try again.") }
+            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Couldn’t load your albums. Reopen Scan Scope to try again.") }
             while !Task.isCancelled {
                 counts = await model.scanCounts()
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }
@@ -113,7 +113,7 @@ struct TravelScanScopeView: View {
             defer { saveTask = nil }
             do { try await model.acceptScanScope(draft, presentation: presentation) }
             catch is CancellationError { return }
-            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Unable to read this selection. Try again.") }
+            catch { failure = AppLocalization.string("scan.scope.apply_failed", defaultValue: "Couldn’t apply your scan settings. Try again.") }
         }
     }
 }

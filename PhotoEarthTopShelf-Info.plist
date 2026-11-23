@@ -7,7 +7,7 @@
 	<key>PhotoEarthShelfAccessGroup</key>
 	<string>$(AppIdentifierPrefix)com.doupi.PhotoEarth.RecentJourneys</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Photo Earth shows previews from your recent journeys on the Apple TV Home Screen.</string>
+	<string>Show cover photos from your recently visited cities on the Apple TV Home Screen.</string>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

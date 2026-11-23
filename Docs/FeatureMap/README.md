@@ -28,7 +28,7 @@
 
 ## 共用设置与检验
 
-- 「照片与扫描」管照片资格和扫描状态。「旅程最低素材数」管首页、最近到访和 Top Shelf 的到访展示。「Apple TV 主屏幕」管 Top Shelf；「地球操作」管操作提示和首次影像等待。各设置的作用范围见对应功能页。 [设置入口](../../PhotoEarth/Features/Settings/SettingsView.swift)
+- 「照片与扫描」管照片资格和扫描状态。「每次到访的最低数量」管首页、最近到访和 Top Shelf 的到访展示。「Apple TV 主屏幕」管 Top Shelf；「地球操作」管操作提示和首次影像等待。各设置的作用范围见对应功能页。 [设置入口](../../PhotoEarth/Features/Settings/SettingsView.swift)
 - 照片权限或排除范围收窄时，检查已经打开的墙、详情、地图、正在播放的素材及系统主屏。集合的分页范围保持稳定，已撤回的照片需要立即移除。 [图库规则](../../rules/library-scan.md) · [照片墙规则](../../rules/photo-browsing.md) · [Top Shelf](top-shelf.md)
 - 界面与地名跟随 Apple TV 为 App 解析的语言。日期、数字与读屏名称随语言变化，集合成员依靠稳定地点身份。用 `LocalizationSmokeUITests` 驱动各语言入口，另在系统设置下检查 VoiceOver、减少动态效果、降低透明度。 [本地化规则](../../rules/localization.md) · [语言冒烟测试](../../PhotoEarthUITests/LocalizationSmokeUITests.swift) · [离线地名验收](../WORLD_CITY_ATLAS_ACCEPTANCE_2026-11-21.md)
 - 用例链接表示可复验的入口。示例和模拟器适合核对导航、Focus、照片成员和分页。真实 Siri Remote 触控、Apple TV 主屏、iCloud 媒体与声音需在相应真机环境核对。已有记录按日期和设备引用。 [验证规则](../../rules/validation.md) · [真机安装授权](../../AGENTS.md#真机安装授权)

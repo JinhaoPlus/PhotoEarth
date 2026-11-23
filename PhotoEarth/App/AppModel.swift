@@ -534,8 +534,14 @@ final class AppModel: ObservableObject {
         isPreparationPresented = false
         let snapshot: TravelIndexSnapshot
 #if DEBUG
-        if ProcessInfo.processInfo.arguments.contains("--slideshow-journeys-fixture") {
+        if ProcessInfo.processInfo.arguments.contains("--slideshow-transition-fixture") {
+            snapshot = SampleTravelIndex.makeCollageFixture(transitions: true)
+        } else if ProcessInfo.processInfo.arguments.contains("--slideshow-collage-fixture") {
+            snapshot = SampleTravelIndex.makeCollageFixture()
+        } else if ProcessInfo.processInfo.arguments.contains("--slideshow-journeys-fixture") {
             snapshot = SampleTravelIndex.makeSlideshowJourneyFixture()
+        } else if ProcessInfo.processInfo.arguments.contains("--slideshow-filmstrip-fixture") {
+            snapshot = SampleTravelIndex.makeFilmstripFixture()
         } else if ProcessInfo.processInfo.arguments.contains("--map-review-fixture") {
             snapshot = SampleTravelIndex.makeMapReviewFixture()
         } else if ProcessInfo.processInfo.arguments.contains("--recent-focus-fixture") {
@@ -793,7 +799,7 @@ final class AppModel: ObservableObject {
                             cameraAction: @escaping EarthSlideshowCoordinator.CameraAction) -> EarthSlideshowCoordinator {
         let members = Set(places.map(\.id))
         let visibleWallRecords = Array(wallRecords.prefix(48))
-        return EarthSlideshowCoordinator(scope: scope, places: places, analyticsLibrary: analyticsLibrary, reduceMotion: reduceMotion,
+        return EarthSlideshowCoordinator(scope: scope, places: places, excluded: excludedAssetIDs.union(collectionExclusions), analyticsLibrary: analyticsLibrary, reduceMotion: reduceMotion,
                                         makeSnapshot: {
             let frozen: SQLiteTravelIndexStore?
             if let reader { frozen = reader } else { frozen = try await self.makePhotoReadSnapshot() }
@@ -1207,6 +1213,19 @@ final class AppModel: ObservableObject {
         let page = try await photoWallCandidates(in: snapshot.viewport, offset: offset, reader: nil)
         guard let placeIDs else { return page }
         return .init(records: page.records.filter { $0.placeID.map(placeIDs.contains) == true }, nextOffset: page.nextOffset)
+    }
+
+    func cityLanding(for city: PlaceCollection, reference: GeoCoordinate) async throws -> GlobeCameraState? {
+        let ids = city.placeIDs
+        if isUsingSampleData {
+            let members = Set(ids)
+            let coordinates = samplePhotos.lazy.filter {
+                $0.placeID.map(members.contains) == true && !self.excludedAssetIDs.contains($0.id)
+            }.map(\.coordinate)
+            return CityLandingFrame.demo(coordinates: Set(coordinates), reference: reference.longitude)?.camera
+        }
+        guard let store = indexStore as? SQLiteTravelIndexStore else { return nil }
+        return try await store.cityLandingFrame(placeIDs: ids, reference: reference.longitude, excluding: excludedAssetIDs)?.camera
     }
 
     func mapReviewClusters(placeID: String, grid: MapReviewGrid, reader: SQLiteTravelIndexStore?) async throws -> [MapReviewCluster] {

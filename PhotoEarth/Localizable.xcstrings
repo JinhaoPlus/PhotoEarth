@@ -1026,7 +1026,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向 PostHog 傳送安裝識別碼，以及開啟照片牆、開始播放幻燈片等操作。照片和地點不會傳送。"
+            "value" : "向 PostHog 傳送安裝識別碼，以及開啟照片牆、開始放映等操作。照片和地點不會傳送。"
           }
         },
         "de" : {
@@ -1338,13 +1338,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "旅程最低素材数"
+            "value" : "每次到访的最低数量"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "旅程最低素材數"
+            "value" : "每次到訪的最低數量"
           }
         },
         "de" : {
@@ -1385,49 +1385,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose how many photos or videos with a location a visit needs to appear in Recently Visited, on the app’s Home screen, and in Top Shelf. Enter a number from 1 to 1,000."
+            "value" : "Count photos and videos with a location for each visit. This minimum applies to Home, Recently Visited, and the Apple TV Home Screen."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每次到访至少有这么多带定位的照片或视频，才会显示在「最近到访」、App 首页和 Apple TV 主屏。可输入 1 至 1,000。"
+            "value" : "按每次到访中带定位的照片和视频总数筛选。适用于首页、最近到访和 Apple TV 主屏幕。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "每次造訪至少有這麼多帶有位置資訊的照片或影片，才會顯示在「最近造訪」、App 首頁和 Apple TV 主畫面。可輸入 1 至 1,000。"
+            "value" : "依每次到訪中含位置資訊的照片和影片總數篩選。適用於首頁、最近到訪和 Apple TV 主畫面。"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ein Besuch erscheint unter „Kürzlich besucht“, auf der Startseite der App und oben auf dem Apple TV-Home-Bildschirm, wenn er mindestens so viele Fotos oder Videos mit Standortdaten enthält. Gib eine Zahl von 1 bis 1.000 ein."
+            "value" : "Pro Besuch zählen Fotos und Videos mit Standort. Die Mindestanzahl gilt für die Startseite, „Kürzlich besucht“ und den Apple TV-Home-Bildschirm."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Una visita debe incluir al menos este número de fotos o vídeos con ubicación para aparecer en «Visitados recientemente», en el inicio de la app y en la parte superior de la pantalla de inicio del Apple TV. Introduce un número del 1 al 1000."
+            "value" : "Se cuentan las fotos y los vídeos con ubicación de cada visita. El mínimo se aplica a Inicio, «Visitados recientemente» y la pantalla de inicio del Apple TV."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Une visite doit comporter au moins ce nombre de photos ou de vidéos géolocalisées pour apparaître dans « Visités récemment », sur l’accueil de l’app et en haut de l’écran d’accueil de l’Apple TV. Saisissez un nombre de 1 à 1 000."
+            "value" : "Les photos et vidéos géolocalisées de chaque visite sont comptées. Ce minimum s’applique à l’accueil, à « Visités récemment » et à l’écran d’accueil de l’Apple TV."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Una visita deve comprendere almeno questo numero di foto o video con dati di posizione per apparire in «Visitati di recente», nella schermata iniziale dell’app e in cima alla schermata Home di Apple TV. Inserisci un numero da 1 a 1.000."
+            "value" : "Per ogni visita contano le foto e i video con posizione. Il minimo si applica alla Home, a «Visitati di recente» e alla schermata Home di Apple TV."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "「最近訪れた場所」、アプリのホーム画面、トップシェルフに表示するには、1回の訪問につき、位置情報付きの写真またはビデオが指定した数以上必要です。1〜1,000の数値を入力してください。"
+            "value" : "訪問ごとに位置情報付きの写真とビデオを数えます。この最小件数はホーム、「最近訪れた場所」、Apple TVのホーム画面に適用されます。"
           }
         }
       }
@@ -1485,55 +1485,161 @@
         }
       }
     },
+    "journey.minimum.range" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@–%2$@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 至 %2$@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ 至 %2$@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@–%2$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@–%2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ à %2$@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@–%2$@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@〜%2$@"
+          }
+        }
+      }
+    },
     "journey.minimum.empty" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No visits meet the minimum. Lower it in Settings to see more."
+            "value" : "No visits meet the minimum"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前没有到访达到最低素材数。可以在设置里调低门槛。"
+            "value" : "没有符合条件的到访"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前沒有造訪達到最低素材數。可以在設定中調低門檻。"
+            "value" : "沒有符合條件的到訪"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kein Besuch erreicht die Mindestanzahl. Verringere sie in den Einstellungen, um mehr Besuche zu sehen."
+            "value" : "Kein Besuch erreicht die Mindestanzahl"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ninguna visita alcanza el mínimo. Redúcelo en Ajustes para ver más."
+            "value" : "Ninguna visita alcanza el mínimo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucune visite n’atteint le minimum. Réduisez-le dans les réglages pour en voir davantage."
+            "value" : "Aucune visite n’atteint le minimum"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna visita raggiunge il minimo. Abbassalo nelle impostazioni per vederne altre."
+            "value" : "Nessuna visita raggiunge il minimo"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最小項目数を満たす訪問がありません。設定で数を減らすと、さらに表示できます。"
+            "value" : "最小件数を満たす訪問はありません"
+          }
+        }
+      }
+    },
+    "journey.minimum.help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lower the minimum per visit in Settings."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在设置中调低每次到访的最低数量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "請在設定中調低每次到訪的最低數量。"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verringere die Mindestanzahl pro Besuch in den Einstellungen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reduce el mínimo por visita en Ajustes."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réduisez le minimum par visite dans les réglages."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riduci il minimo per visita nelle impostazioni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定で訪問ごとの最小件数を減らしてください。"
           }
         }
       }
@@ -1556,7 +1662,7 @@
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "顯示最近造訪的城市"
+            "value" : "顯示最近到訪的城市"
           }
         },
         "de" : {
@@ -2392,49 +2498,102 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to read this selection. Try again."
+            "value" : "Couldn’t load your albums. Reopen Scan Scope to try again."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暂时无法读取所选相册，请重试。"
+            "value" : "无法载入相册列表。请重新打开「扫描范围」。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "暫時無法讀取所選相簿，請再試一次。"
+            "value" : "無法載入相簿列表。請重新開啟「掃描範圍」。"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選択したアルバムを読み込めません。もう一度お試しください。"
+            "value" : "アルバムを読み込めませんでした。スキャン範囲を開き直してください。"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Auswahl konnte nicht gelesen werden. Bitte erneut versuchen."
+            "value" : "Die Alben konnten nicht geladen werden. Öffne den Scanbereich erneut."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de lire la sélection. Réessayez."
+            "value" : "Impossible de charger vos albums. Rouvrez les réglages du périmètre d’analyse."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se puede leer la selección. Inténtalo de nuevo."
+            "value" : "No se han podido cargar tus álbumes. Vuelve a abrir el alcance del análisis."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossibile leggere la selezione. Riprova."
+            "value" : "Impossibile caricare gli album. Riapri le impostazioni dell’ambito di scansione."
+          }
+        }
+      }
+    },
+    "scan.scope.apply_failed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Couldn’t apply your scan settings. Try again."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "未能应用扫描设置，请重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法套用掃描設定，請再試一次。"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Scaneinstellungen konnten nicht übernommen werden. Versuche es erneut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se han podido aplicar los ajustes del análisis. Inténtalo de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’appliquer les réglages de l’analyse. Réessayez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile applicare le impostazioni di scansione. Riprova."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スキャン設定を適用できませんでした。もう一度お試しください。"
           }
         }
       }
@@ -2445,49 +2604,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Exclude albums from your globe and slideshow. Photos in these albums stay hidden even when they also belong to another album."
+            "value" : "Select albums to exclude. Their photos and videos stay hidden even if they also appear in other albums."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选中的相册会从地球和放映中排除。同一素材出现在多个相册时，也会一并排除。"
+            "value" : "勾选要排除的相册。里面的照片和视频即使也在其他相册中，仍会隐藏。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選取的相簿將從地球和幻燈片中排除。同一素材出現在多個相簿時，也會一併排除。"
+            "value" : "勾選要排除的相簿。當中的照片和影片即使也在其他相簿中，仍會隱藏。"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選択したアルバムの写真は地球儀とスライドショーに表示されません。ほかのアルバムにもある写真は、どちらから見ても非表示になります。"
+            "value" : "除外するアルバムを選んでください。含まれる写真とビデオは、ほかのアルバムにあっても表示されません。"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ausgewählte Alben werden aus Globus und Diashow ausgeschlossen, auch wenn ihre Fotos in weiteren Alben vorkommen."
+            "value" : "Wähle die auszuschließenden Alben aus. Ihre Fotos und Videos bleiben auch dann ausgeblendet, wenn sie zu anderen Alben gehören."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les albums sélectionnés sont exclus du globe et du diaporama, même si leurs photos figurent dans d’autres albums."
+            "value" : "Sélectionnez les albums à exclure. Leurs photos et vidéos resteront masquées même si elles figurent dans d’autres albums."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los álbumes seleccionados se excluyen del globo y de la presentación, incluso si sus fotos también aparecen en otros álbumes."
+            "value" : "Selecciona los álbumes que quieras excluir. Sus fotos y vídeos seguirán ocultos aunque también estén en otros álbumes."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gli album selezionati vengono esclusi dal globo e dalla presentazione, anche se le loro foto compaiono in altri album."
+            "value" : "Seleziona gli album da escludere. Le loro foto e i loro video resteranno nascosti anche se presenti in altri album."
           }
         }
       }
@@ -2816,7 +2975,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Map Review"
+            "value" : "Photo Map"
           }
         },
         "zh-Hans" : {
@@ -3508,97 +3667,13 @@
               "one" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld photo hidden"
+                  "value" : "%lld item hidden"
                 }
               },
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "%lld photos hidden"
-                }
-              }
-            }
-          }
-        },
-        "de" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld Foto ausgeblendet"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld Fotos ausgeblendet"
-                }
-              }
-            }
-          }
-        },
-        "es" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld foto oculta"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld fotos ocultas"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld photo masquée"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld photos masquées"
-                }
-              }
-            }
-          }
-        },
-        "it" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld foto nascosta"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld foto nascoste"
-                }
-              }
-            }
-          }
-        },
-        "ja" : {
-          "variations" : {
-            "plural" : {
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "非表示の写真：%lld枚"
+                  "value" : "%lld items hidden"
                 }
               }
             }
@@ -3610,7 +3685,7 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已隐藏 %lld 张照片"
+                  "value" : "已隐藏 %lld 项"
                 }
               }
             }
@@ -3622,7 +3697,91 @@
               "other" : {
                 "stringUnit" : {
                   "state" : "translated",
-                  "value" : "已隱藏 %lld 張照片"
+                  "value" : "已隱藏 %lld 項"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Objekt ausgeblendet"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Objekte ausgeblendet"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elemento oculto"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elementos ocultos"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld élément masqué"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld éléments masqués"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elemento nascosto"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elementi nascosti"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "非表示：%lld件"
                 }
               }
             }
@@ -3689,49 +3848,102 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passing-through photos are hidden. Show them again in Settings."
+            "value" : "Likely transit photos are hidden"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "途经照片已隐藏，你可以在设置中恢复显示。"
+            "value" : "疑似途经照片已隐藏"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "途經照片已隱藏，你可以在設定中恢復顯示。"
+            "value" : "疑似途經照片已隱藏"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos von der Durchreise sind ausgeblendet. Du kannst sie in den Einstellungen wieder einblenden."
+            "value" : "Vermutliche Durchreisefotos sind ausgeblendet"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las fotos tomadas de paso están ocultas. Puedes volver a mostrarlas en Ajustes."
+            "value" : "Las posibles fotos de paso están ocultas"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les photos prises en transit sont masquées. Vous pouvez les réafficher dans les réglages."
+            "value" : "Les photos probablement prises en transit sont masquées"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le foto scattate durante il transito sono nascoste. Puoi mostrarle di nuovo nelle impostazioni."
+            "value" : "Le probabili foto di passaggio sono nascoste"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "通過中の写真は非表示です。設定で再表示できます。"
+            "value" : "移動中と思われる写真は非表示です"
+          }
+        }
+      }
+    },
+    "home.transit_help" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn off the transit filter in Settings to show them."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在设置中关闭「隐藏疑似途经照片」即可查看。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在設定中關閉「隱藏疑似途經照片」即可查看。"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deaktiviere den Durchreisefilter in den Einstellungen, um sie zu sehen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactiva el filtro de fotos de paso en Ajustes para verlas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Désactivez le filtre de transit dans les réglages pour les afficher."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disattiva il filtro delle foto di passaggio nelle impostazioni per mostrarle."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定で移動中の写真のフィルタをオフにすると表示できます。"
           }
         }
       }
@@ -4309,6 +4521,137 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld 張照片"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "count.item" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld item"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld items"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 项"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 項"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Objekt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Objekte"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elemento"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elementos"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld élément"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld éléments"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elemento"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld elementi"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld件"
                 }
               }
             }
@@ -5079,6 +5422,59 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "正在準備原況照片…"
+          }
+        }
+      }
+    },
+    "detail.loading_photo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading photo…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在载入照片…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在載入照片…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto wird geladen …"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cargando foto…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chargement de la photo…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Caricamento della foto…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を読み込み中…"
           }
         }
       }
@@ -6947,49 +7343,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Fotos konnten nicht gezählt werden."
+            "value" : "Die Gesamtzahl konnte nicht ermittelt werden."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t count all photos."
+            "value" : "Couldn’t count all items."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se han podido contar todas las fotos."
+            "value" : "No se ha podido calcular el total."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de compter toutes les photos."
+            "value" : "Impossible de calculer le total."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossibile contare tutte le foto."
+            "value" : "Impossibile calcolare il totale."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "写真の枚数を数えられませんでした。"
+            "value" : "合計件数を確認できませんでした。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法统计全部照片。"
+            "value" : "暂时无法统计总数。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法統計所有照片。"
+            "value" : "暫時無法統計總數。"
           }
         }
       }
@@ -7319,49 +7715,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erkunde den Globus. Drehe ihn mit den Richtungstasten. Drücke die Mitteltaste, um Fotos anzusehen. Drücke die Wiedergabe-/Pausetaste, um die Zoomsteuerung zu öffnen."
+            "value" : "Drehe ihn mit den Richtungstasten. Drücke die Mitteltaste, um Fotos anzusehen. Drücke die Wiedergabe-/Pausetaste, um die Zoomsteuerung zu öffnen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explore the globe. Use the direction buttons to turn it. Press the center button to view photos. Press Play/Pause to open zoom controls."
+            "value" : "Use the direction buttons to turn it. Press the center button to view photos. Press Play/Pause to open zoom controls."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explora el globo. Usa los botones de dirección para girarlo. Pulsa el botón central para ver fotos. Pulsa Reproducir/Pausa para abrir los controles de zoom."
+            "value" : "Usa los botones de dirección para girarlo. Pulsa el botón central para ver fotos. Pulsa Reproducir/Pausa para abrir los controles de zoom."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explorez le globe. Utilisez les touches directionnelles pour le tourner. Appuyez sur le bouton central pour voir les photos. Appuyez sur Lecture/Pause pour ouvrir les commandes de zoom."
+            "value" : "Utilisez les touches directionnelles pour le tourner. Appuyez sur le bouton central pour voir les photos. Appuyez sur Lecture/Pause pour ouvrir les commandes de zoom."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esplora il globo. Usa i tasti direzionali per ruotarlo. Premi il tasto centrale per vedere le foto. Premi Riproduci/Pausa per aprire i controlli dello zoom."
+            "value" : "Usa i tasti direzionali per ruotarlo. Premi il tasto centrale per vedere le foto. Premi Riproduci/Pausa per aprire i controlli dello zoom."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球を探索します。方向ボタンで地球を回します。中央ボタンを押すと写真が開きます。再生／一時停止ボタンを押すとズーム操作が開きます。"
+            "value" : "方向ボタンで地球を回します。中央ボタンを押すと写真が開きます。再生／一時停止ボタンを押すとズーム操作が開きます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "探索地球。使用方向键转动地球。按中键查看照片。按播放/暂停键打开缩放控制。"
+            "value" : "使用方向键转动地球。按中键查看照片。按播放/暂停键打开缩放控制。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "探索地球。使用方向鍵轉動地球。按中鍵檢視照片。按播放/暫停鍵打開縮放控制。"
+            "value" : "使用方向鍵轉動地球。按中鍵檢視照片。按播放/暫停鍵打開縮放控制。"
           }
         }
       }
@@ -7589,49 +7985,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erkunde den Globus. Streiche auf dem Klickpad oder der Touch-Oberfläche, um ihn zu bewegen, oder drücke auf den Klickpad-Ring, um ihn zu drehen. Drücke die Klickpad-Mitte oder die Touch-Oberfläche, um Fotos anzusehen. Drücke die Wiedergabe-/Pausetaste, um die Zoomsteuerung zu öffnen."
+            "value" : "Streiche auf dem Klickpad oder der Touch-Oberfläche, um ihn zu bewegen, oder drücke auf den Klickpad-Ring, um ihn zu drehen. Drücke die Klickpad-Mitte oder die Touch-Oberfläche, um Fotos anzusehen. Drücke die Wiedergabe-/Pausetaste, um die Zoomsteuerung zu öffnen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explore the globe. Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls."
+            "value" : "Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explora el globo. Desliza el dedo por el clickpad o la superficie táctil para moverlo, o pulsa el anillo del clickpad para girarlo. Pulsa el centro del clickpad o la superficie táctil para ver fotos. Pulsa Reproducir/Pausa para abrir los controles de zoom."
+            "value" : "Desliza el dedo por el clickpad o la superficie táctil para moverlo, o pulsa el anillo del clickpad para girarlo. Pulsa el centro del clickpad o la superficie táctil para ver fotos. Pulsa Reproducir/Pausa para abrir los controles de zoom."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explorez le globe. Balayez le clickpad ou la surface tactile pour le déplacer, ou appuyez sur le cercle du clickpad pour le tourner. Appuyez sur le centre du clickpad ou sur la surface tactile pour voir les photos. Appuyez sur Lecture/Pause pour ouvrir les commandes de zoom."
+            "value" : "Balayez le clickpad ou la surface tactile pour le déplacer, ou appuyez sur le cercle du clickpad pour le tourner. Appuyez sur le centre du clickpad ou sur la surface tactile pour voir les photos. Appuyez sur Lecture/Pause pour ouvrir les commandes de zoom."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esplora il globo. Scorri sul clickpad o sulla superficie touch per spostarlo, oppure premi l’anello del clickpad per ruotarlo. Premi il centro del clickpad o la superficie touch per vedere le foto. Premi Riproduci/Pausa per aprire i controlli dello zoom."
+            "value" : "Scorri sul clickpad o sulla superficie touch per spostarlo, oppure premi l’anello del clickpad per ruotarlo. Premi il centro del clickpad o la superficie touch per vedere le foto. Premi Riproduci/Pausa per aprire i controlli dello zoom."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地球を探索します。クリックパッドまたはタッチサーフェスをスワイプして地球を動かすか、クリックパッドリングを押して回します。クリックパッドの中央またはタッチサーフェスを押すと写真が開きます。再生／一時停止ボタンを押すとズーム操作が開きます。"
+            "value" : "クリックパッドまたはタッチサーフェスをスワイプして地球を動かすか、クリックパッドリングを押して回します。クリックパッドの中央またはタッチサーフェスを押すと写真が開きます。再生／一時停止ボタンを押すとズーム操作が開きます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "探索地球。轻扫点按板或触控表面来拖动地球，也可按点按板圆环来转动。按下点按板中央或触控表面查看照片。按播放/暂停键打开缩放控制。"
+            "value" : "轻扫点按板或触控表面来拖动地球，也可按点按板圆环来转动。按下点按板中央或触控表面查看照片。按播放/暂停键打开缩放控制。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "探索地球。滑動觸控板或觸控表面來拖曳地球，也可按下觸控板環來轉動。按下觸控板中央或觸控表面來檢視照片。按播放/暫停鍵打開縮放控制。"
+            "value" : "滑動觸控板或觸控表面來拖曳地球，也可按下觸控板環來轉動。按下觸控板中央或觸控表面來檢視照片。按播放/暫停鍵打開縮放控制。"
           }
         }
       }
@@ -8388,59 +8784,6 @@
         }
       }
     },
-    "home.expand" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weitere Orte anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unfold More Places"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver más lugares"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher plus de lieux"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra altri luoghi"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ほかの場所を表示"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "展开更多地点"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "展開更多地點"
-          }
-        }
-      }
-    },
     "home.explore_globe" : {
       "comment" : "Primary Apple TV action that enters direct globe manipulation with the Siri Remote.",
       "extractionState" : "manual",
@@ -8591,13 +8934,13 @@
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近抵达的城市"
+            "value" : "最近到访的城市"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最近抵達的城市"
+            "value" : "最近到訪的城市"
           }
         }
       }
@@ -9085,49 +9428,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In dieser Ansicht wurden keine Fotos gefunden"
+            "value" : "Keine Fotos in dieser Ansicht"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No photos found in this view"
+            "value" : "No photos in this view"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se han encontrado fotos en esta vista"
+            "value" : "No hay fotos en esta vista"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucune photo trouvée dans cette vue"
+            "value" : "Aucune photo dans cette vue"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna foto trovata in questa visualizzazione"
+            "value" : "Nessuna foto in questa vista"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "この範囲には写真がありません"
+            "value" : "この範囲に写真はありません"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前画面内没有找到照片"
+            "value" : "当前画面没有照片"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前畫面內找不到照片"
+            "value" : "目前畫面沒有照片"
           }
         }
       }
@@ -9193,49 +9536,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine Fotovorschau in dieser Ansicht"
+            "value" : "Keine Vorschau verfügbar"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No photo previews in this view"
+            "value" : "No previews available"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No hay vistas previas de fotos en esta vista"
+            "value" : "No hay vistas previas disponibles"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucun aperçu photo dans cette vue"
+            "value" : "Aucun aperçu disponible"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nessuna anteprima foto in questa vista"
+            "value" : "Nessuna anteprima disponibile"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "この表示範囲には写真のプレビューがありません"
+            "value" : "プレビューはありません"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "当前画面暂无可展示照片"
+            "value" : "暂无照片预览"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前畫面暫無可顯示的照片"
+            "value" : "暫無照片預覽"
           }
         }
       }
@@ -9277,19 +9620,19 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "プレビュー %@ 枚"
+            "value" : "プレビュー %@ 件"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "预览 %@ 张"
+            "value" : "预览 %@ 项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "預覽 %@ 張"
+            "value" : "預覽 %@ 項"
           }
         }
       }
@@ -10576,49 +10919,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geprüfte Fotos: %1$@ / %2$@"
+            "value" : "Geprüfte Objekte: %1$@ / %2$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photos checked: %1$@ / %2$@"
+            "value" : "Items checked: %1$@ / %2$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos revisadas: %1$@ / %2$@"
+            "value" : "Elementos revisados: %1$@ / %2$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photos vérifiées : %1$@ / %2$@"
+            "value" : "Éléments vérifiés : %1$@ / %2$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Foto verificate: %1$@ / %2$@"
+            "value" : "Elementi verificati: %1$@ / %2$@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "写真%2$@枚中%1$@枚を確認しました"
+            "value" : "確認済み：%1$@ / %2$@件"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已检查 %1$@ / %2$@ 张照片"
+            "value" : "已检查 %1$@ / %2$@ 项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已檢查 %1$@ / %2$@ 張照片"
+            "value" : "已檢查 %1$@ / %2$@ 項"
           }
         }
       }
@@ -10682,49 +11025,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos mit Standortdaten: %1$@ · Orte: %2$@"
+            "value" : "Objekte mit Standort: %1$@ · Orte: %2$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photos with location data: %1$@ · Places: %2$@"
+            "value" : "Items with a location: %1$@ · Places: %2$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos con ubicación: %1$@ · Lugares: %2$@"
+            "value" : "Elementos con ubicación: %1$@ · Lugares: %2$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photos géolocalisées : %1$@ · Lieux : %2$@"
+            "value" : "Éléments géolocalisés : %1$@ · Lieux : %2$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Foto con posizione: %1$@ · Luoghi: %2$@"
+            "value" : "Elementi con posizione: %1$@ · Luoghi: %2$@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "位置情報のある写真：%1$@枚 · 場所：%2$@か所"
+            "value" : "位置情報付き：%1$@件 · 場所：%2$@か所"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ 张带地点的照片 · %2$@ 个地点"
+            "value" : "%1$@ 项带定位的内容 · %2$@ 个地点"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ 張帶地點的照片 · %2$@ 個地點"
+            "value" : "%1$@ 個含位置資訊的項目 · %2$@ 個地點"
           }
         }
       }
@@ -10788,49 +11131,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos mit Standortdaten: %1$@ / %2$@"
+            "value" : "Geordnete Objekte: %1$@ / %2$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photos with location data: %1$@ / %2$@"
+            "value" : "Items organized: %1$@ / %2$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos con ubicación: %1$@ / %2$@"
+            "value" : "Elementos organizados: %1$@ / %2$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photos géolocalisées : %1$@ / %2$@"
+            "value" : "Éléments classés : %1$@ / %2$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Foto con posizione: %1$@ / %2$@"
+            "value" : "Elementi organizzati: %1$@ / %2$@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "位置情報付きの写真：%1$@ / %2$@枚"
+            "value" : "整理済み：%1$@ / %2$@件"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已整理 %1$@ / %2$@ 张带定位的照片"
+            "value" : "已整理 %1$@ / %2$@ 项"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已整理 %1$@ / %2$@ 張含位置資訊的照片"
+            "value" : "已整理 %1$@ / %2$@ 項"
           }
         }
       }
@@ -10884,59 +11227,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "尚未完成照片資訊檢查"
-          }
-        }
-      }
-    },
-    "preparation.count.photos" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geprüfte Fotos: %1$@ / %2$@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Photos checked: %1$@ / %2$@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fotos revisadas: %1$@ / %2$@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Photos vérifiées : %1$@ / %2$@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Foto verificate: %1$@ / %2$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "写真：%1$@ / %2$@枚"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ / %2$@ 张照片"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ / %2$@ 張照片"
           }
         }
       }
@@ -11527,49 +11817,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Reiserouten in deinen Fotos werden neu ermittelt. Bekannte Ortsnamen bleiben erhalten."
+            "value" : "Vorhandene Ortsnamen bleiben erhalten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rediscovering the paths in your photos while keeping known place names."
+            "value" : "Existing place names are kept."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Se vuelven a trazar las rutas de tus fotos. Se conservan los nombres de lugares ya conocidos."
+            "value" : "Se conservan los nombres de lugar existentes."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les itinéraires de vos photos sont reconstitués. Les noms de lieux déjà connus sont conservés."
+            "value" : "Les noms de lieux existants sont conservés."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I percorsi delle tue foto vengono ricostruiti. I nomi dei luoghi già noti vengono conservati."
+            "value" : "I nomi dei luoghi esistenti vengono conservati."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "確認済みの地名を残して、写真から旅の足取りをたどり直します。"
+            "value" : "既存の地名は保持されます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重新寻找照片里的足迹，同时保留已有的地点名称。"
+            "value" : "已有地名会保留。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重新尋找照片裡的足跡，同時保留現有的地點名稱。"
+            "value" : "現有地名會保留。"
           }
         }
       }
@@ -11686,49 +11976,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die zugänglichen Fotos und Videos enthalten noch keine Standortdaten. Änderungen werden automatisch berücksichtigt."
+            "value" : "Keine Fotos oder Videos entsprechen diesem Scan. Prüfe den Scanbereich und die Aufnahmeorte in „Fotos“."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No accessible photos or videos have location data yet. Future changes will update automatically."
+            "value" : "No photos or videos matched this scan. Check the scan scope and the locations in Photos."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las fotos y los vídeos accesibles aún no tienen datos de ubicación. Los cambios se reflejarán automáticamente."
+            "value" : "Ninguna foto ni vídeo cumple los criterios del análisis. Revisa su alcance y las ubicaciones en Fotos."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les photos et vidéos accessibles ne contiennent encore aucune donnée de localisation. Les changements seront pris en compte automatiquement."
+            "value" : "Aucune photo ni vidéo ne correspond aux critères de l’analyse. Vérifiez le périmètre de l’analyse et les lieux de prise de vue dans Photos."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le foto e i video accessibili non contengono ancora dati sulla posizione. Le modifiche verranno recepite automaticamente."
+            "value" : "Nessuna foto o video soddisfa i criteri della scansione. Controlla l’ambito della scansione e le posizioni in Foto."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アクセス可能な写真またはビデオには、まだ位置情報がありません。今後の変更は自動的に反映されます。"
+            "value" : "スキャン条件に合う写真やビデオはありません。スキャン範囲と「写真」の撮影場所を確認してください。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前可访问的照片和视频中没有位置信息；照片图库有变化时会自动更新。"
+            "value" : "当前扫描范围内没有符合条件的照片或视频。请检查扫描范围和拍摄地点。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "目前可取用的照片和影片中沒有位置資訊；照片圖庫有變化時會自動更新。"
+            "value" : "目前掃描範圍內沒有符合條件的照片或影片。請檢查掃描範圍和拍攝地點。"
           }
         }
       }
@@ -11739,49 +12029,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bei einigen Orten lässt sich die Stadt oder das Land noch nicht zuverlässig bestimmen. Ihre Fotos und Koordinaten bleiben verfügbar."
+            "value" : "Du kannst diese Fotos und Videos weiterhin ansehen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Some locations have no reliable city or country yet. Their photos and coordinates remain available."
+            "value" : "You can still browse these photos and videos."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "En algunos lugares aún no se puede determinar con certeza la ciudad o el país. Sus fotos y coordenadas siguen disponibles."
+            "value" : "Puedes seguir viendo estas fotos y vídeos."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pour certains lieux, la ville ou le pays n’ont pas encore pu être identifiés avec certitude. Les photos et leurs coordonnées restent disponibles."
+            "value" : "Vous pouvez toujours consulter ces photos et vidéos."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Per alcuni luoghi non è ancora possibile identificare con certezza la città o il paese. Le foto e le relative coordinate restano disponibili."
+            "value" : "Puoi continuare a vedere queste foto e questi video."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "都市や国を特定できない場所があります。写真と撮影位置は引き続き確認できます。"
+            "value" : "これらの写真やビデオは引き続き閲覧できます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "部分地点暂时无法确定城市或国家，但照片与坐标仍可正常浏览。"
+            "value" : "这些照片和视频仍可浏览。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "部分地點暫時無法確定城市或國家，但照片與座標仍可正常瀏覽。"
+            "value" : "這些照片和影片仍可瀏覽。"
           }
         }
       }
@@ -12640,49 +12930,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vorbereitung der Orte vorerst abgeschlossen"
+            "value" : "Einige Ortsnamen sind noch unbekannt"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Place Preparation Complete for Now"
+            "value" : "Some place names are unavailable"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparación de los lugares completada por ahora"
+            "value" : "Faltan algunos nombres de lugar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Préparation des lieux terminée pour le moment"
+            "value" : "Certains noms de lieux sont encore inconnus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Preparazione dei luoghi completata per ora"
+            "value" : "Alcuni nomi di luogo non sono disponibili"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "今回の場所の整理が完了しました"
+            "value" : "一部の地名は未確定です"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本轮地点整理已完成"
+            "value" : "部分地名尚未确定"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "本輪地點整理已完成"
+            "value" : "部分地名尚未確定"
           }
         }
       }
@@ -13588,59 +13878,6 @@
         }
       }
     },
-    "settings.footer" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · DEINE EIGENE WELT"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · YOUR WORLD ALONE"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · TU PROPIO MUNDO"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · VOTRE MONDE À VOUS"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · IL TUO MONDO"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · あなただけの世界"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · 只属于你的世界"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PHOTO EARTH · 只屬於你的世界"
-          }
-        }
-      }
-    },
     "settings.globe_experience" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14125,49 +14362,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reiseindex neu erstellen"
+            "value" : "Fotos und Videos erneut scannen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rebuild Travel Index"
+            "value" : "Rescan Photos and Videos"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reconstruir el índice de viajes"
+            "value" : "Volver a analizar fotos y vídeos"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reconstruire l’index des voyages"
+            "value" : "Réanalyser les photos et vidéos"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ricostruisci l'indice dei viaggi"
+            "value" : "Scansiona di nuovo foto e video"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "写真と場所を整理し直す"
+            "value" : "写真とビデオを再スキャン"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重新整理照片与地点"
+            "value" : "重新扫描照片和视频"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "重新整理照片與地點"
+            "value" : "重新掃描照片和影片"
           }
         }
       }
@@ -14328,59 +14565,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示地球操作提示"
-          }
-        }
-      }
-    },
-    "settings.subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wähle, wie du deine Erinnerungen erleben möchtest."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Let your memories unfold the way you prefer."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Elige cómo quieres revivir tus recuerdos."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Choisissez comment revivre vos souvenirs."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Scegli come rivivere i tuoi ricordi."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "旅の思い出を、お好みのスタイルで振り返りましょう。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "按你喜欢的方式，重温走过的世界。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "用你喜歡的方式，重溫走過的世界。"
           }
         }
       }
@@ -14915,59 +15099,6 @@
         }
       }
     },
-    "slideshow.current_journey" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reise %1$lld von %2$lld · %3$@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trip %1$lld of %2$lld · %3$@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Viaje %1$lld de %2$lld · %3$@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voyage %1$lld sur %2$lld · %3$@"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Viaggio %1$lld di %2$lld · %3$@"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%2$lld件中%1$lld件目の旅 · %3$@"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %1$lld 段旅程，共 %2$lld 段 · %3$@"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "第 %1$lld 段旅程，共 %2$lld 段 · %3$@"
-          }
-        }
-      }
-    },
     "slideshow.ending.summary" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15027,49 +15158,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In dieser Fotowand sind keine abspielbaren Erinnerungen verfügbar."
+            "value" : "Für diese Diashow sind keine Fotos oder Videos verfügbar."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No playable memories are available in this photo wall."
+            "value" : "No photos or videos are available for this slideshow."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No hay recuerdos disponibles para reproducir en este muro de fotos."
+            "value" : "No hay fotos ni vídeos disponibles para esta presentación."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aucun souvenir lisible n’est disponible dans ce mur de photos."
+            "value" : "Aucune photo ni vidéo n’est disponible pour ce diaporama."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "In questa parete di foto non ci sono ricordi da riprodurre."
+            "value" : "Nessuna foto o video disponibile per questa presentazione."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "このフォトウォールには再生できる写真やビデオがありません。"
+            "value" : "このスライドショーで再生できる写真やビデオはありません。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这个照片墙里没有可播放的回忆。"
+            "value" : "这次放映没有可播放的照片或视频。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "這個照片牆裡沒有可播放的回憶。"
+            "value" : "這次放映沒有可播放的照片或影片。"
           }
         }
       }
@@ -15282,6 +15413,982 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "slideshow.all_cities" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Cities"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部城市"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有城市"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Städte"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todas las ciudades"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les villes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutte le città"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての都市"
+          }
+        }
+      }
+    },
+    "slideshow.trip_search" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "City or country"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜索城市或国家"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "搜尋城市或國家"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stadt oder Land suchen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar ciudad o país"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher une ville ou un pays"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca città o paese"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "都市や国を検索"
+          }
+        }
+      }
+    },
+    "slideshow.clear_filters" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset Filters"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置筛选"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設篩選"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Filter zurücksetzen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer filtros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialiser les filtres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reimposta filtri"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "絞り込みをリセット"
+          }
+        }
+      }
+    },
+    "slideshow.all_countries" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Countries and Regions"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部国家和地区"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有國家與地區"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Länder und Regionen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los países y regiones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les pays et régions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i paesi e le regioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての国と地域"
+          }
+        }
+      }
+    },
+    "slideshow.remove_matches" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deselect %lld trip"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deselect %lld trips"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "取消勾选这 %lld 段旅程"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "取消勾選這 %lld 段旅程"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reise abwählen"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reisen abwählen"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deseleccionar %lld viaje"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deseleccionar %lld viajes"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Désélectionner %lld voyage"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Désélectionner %lld voyages"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deseleziona %lld viaggio"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Deseleziona %lld viaggi"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 件の旅の選択を解除"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "slideshow.select_matches" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Select %lld trip"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Select %lld trips"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "勾选这 %lld 段旅程"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "勾選這 %lld 段旅程"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reise auswählen"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reisen auswählen"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Seleccionar %lld viaje"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Seleccionar %lld viajes"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sélectionner %lld voyage"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Sélectionner %lld voyages"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Seleziona %lld viaggio"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Seleziona %lld viaggi"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld 件の旅を選択"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "slideshow.no_matching_trips" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No matching trips"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有符合条件的旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "沒有符合條件的旅程"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine passenden Reisen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ningún viaje coincide"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun voyage correspondant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun viaggio corrispondente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "条件に合う旅はありません"
+          }
+        }
+      }
+    },
+    "slideshow.no_selected_trips" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No trips selected"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未选择旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "尚未選擇旅程"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Reisen ausgewählt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay viajes seleccionados"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun voyage sélectionné"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun viaggio selezionato"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅が選択されていません"
+          }
+        }
+      }
+    },
+    "slideshow.choose_trips" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Trips"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇旅程"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reisen auswählen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir viajes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir les voyages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli viaggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "旅を選ぶ"
+          }
+        }
+      }
+    },
+    "slideshow.all_trips" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Trips"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "全部旅程"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Reisen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los viajes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tous les voyages"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti i viaggi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての旅"
+          }
+        }
+      }
+    },
+    "slideshow.all_years" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All Years"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有年份"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "所有年份"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alle Jahre"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todos los años"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toutes les années"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutti gli anni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべての年"
+          }
+        }
+      }
+    },
+    "slideshow.trips_selected" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld trip selected"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld trips selected"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已选 %lld 段旅程"
+                }
+              }
+            }
+          }
+        },
+        "zh-Hant" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "已選 %lld 段旅程"
+                }
+              }
+            }
+          }
+        },
+        "de" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reise ausgewählt"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld Reisen ausgewählt"
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld viaje seleccionado"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld viajes seleccionados"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld voyage sélectionné"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld voyages sélectionnés"
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld viaggio selezionato"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld viaggi selezionati"
+                }
+              }
+            }
+          }
+        },
+        "ja" : {
+          "variations" : {
+            "plural" : {
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "選択した旅：%lld 件"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "slideshow.hidden_previous_journeys" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere vorherige Reisen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More previous trips"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más viajes anteriores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres voyages précédents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri viaggi precedenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前に表示されていない旅"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前面还有旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前面還有旅程"
+          }
+        }
+      }
+    },
+    "slideshow.hidden_upcoming_journeys" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere kommende Reisen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More upcoming trips"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más viajes siguientes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres voyages à venir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri viaggi successivi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "後に表示されていない旅"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "后面还有旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "後面還有旅程"
           }
         }
       }
@@ -16081,6 +17188,59 @@
         }
       }
     },
+    "slideshow.music.recommended" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommended"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "推荐"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "推薦"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empfehlungen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recomendaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommandations"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consigliati"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "おすすめ"
+          }
+        }
+      }
+    },
     "slideshow.music.online" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16511,49 +17671,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stelle die Internetverbindung wieder her und versuche es erneut oder drücke die Zurück-Taste."
+            "value" : "Stelle eine Internetverbindung her, um Musik abzuspielen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reconnect and try again, or press Back."
+            "value" : "Reconnect to play music."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vuelve a conectarte e inténtalo de nuevo, o pulsa Atrás."
+            "value" : "Conéctate a internet para reproducir música."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reconnectez-vous et réessayez, ou appuyez sur Retour."
+            "value" : "Reconnectez-vous à Internet pour écouter de la musique."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Riconnettiti e riprova, oppure premi Indietro."
+            "value" : "Riconnettiti a internet per riprodurre la musica."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ネットワークに接続して再試行するか、戻るボタンを押してください。"
+            "value" : "音楽を再生するにはインターネットに再接続してください。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "连接网络后重试，或按返回键。"
+            "value" : "恢复网络连接后可播放配乐。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "連線後再試，或按返回鍵。"
+            "value" : "恢復網路連線後即可播放配樂。"
           }
         }
       }
@@ -16713,59 +17873,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "靜謐時光"
-          }
-        }
-      }
-    },
-    "slideshow.music.online.retry_help" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Versuche es erneut oder drücke die Zurück-Taste."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try again, or press Back."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inténtalo de nuevo o pulsa Atrás."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Réessayez ou appuyez sur Retour."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Riprova oppure premi Indietro."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "再試行するか、戻るボタンを押してください。"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "请重试，或按返回键。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "請再試一次，或按返回鍵。"
           }
         }
       }
@@ -18522,49 +19629,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Drücke links oder rechts, um die Erinnerung zu wechseln, und oben, um die Steuerung einzublenden. Mit der Wiedergabe-/Pausetaste hältst du die Diashow an."
+            "value" : "Drücke links oder rechts zum Wechseln, oben für die Steuerung und die Wiedergabe-/Pausetaste zum Pausieren oder Fortsetzen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Left or right changes memory. Up shows controls. Play/Pause pauses the slideshow."
+            "value" : "Press left or right to skip, up for controls, or Play/Pause to pause or resume."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pulsa a la izquierda o a la derecha para cambiar de recuerdo, y arriba para ver los controles. Reproducir/Pausa pone la presentación en pausa."
+            "value" : "Pulsa izquierda o derecha para cambiar, arriba para ver los controles y Reproducir/Pausa para pausar o continuar."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Appuyez à gauche ou à droite pour changer de souvenir, et en haut pour afficher les commandes. Lecture/Pause met le diaporama en pause."
+            "value" : "Appuyez à gauche ou à droite pour changer de vue, en haut pour les commandes et sur Lecture/Pause pour suspendre ou reprendre le diaporama."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Premi a sinistra o a destra per cambiare ricordo e in alto per mostrare i comandi. Riproduci/Pausa mette in pausa la presentazione."
+            "value" : "Premi a sinistra o a destra per cambiare, in alto per i controlli e Riproduci/Pausa per mettere in pausa o riprendere."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "左右で思い出を切り替え、上で操作ボタンを表示します。再生／一時停止ボタンでスライドショーを一時停止できます。"
+            "value" : "左右で切り替え、上で操作ボタンを表示します。再生／一時停止ボタンで一時停止・再開できます。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按左右键切换回忆，按上键显示播放控件，按播放/暂停键暂停放映。"
+            "value" : "左右键切换，上键显示控件，播放/暂停键暂停或继续。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "按左右鍵切換回憶，按上鍵顯示播放控制項目，按播放/暫停鍵暫停放映。"
+            "value" : "左右鍵切換，上鍵顯示控制項目，播放/暫停鍵可暫停或繼續。"
           }
         }
       }
@@ -18671,6 +19778,165 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重新開始"
+          }
+        }
+      }
+    },
+    "slideshow.exit.prompt" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exit the slideshow?"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出放映？"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出放映？"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diashow beenden?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Salir de la presentación?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitter le diaporama ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uscire dalla presentazione?"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "スライドショーを終了しますか？"
+          }
+        }
+      }
+    },
+    "slideshow.exit.stay" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取消"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンセル"
+          }
+        }
+      }
+    },
+    "slideshow.exit.confirm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Exit"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "退出"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beenden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esci"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終了"
           }
         }
       }
@@ -19264,37 +20530,37 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotos erneut zählen"
+            "value" : "Erneut zählen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recount Photos"
+            "value" : "Count Again"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Volver a contar las fotos"
+            "value" : "Volver a contar"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recompter les photos"
+            "value" : "Recompter"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conta di nuovo le foto"
+            "value" : "Conta di nuovo"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "写真を数え直す"
+            "value" : "もう一度数える"
           }
         },
         "zh-Hans" : {
@@ -19317,49 +20583,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle Fotos werden gezählt …"
+            "value" : "Objekte werden gezählt …"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Counting all photos…"
+            "value" : "Counting items…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Contando todas las fotos…"
+            "value" : "Contando elementos…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comptage de toutes les photos…"
+            "value" : "Décompte des éléments…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conteggio di tutte le foto…"
+            "value" : "Conteggio degli elementi…"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "すべての写真を数えています…"
+            "value" : "件数を確認中…"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在计算全部照片…"
+            "value" : "正在统计数量…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在計算全部照片…"
+            "value" : "正在統計數量…"
           }
         }
       }
@@ -19519,6 +20785,112 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "暫未找到照片"
+          }
+        }
+      }
+    },
+    "wall.journey.collapse" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einklappen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Replier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprimi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "折りたたむ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收起"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "收合"
+          }
+        }
+      }
+    },
+    "wall.journey.expand" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausklappen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expandir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Déplier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Espandi"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展开"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "展開"
           }
         }
       }
@@ -19688,102 +21060,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erinnerungen werden geladen …"
+            "value" : "Wird geladen …"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfolding memories…"
+            "value" : "Loading…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cargando recuerdos…"
+            "value" : "Cargando…"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chargement des souvenirs…"
+            "value" : "Chargement…"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Caricamento dei ricordi…"
+            "value" : "Caricamento…"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "思い出を読み込み中…"
+            "value" : "読み込み中…"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在展开回忆……"
+            "value" : "正在载入…"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "正在展開回憶……"
-          }
-        }
-      }
-    },
-    "wall.more_waiting" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Es gibt noch weitere Momente zu entdecken"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More moments are waiting to be found"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aún quedan momentos por descubrir"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "D’autres moments restent à découvrir"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ci sono altri momenti da scoprire"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ほかの思い出も探してみましょう"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更多精彩时刻等待被发现"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更多精彩時刻等待被發現"
+            "value" : "正在載入…"
           }
         }
       }
@@ -20006,49 +21325,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weitere Erinnerungen anzeigen"
+            "value" : "Mehr anzeigen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unfold More Memories"
+            "value" : "Show More"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ver más recuerdos"
+            "value" : "Mostrar más"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Afficher plus de souvenirs"
+            "value" : "Afficher plus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mostra altri ricordi"
+            "value" : "Mostra altro"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ほかの思い出を表示"
+            "value" : "さらに表示"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "展开更多回忆"
+            "value" : "显示更多"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "展開更多回憶"
+            "value" : "顯示更多"
           }
         }
       }
@@ -20102,59 +21421,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "返回地球，轉向有光點的地點，或縮小地球擴大視野。"
-          }
-        }
-      }
-    },
-    "wall.viewport.title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erinnerungen in dieser Ansicht"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Memories in This View"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recuerdos en esta vista"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Souvenirs dans cette vue"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ricordi in questa vista"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "この景色の中の思い出"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前画面中的回忆"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前畫面中的回憶"
           }
         }
       }

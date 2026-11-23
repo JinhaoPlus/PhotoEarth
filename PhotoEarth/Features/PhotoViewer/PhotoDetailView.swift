@@ -99,7 +99,7 @@ struct PhotoDetailView: View {
                             .onMoveCommand(perform: moveFocusOrPhoto)
                             .accessibilityIdentifier("photo-detail-page-retry")
                     } else {
-                        ProgressView(AppLocalization.string("wall.loading", defaultValue: "Unfolding memories…"))
+                        ProgressView(AppLocalization.string("wall.loading", defaultValue: "Loading…"))
                             .tint(.white)
                     }
                 }
@@ -273,7 +273,7 @@ struct PhotoDetailView: View {
         case .video:
             return AppLocalization.string("detail.loading_video", defaultValue: "Preparing video…")
         case .photo:
-            return AppLocalization.string("wall.loading", defaultValue: "Unfolding memories…")
+            return AppLocalization.string("detail.loading_photo", defaultValue: "Loading photo…")
         }
     }
 
@@ -370,8 +370,7 @@ struct PhotoDetailView: View {
 
     private var locationName: AttributedString? {
         if let cachedAddress, cachedAddress.request == addressRequest { return AttributedString(cachedAddress.text) }
-        if let placeLabel, placeLabel.hasCity { return placeLabel.styledName(citySize: 28) }
-        return placeLabel?.displayCountry.map { AttributedString($0) }
+        return placeLabel?.photoCaptionName
     }
 
     private var hasLocationButton: Bool {
@@ -386,31 +385,12 @@ struct PhotoDetailView: View {
                 }
                 .focused($focus, equals: .globe)
             }
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 10) {
-                    Text(record.creationDate, format: .dateTime.year().month().day().hour().minute().locale(AppLocalization.locale))
-                        .font(.system(size: 23, weight: .medium))
-                        .accessibilityIdentifier("photo-detail-capture-time")
-                    if record.isFavorite {
-                        Image(systemName: "heart.fill")
-                            .font(.system(size: 20))
-                            .foregroundStyle(.pink)
-                            .accessibilityLabel(AppLocalization.string("detail.favorited", defaultValue: "Favorited"))
-                            .accessibilityIdentifier("photo-detail-favorite")
-                    }
-                }
-                if let locationName {
-                    Text(locationName)
-                        .font(.system(size: 28, weight: .semibold))
-                        .lineLimit(2)
-                        .accessibilityIdentifier("photo-detail-location-name")
-                }
-            }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.9), radius: 3, y: 1)
-            .frame(maxWidth: 620, alignment: .leading)
-            .padding(.bottom, 4)
-            .allowsHitTesting(false)
+            PhotoCaptureCaption(
+                date: record.creationDate,
+                locationName: locationName,
+                isFavorite: record.isFavorite,
+                identifierPrefix: "photo-detail"
+            )
 
             Spacer(minLength: 0)
             if playback.isPlayable {
@@ -457,6 +437,50 @@ struct PhotoDetailView: View {
             }.value
             if !Task.isCancelled, request == addressRequest, let address { cachedAddress = (request, address) }
         }
+    }
+}
+
+extension PlaceDisplayLabel {
+    var photoCaptionName: AttributedString? {
+        if hasCity { return styledName(citySize: 28) }
+        return displayCountry.map { AttributedString($0) }
+    }
+}
+
+struct PhotoCaptureCaption: View {
+    let date: Date
+    let locationName: AttributedString?
+    var isFavorite = false
+    var showsTime = true
+    let identifierPrefix: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 10) {
+                Text(showsTime ? date.formatted(.dateTime.year().month().day().hour().minute().locale(AppLocalization.locale))
+                                   : AppLocalization.shortDate(date))
+                    .font(.system(size: 23, weight: .medium))
+                    .accessibilityIdentifier("\(identifierPrefix)-capture-time")
+                if isFavorite {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.pink)
+                        .accessibilityLabel(AppLocalization.string("detail.favorited", defaultValue: "Favorited"))
+                        .accessibilityIdentifier("\(identifierPrefix)-favorite")
+                }
+            }
+            if let locationName {
+                Text(locationName)
+                    .font(.system(size: 28, weight: .semibold))
+                    .lineLimit(2)
+                    .accessibilityIdentifier("\(identifierPrefix)-location-name")
+            }
+        }
+        .foregroundStyle(.white)
+        .shadow(color: .black.opacity(0.9), radius: 3, y: 1)
+        .frame(maxWidth: 620, alignment: .leading)
+        .padding(.bottom, 4)
+        .allowsHitTesting(false)
     }
 }
 

@@ -29,6 +29,19 @@ final class PurchaseStore: ObservableObject {
     private var expiration: Task<Void, Never>?
     private var listener: Task<Void, Never>?
 
+#if DEBUG
+    private let skipsPurchases: Bool = {
+        if let override = ProcessInfo.processInfo.environment["PHOTOEARTH_UI_OWNED_FIXTURE"] {
+            return override == "1"
+        }
+#if targetEnvironment(simulator)
+        return false
+#else
+        return true
+#endif
+    }()
+#endif
+
     private var now: Date {
 #if DEBUG && targetEnvironment(simulator)
         if let offset = ProcessInfo.processInfo.environment["PHOTOEARTH_STORE_CLOCK_OFFSET"].flatMap(Double.init) {
@@ -39,6 +52,12 @@ final class PurchaseStore: ObservableObject {
     }
 
     func start() async {
+#if DEBUG
+        if skipsPurchases {
+            apply(.unlocked)
+            return
+        }
+#endif
         guard listener == nil else { return }
         listener = Task { [weak self] in
             for await result in StoreKit.Transaction.updates {
@@ -68,7 +87,7 @@ final class PurchaseStore: ObservableObject {
 
     func refreshAccess() async {
 #if DEBUG
-        if ProcessInfo.processInfo.environment["PHOTOEARTH_UI_OWNED_FIXTURE"] == "1" {
+        if skipsPurchases {
             apply(.unlocked)
             return
         }

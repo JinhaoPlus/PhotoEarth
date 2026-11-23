@@ -51,7 +51,7 @@ struct GlobeOverviewView: View {
                         }
 
                         if content.hasMore {
-                            Button(AppLocalization.string("home.expand", defaultValue: "Unfold More Places"), action: content.expand)
+                            Button(AppLocalization.string("library.load_more", defaultValue: "Show More Places"), action: content.expand)
                                 .font(.system(size: 29, weight: .medium))
                                 .buttonStyle(.glass)
                                 .focused($focusedID, equals: "load-more-places")
@@ -200,15 +200,19 @@ struct GlobeOverviewView: View {
             .shadow(color: .black.opacity(0.8), radius: 4, y: 1)
 
             if content.recent.isEmpty {
-                Text(content.hasVisitsBelowMinimum
-                     ? AppLocalization.string("journey.minimum.empty", defaultValue: "No visits meet the minimum. Lower it in Settings to see more.")
-                     : (content.hiddenTransitPhotoCount > 0
-                         ? AppLocalization.string("home.transit_empty", defaultValue: "Passing-through photos are hidden. Show them again in Settings.")
-                         : AppLocalization.string("home.empty", defaultValue: "No visits yet")))
-                    .font(.system(size: 29, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.74))
-                    .frame(maxWidth: .infinity, minHeight: 200, alignment: .leading)
-                    .padding(.horizontal, shelfInset)
+                VStack(alignment: .leading, spacing: 8) {
+                    if let notice = AppLocalization.visitFilterNotice(belowMinimum: content.hasVisitsBelowMinimum,
+                                                                      hiddenTransitItems: content.hiddenTransitPhotoCount) {
+                        Text(notice.title)
+                        Text(notice.help).font(.system(size: 23))
+                    } else {
+                        Text(AppLocalization.string("home.empty", defaultValue: "No visits yet"))
+                    }
+                }
+                .font(.system(size: 29, weight: .regular))
+                .foregroundStyle(.white.opacity(0.74))
+                .frame(maxWidth: .infinity, minHeight: 200, alignment: .leading)
+                .padding(.horizontal, shelfInset)
             } else {
                 HStack(spacing: shelfSpacing) {
                     ForEach(content.recent) { place in

@@ -12,8 +12,8 @@ final class LocalizationSmokeUITests: XCTestCase {
             ("fr", "fr_FR", "Villes récemment visitées", "Déplacer", "Tourner", "Photos"),
             ("it", "it_IT", "Città visitate di recente", "Sposta", "Ruota", "Foto"),
             ("ja", "ja_JP", "最近訪れた都市", "ドラッグ", "回転", "写真"),
-            ("zh-Hans", "zh_CN", "最近抵达的城市", "拖动", "转动", "照片"),
-            ("zh-Hant", "zh_TW", "最近抵達的城市", "拖曳", "轉動", "照片"),
+            ("zh-Hans", "zh_CN", "最近到访的城市", "拖动", "转动", "照片"),
+            ("zh-Hant", "zh_TW", "最近到訪的城市", "拖曳", "轉動", "照片"),
         ]
 
         for item in cases {

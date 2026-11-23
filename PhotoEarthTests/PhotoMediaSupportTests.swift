@@ -1,6 +1,8 @@
 import AVFoundation
 import Foundation
+import PhotosUI
 import SQLite3
+import SwiftUI
 import Testing
 @testable import PhotoEarth
 
@@ -240,16 +242,63 @@ struct PhotoMediaSupportTests {
         #expect(!model.isOriginalAudioReady)
     }
 
-    private func writeTestAudio(to url: URL) throws {
-        let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1))
-        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 192_000))
-        let samples = try #require(buffer.floatChannelData?[0])
-        buffer.frameLength = buffer.frameCapacity
-        for frame in 0..<Int(buffer.frameLength) {
-            samples[frame] = 0.05 * sin(Float(frame) * 2 * .pi * 440 / 48_000)
+    @Test func livePhotoAndPosterFillTheSameSlideshowCanvas() async throws {
+        let record = record(id: "live-layout", kind: .livePhoto)
+        let visit = try #require(snapshot([record]).index.places.first)
+        var config = EarthSlideshowConfiguration.standard
+        config.earthIntroDuration = 0.01
+        let coordinator = EarthSlideshowCoordinator(
+            scope: .init(id: visit.id, title: visit.name, kind: .recentVisit), places: [visit],
+            configuration: config, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()), makeSnapshot: {
+                let frozen = try SlideshowSnapshot()
+                try frozen.append([record])
+                return frozen
+            }, cameraAction: { _, _ in }
+        )
+        coordinator.start()
+        defer { coordinator.cancel() }
+        for _ in 0..<200 where coordinator.phase != .presentingItem {
+            try await Task.sleep(for: .milliseconds(10))
         }
-        let file = try AVAudioFile(forWriting: url, settings: format.settings)
-        try file.write(from: buffer)
+        try #require(coordinator.phase == .presentingItem)
+        coordinator.setPaused(true)
+        let poster = UIGraphicsImageRenderer(size: CGSize(width: 160, height: 90)).image { context in
+            UIColor.blue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 160, height: 90))
+        }
+        coordinator.markCurrentItemReady(record.id, image: poster)
+        let requester = ControlledMediaRequester()
+        let playback = PhotoDetailPlaybackModel(requester: requester, isMuted: true)
+        playback.prepareForAutoplay(record)
+        let token = try #require(requester.latestPlaybackToken)
+        let completion = try #require(requester.playbackRequests[token])
+        let placeholders = AsyncStream<PHLivePhoto> { stream in
+            PHLivePhoto.request(withResourceFileURLs: [], placeholderImage: poster, targetSize: .zero, contentMode: .aspectFit) { photo, _ in
+                if let photo { stream.yield(photo) }
+                stream.finish()
+            }
+        }
+        let live = try #require(await placeholders.first(where: { _ in true }))
+        completion(.success(.init(descriptor: .init(record), content: .livePhoto(live))))
+
+        let scene = try #require(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let window = UIWindow(windowScene: scene)
+        let host = UIHostingController(rootView: ZStack {
+            SlideshowMediaTimeline(coordinator: coordinator, playback: playback, onDisplay: { _ in })
+        }.ignoresSafeArea())
+        window.rootViewController = host
+        window.isHidden = false
+        defer { window.isHidden = true }
+        window.layoutIfNeeded()
+        func descendant<T: UIView>(_ type: T.Type, in root: UIView) -> T? {
+            if let match = root as? T { return match }
+            return root.subviews.lazy.compactMap { descendant(type, in: $0) }.first
+        }
+        let canvas = try #require(descendant(SlideshowTransitionCanvas.Stage.self, in: host.view))
+        let motion = try #require(descendant(PHLivePhotoView.self, in: host.view))
+        #expect(canvas.convert(canvas.bounds, to: window) == window.bounds)
+        #expect(motion.convert(motion.bounds, to: window) == window.bounds)
     }
 
     private func record(
@@ -400,4 +449,17 @@ private final class ControlledMediaRequester: PhotoMediaRequesting {
         playbackAssetIDs.first(where: { $0.value == assetID })?.key
     }
 
+}
+
+@MainActor
+func writeTestAudio(to url: URL) throws {
+    let format = try #require(AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1))
+    let buffer = try #require(AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 192_000))
+    let samples = try #require(buffer.floatChannelData?[0])
+    buffer.frameLength = buffer.frameCapacity
+    for frame in 0..<Int(buffer.frameLength) {
+        samples[frame] = 0.05 * sin(Float(frame) * 2 * .pi * 440 / 48_000)
+    }
+    let file = try AVAudioFile(forWriting: url, settings: format.settings)
+    try file.write(from: buffer)
 }

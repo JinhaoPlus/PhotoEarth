@@ -21,6 +21,7 @@ struct GlobeView: View {
 
     @State private var layer: Layer = .overview
     @State private var isOverviewInteractive = true
+    @State private var pendingCityEntry: TravelPlace?
     @State private var focusedSatelliteCity: GeoCoordinate?
     @State private var wallFocusID: String?
     @State private var showsControls = false
@@ -42,6 +43,7 @@ struct GlobeView: View {
     @State private var selectedPhoto: PhotoAssetRecord?
     @State private var selectedPhotoPreview: UIImage?
     @State private var destination: Destination = .home
+    @State private var presentsDirectHome = false
     @State private var anniversaryDay: AnniversaryDay?
     private var showsSidebarContent: Bool {
         layer == .overview && navigationVisible && collection == nil && anniversaryDay == nil && slideshow == nil
@@ -160,10 +162,8 @@ struct GlobeView: View {
                         .transition(.opacity)
                 }
 
-                // Create the native tab hierarchy when the library first becomes
-                // browsable, then retain its focus and scroll state during exploration.
                 if locationDestination == nil && (model.phase == .globe || (hasPresentedLibrary && model.isPreparationPresented)) {
-                    sidebar
+                    libraryNavigation
                         .opacity(showsSidebarContent ? 1 : 0)
                         .disabled(!isOverviewInteractive || !showsSidebarContent)
                         .allowsHitTesting(isOverviewInteractive && showsSidebarContent)
@@ -227,7 +227,7 @@ struct GlobeView: View {
                         selectedPhotoID: $wallFocusID,
                         errorMessage: activeWallError,
                         title: wallCollection?.title
-                            ?? AppLocalization.string("wall.viewport.title", defaultValue: "Memories in This View"),
+                            ?? AppLocalization.string("memory_strip.title", defaultValue: "Photos in this view"),
                         canRetry: activeWallNextOffset != nil,
                         emptyHint: wallCollection == nil
                             ? AppLocalization.string("wall.viewport.empty_message", defaultValue: "Return to the globe, turn toward a glowing place, or widen the view.")
@@ -348,6 +348,11 @@ struct GlobeView: View {
             experience.refreshPhotos() // Drop candidates captured under the previous filter policy.
             // Metadata updates never relocate the user's browsing camera.
         }
+        .onChange(of: model.isInitialLibraryReady) { _, ready in
+            if ready && !hasPresentedLibrary && destination == .home {
+                presentsDirectHome = true
+            }
+        }
         .onChange(of: model.isPreparationPresented) { _, presented in
             guard locationDestination == nil, !model.isExploringPublicGlobe else { return }
             if presented {
@@ -459,6 +464,29 @@ struct GlobeView: View {
         }
     }
 
+    @ViewBuilder private var libraryNavigation: some View {
+        if presentsDirectHome {
+            // Mounting the native tab view opens its sidebar on tvOS. After a first
+            // scan, let Home own focus until the user asks for navigation.
+            overviewTab
+                .padding(.top, 60)
+                .overlay(alignment: .topLeading) {
+                    Button(action: showSidebar) {
+                        Label(AppLocalization.string("sidebar.home", defaultValue: "Home"), systemImage: "sidebar.left")
+                    }
+                    .buttonStyle(.glass)
+                    .padding(.leading, 48)
+                    .padding(.top, 32)
+                    .accessibilityIdentifier("home-open-sidebar")
+                }
+                .onExitCommand(perform: showsHome ? { showSidebar() } : nil)
+        } else {
+            sidebar
+        }
+    }
+
+    private func showSidebar() { presentsDirectHome = false }
+
     private var overviewTab: some View {
         GlobeOverviewView(
                         content: model.overview,
@@ -467,14 +495,19 @@ struct GlobeView: View {
                         startSlideshow: places.isEmpty ? nil : { startHomeSlideshow() },
                         openPlace: { place in
                             model.select(placeID: place.id)
-                            enterExplore(
-                                at: place.coordinate,
-                                city: PlaceCollection.city(containing: place, in: places), entry: .homeCity
-                            )
+                            pendingCityEntry = place
                         },
                         prepareSatelliteCity: { focusedSatelliteCity = $0 },
                         isActive: slideshow == nil && isOverviewInteractive && destination == .home && navigationVisible && collection == nil && scenePhase == .active
                     )
+                    .task(id: pendingCityEntry) {
+                        guard let place = pendingCityEntry else { return }
+                        await enterSelectedCity(place)
+                    }
+                    .onDisappear { pendingCityEntry = nil }
+                    .onChange(of: showsHome && scenePhase == .active) { _, active in
+                        if !active { pendingCityEntry = nil }
+                    }
                     .padding(.bottom, 88)
                     .modifier(LibraryPreparationChrome(model: model, aboveHomeActions: true))
     }
@@ -621,7 +654,7 @@ struct GlobeView: View {
 
     private func prepareOverview() {
         if let locationDestination, layer == .overview {
-            let start = reduceMotion ? locationDestination.camera : locationDestination.previewCamera
+            let start = reduceMotion ? locationDestination.camera : locationDestination.explorationOpeningCamera
             experience.transitionCamera(to: start.center, distance: start.distance, animated: false, overviewFraming: 0)
             enterExplore(at: locationDestination.camera.center, distance: locationDestination.camera.distance,
                          duration: 2.2, city: photoCityCollection(for: locationDestination), entry: .photoGlobe)
@@ -658,6 +691,26 @@ struct GlobeView: View {
         }
     }
 
+    private func enterSelectedCity(_ place: TravelPlace) async {
+        while !Task.isCancelled, pendingCityEntry == place, showsHome, scenePhase == .active {
+            guard places.contains(where: { $0.id == place.id && $0.coordinate == place.coordinate }) else {
+                pendingCityEntry = nil
+                return
+            }
+            let city = PlaceCollection.city(containing: place, in: places)
+            let exclusions = model.excludedAssetIDs
+            let revision = model.index?.contentRevision
+            let landing = try? await model.cityLanding(for: city, reference: place.coordinate)
+            guard !Task.isCancelled, pendingCityEntry == place, showsHome, scenePhase == .active else { return }
+            guard revision == model.index?.contentRevision, exclusions == model.excludedAssetIDs else { continue }
+            pendingCityEntry = nil
+            enterExplore(at: landing?.center ?? place.coordinate,
+                         distance: landing?.distance ?? GlobeCameraState.cityFallbackDistance,
+                         city: city, entry: .homeCity)
+            return
+        }
+    }
+
     private func enterExplore(at center: GeoCoordinate, distance: Double = GlobeCameraState.orbitalDistance,
                               duration: Double = 0.9, city: PlaceCollection? = nil, entry: JourneyEventContext.Entry = .home) {
         if layer != .explore {
@@ -676,7 +729,7 @@ struct GlobeView: View {
             layer = .explore
         }
         if city != nil, locationDestination == nil {
-            experience.approachCity(at: center, animated: !reduceMotion)
+            experience.approachCity(at: center, distance: distance, animated: !reduceMotion)
         } else {
             experience.transitionCamera(to: center, distance: distance, animated: !reduceMotion,
                                         overviewFraming: 0, duration: duration)
@@ -909,7 +962,7 @@ struct GlobeView: View {
         let membership = collectionWallSession?.membership
         guard membership != nil || (wallHasReadSession && wallSnapshot != nil) else { return }
         let scope = EarthSlideshowScope(id: collection?.id ?? "viewport-\(wallGeneration)",
-            title: collection?.title ?? AppLocalization.string("wall.viewport.title", defaultValue: "Memories in This View"),
+            title: collection?.title ?? AppLocalization.string("memory_strip.title", defaultValue: "Photos in this view"),
             kind: collection == nil ? .currentView : .collection)
         let source = frozenWallPlaces.places.isEmpty ? places : frozenWallPlaces.places
         let show = model.makeEarthSlideshow(scope: scope,
@@ -932,13 +985,13 @@ struct GlobeView: View {
         if slideshowReturnCamera == nil { slideshowReturnCamera = experience.displayedCamera }
         experience.pauseDirectManipulation()
         switch target {
-        case .chapter(let visit, _):
+        case .chapter(let visit, let isOpening):
             experience.transitionCamera(
                 to: visit.coordinate,
                 distance: GlobeCameraState.regionalDistance,
                 animated: !reducedMotion,
                 overviewFraming: 0,
-                duration: 2.8,
+                duration: isOpening ? EarthSlideshowConfiguration.standard.earthIntroDuration : 2.8,
                 usesGreatCircle: true
             )
         case .ending(let visit):
@@ -1113,13 +1166,12 @@ private struct GlobeMapLayer: View {
     let onUserLocationUpdate: (GeoCoordinate) -> Void
     let onInitialRenderReady: () -> Void
 
-    private var followsCameraScale: Bool { exploresByScale && experience.pendingCityLanding == nil }
     private var renderedPresentation: GlobeScalePresentation {
-        followsCameraScale ? experience.presentation : GlobeScalePresentation()
+        exploresByScale ? experience.presentation : GlobeScalePresentation()
     }
 
     private var receiveScale: ((GlobeScale) -> Void)? {
-        guard followsCameraScale else { return nil }
+        guard exploresByScale else { return nil }
         return { scale in experience.updateScale(scale) }
     }
 
@@ -1145,7 +1197,8 @@ private struct GlobeMapLayer: View {
             advanceHomeDrift: homeDriftStep,
             mapStyle: renderedPresentation.style,
             focusedSatelliteCity: focusedSatelliteCity,
-            cityLanding: exploresByScale ? experience.regionalFlightDestination : nil,
+            isCityFlight: exploresByScale && experience.isApproachingCity,
+            regionalBasemapTarget: exploresByScale ? experience.regionalBasemapTarget : nil,
             scalePresentation: renderedPresentation,
             onScaleChanged: receiveScale,
             onViewportSettled: experience.receiveViewport,

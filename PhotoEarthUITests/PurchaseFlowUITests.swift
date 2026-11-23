@@ -94,6 +94,7 @@ final class PurchaseFlowUITests: XCTestCase {
 
     private func launchStore() throws -> (XCUIApplication, SKTestSession) {
         let app = XCUIApplication()
+        app.launchEnvironment["PHOTOEARTH_UI_OWNED_FIXTURE"] = "0"
         app.launchArguments = ["--welcome-fixture", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
         // StoreKitTest resolves the target via LaunchServices even on a fresh simulator.
         app.launch()

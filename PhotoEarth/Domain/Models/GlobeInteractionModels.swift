@@ -2,6 +2,7 @@ import Foundation
 
 nonisolated struct GlobeCameraState: Equatable, Sendable {
     static let minimumDistance = 100.0
+    static let cityFallbackDistance = 100_000.0
     static let regionalDistance = 800_000.0
     static let maximumDistance = 42_000_000.0
     static let defaultDistance = 23_500_000.0

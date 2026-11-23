@@ -53,53 +53,26 @@ struct OnlineSlideshowCatalogTests {
 @Suite(.serialized)
 @MainActor
 struct EarthSlideshowTests {
-    @Test func transitionDirectorKeepsContinuousMemoriesOnOneDissolveGrammar() {
-        let start = Date(timeIntervalSince1970: 1_700_000_000)
-        let records = [
-            record(0, visit: 0, date: start),
-            record(1, visit: 0, date: start.addingTimeInterval(60)),
-            record(2, visit: 0, date: start.addingTimeInterval(120)),
-            record(3, visit: 0, date: start.addingTimeInterval(180)),
-            record(4, visit: 0, date: start.addingTimeInterval(86_400)),
-        ]
-        let transitions = SlideshowTransitionDirector().transitions(for: records)
-
-        #expect(transitions.map(\.kind) == [.dissolve, .dissolve, .dissolve, .dissolve, .dateReveal])
-        #expect(transitions.dropLast().allSatisfy { $0.duration == 0.72 })
-        #expect(transitions.last?.duration == 0.90)
-    }
-
-    @Test func transitionDirectorUsesDriftAndReframingOnlyWhenContentCallsForThem() {
-        let calendar = Calendar(identifier: .gregorian)
-        let start = calendar.date(from: DateComponents(
-            year: 2024,
-            month: 1,
-            day: 15,
-            hour: 8
-        ))!
-        let records = [
-            record(0, visit: 0, date: start),
-            record(1, visit: 0, date: start.addingTimeInterval(3 * 3_600)),
-            record(
-                2,
-                visit: 0,
-                date: start.addingTimeInterval(3 * 3_600 + 60),
-                pixelWidth: 1_080,
-                pixelHeight: 1_920
-            ),
-            record(
-                3,
-                visit: 0,
-                date: start.addingTimeInterval(3 * 3_600 + 120),
-                mediaKind: .video,
-                duration: 8
-            ),
-        ]
-
-        let transitions = SlideshowTransitionDirector().transitions(for: records)
-
-        #expect(transitions.map(\.kind) == [.dissolve, .directional, .settle, .dissolve])
-        #expect(transitions.map(\.duration) == [0.72, 0.78, 0.82, 0.72])
+    @Test func transitionRecipesUseFinalPagesAndSpaceAccents() {
+        let start = Calendar.current.startOfDay(for: Date()).addingTimeInterval(3600)
+        func page(_ index: Int, _ ratios: [CGFloat], minutes: Int = 0, favorite: Bool = false, dynamic: Bool = false) -> SlideshowPageDescriptor {
+            let date = start.addingTimeInterval(Double(minutes) * 60)
+            return .init(ids: ratios.indices.map { "\(index)-\($0)" }, ratios: ratios, visitID: "one",
+                         firstDate: date, lastDate: date, favorite: favorite, dynamic: dynamic)
+        }
+        var director = SlideshowTransitionDirector()
+        let pages = [page(0,[1.5]), page(1,[1.5],favorite: true), page(2,[0.75]), page(3,[1.5]),
+                     page(4,[0.75]), page(5,[0.75]), page(6,[0.75]), page(7,[0.75],minutes:45),
+                     page(8,[0.75,0.75]), page(9,[0.75,0.75]), page(10,[0.75,0.75])]
+        let choices = zip(pages, pages.dropFirst()).map { director.transition(from: $0, to: $1, manual: false, reduced: false).kind }
+        #expect(choices == [.settle,.dissolve,.dissolve,.backdrop,.dissolve,.dissolve,.reveal,.dissolve,.dissolve,.stagger])
+        #expect(director.transition(from: pages[0], to: pages[1], manual: false, reduced: false).kind == .settle)
+        #expect(director.transition(from: pages[0], to: pages[1], manual: true, reduced: false) == .init(kind: .dissolve, duration: 0.16))
+        #expect(director.transition(from: pages[0], to: pages[1], manual: false, reduced: true) == .init(kind: .dissolve, duration: 0.20))
+        for next in [page(11,[0.75,0.56]), page(12,[1.5],favorite:true,dynamic:true), page(13,[1.5],minutes:1440)] {
+            var fresh = SlideshowTransitionDirector()
+            #expect(fresh.transition(from: pages[9], to: next, manual: false, reduced: false).kind == .dissolve)
+        }
     }
 
     @Test func frozenMembershipSurvivesIndexReplacementAndPagesTiedDatesWithoutGaps() async throws {
@@ -170,9 +143,9 @@ struct EarthSlideshowTests {
         #expect(coordinator.phase == .preparing)
         #expect(coordinator.currentItem == nil)
         continuation.yield(())
-        try await waitUntil { coordinator.retainedCount == 7 }
+        try await waitUntil { coordinator.filmstrip.count == 7 }
         #expect(coordinator.currentItem?.id == source[1].id)
-        #expect(Set(coordinator.selectionRecords.map(\.id)) == Set(source.dropFirst().map(\.id)))
+        #expect(Set(coordinator.filmstrip.map(\.id)) == Set(source.dropFirst().map(\.id)))
     }
 
     @Test func frozenViewportReadsOnlyProjectedFramesAcrossSparseChronologicalPages() async throws {
@@ -222,10 +195,10 @@ struct EarthSlideshowTests {
                     }
                     show.start()
                     defer { show.cancel() }
-                    try await waitUntil(timeout: .seconds(10)) { opening != nil }
+                    try await waitUntil(timeout: .seconds(10)) { opening != nil && show.currentItem != nil }
                     #expect(show.currentItem?.id == records.first?.id)
                     #expect(!wall.records.contains { $0.id == records.first?.id })
-                    print("Slideshow startup rows=\(count) scope=view analyzedQueue=\(try #require(opening))")
+                    print("Slideshow startup rows=\(count) scope=view title=\(try #require(opening)) firstSelected=\(start.duration(to: clock.now))")
                 } else {
                     let frozen = try await reader.slideshowSnapshot(for: kind == .library ? nil : [place], excluding: [])
                     let detached = clock.now
@@ -315,7 +288,52 @@ struct EarthSlideshowTests {
         #expect(distant.records.isEmpty)
     }
 
-    @Test func sustainedSessionVisitsEveryPeriodWithoutRepeatsAndBoundsItsWindow() async throws {
+    @Test func slideshowSpacesPhotosAcrossPagesAndVisitsWhileKeepingVideo() async throws {
+        let base = Date(timeIntervalSinceReferenceDate: 60_059)
+        let source = [
+            record(0, visit: 1, date: base),
+            record(1, visit: 1, date: base.addingTimeInterval(2), mediaKind: .livePhoto),
+            record(2, visit: 1, date: base.addingTimeInterval(6), mediaKind: .video, duration: 4),
+            record(3, visit: 1, date: base.addingTimeInterval(59.99)),
+            record(4, visit: 1, date: base.addingTimeInterval(60), mediaKind: .livePhoto),
+            record(5, visit: 0, date: base.addingTimeInterval(-120)),
+            record(6, visit: 0, date: base.addingTimeInterval(-10))
+        ]
+        let stops = [visit(0, photoCount: 2), visit(1, photoCount: 5)]
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "", kind: .library),
+            places: stops, configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            makeSnapshot: { try frozen(source) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem && show.filmstrip.count == 4 }
+        #expect(show.filmstrip.map(\.id) == [source[0], source[2], source[4], source[5]].map(\.id))
+    }
+
+    @Test func aPhotoSkippedForTimingDoesNotHideALaterCopyOfItsScene() async throws {
+        let base = Date(timeIntervalSinceReferenceDate: 60_059)
+        let first = record(0, visit: 0, date: base)
+        let tooSoon = record(1, visit: 0, date: base.addingTimeInterval(10))
+        let anotherBurstFrame = record(2, visit: 0, date: base.addingTimeInterval(15))
+        let later = record(3, visit: 0, date: base.addingTimeInterval(65))
+        let paris = try #require(SamplePhotoResource.url(for: "sample-paris-1"))
+        let rio = try #require(SamplePhotoResource.url(for: "sample-rio-1"))
+        let firstScene = try #require(UIImage(contentsOfFile: paris.path))
+        let secondScene = try #require(UIImage(contentsOfFile: rio.path))
+        let previews = MappedThumbnailProvider(images: [
+            first.id: firstScene, tooSoon.id: secondScene, anotherBurstFrame.id: secondScene, later.id: secondScene
+        ])
+        let show = EarthSlideshowCoordinator(scope: .init(id: "city", title: "", kind: .city),
+            places: [visit(0, photoCount: 4)], configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: previews),
+            makeSnapshot: { try frozen([first, tooSoon, anotherBurstFrame, later]) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem && show.filmstrip.count == 2 }
+        #expect(show.filmstrip.map(\.id) == [first.id, later.id])
+    }
+
+    @Test func sustainedSessionVisitsEveryPeriodWithoutRepeats() async throws {
         let visits = (0..<8).map { visit($0, photoCount: 20) }
         let source = (0..<8).flatMap { v in (0..<20).map { record($0, visit: v) } }
         var config = EarthSlideshowConfiguration.standard
@@ -336,9 +354,7 @@ struct EarthSlideshowTests {
             let inserted = played.insert(item.id).inserted
             #expect(inserted)
             if let visitID = item.record.placeID { periods.insert(visitID) }
-            #expect(show.retainedCount <= 45)
-            #expect(show.selectionRecords.count <= 9)
-            #expect(show.selectionRecords.contains(item.record))
+            #expect(show.filmstrip[show.itemIndex].id == item.id)
             show.markCurrentItemReady(item.id)
             show.move(forward: true)
         }
@@ -346,6 +362,34 @@ struct EarthSlideshowTests {
         #expect(periods.count == 8)
         #expect(show.phase == .ending || show.phase == .completed)
         show.cancel()
+    }
+
+    @Test func browsingThreeHundredPhotosPagesForwardAndSeeksBackWithoutPlaying() async throws {
+        let source = (0..<300).map { record($0, visit: 0) }
+        let show = EarthSlideshowCoordinator(scope: .init(id: "city", title: "", kind: .city),
+            places: [visit(0, photoCount: 300)], configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            makeSnapshot: { try frozen(source) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem }
+        show.setPaused(true)
+        while show.filmstrip.count < source.count {
+            let count = show.filmstrip.count
+            show.prepareFilmstrip(around: try #require(show.filmstrip.last?.id))
+            try await waitUntil { show.filmstrip.count > count }
+            try #require(show.filmstrip.count > count)
+        }
+        #expect(show.filmstrip.map(\.id) == source.map(\.id))
+        #expect(show.currentItem?.id == source[0].id && show.viewedCount == 0)
+        show.selectPausedItem(source[299].id)
+        #expect(show.currentItem?.record == source[299])
+        show.removeAssets([source[1].id])
+        show.selectPausedItem(source[1].id)
+        #expect(show.currentItem?.id == source[299].id)
+        show.selectPausedItem(source[0].id)
+        #expect(show.currentItem?.record == source[0])
+        #expect(show.nextItemForPrefetch?.record == source[2] && show.isPaused)
     }
 
     @Test func activePlaybackKeepsTheTelevisionAwakeAndTerminalStatesReleaseIt() {
@@ -430,6 +474,54 @@ struct EarthSlideshowTests {
         show.cancel()
     }
 
+    @Test func openingTitleAppearsBeforeTheFirstPageIsSelected() async throws {
+        let source = [record(0, visit: 0)]
+        let firstVisit = visit(0, photoCount: 1)
+        let provider = DelayedOpeningThumbnailProvider(delay: .milliseconds(400))
+        var config = EarthSlideshowConfiguration.standard
+        config.earthIntroDuration = 0.02
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "Library", kind: .collection),
+            places: [firstVisit], configuration: config, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: provider),
+            makeSnapshot: { try frozen(source) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start(waitingForConfirmation: true)
+        try await waitUntil { provider.peakWaiting > 0 }
+        #expect(show.phase == .preparing)
+        #expect(show.currentItem == nil)
+
+        show.beginPlayback()
+        #expect(show.phase == .earthIntro)
+        #expect(show.displayedChapter?.visit == firstVisit)
+        #expect(show.displayedJourneyIndex == 0)
+        #expect(show.currentItem == nil)
+
+        try await waitUntil { show.phase == .presentingItem }
+        #expect(show.currentItem?.record == source[0])
+    }
+
+    @Test func removingTheOpeningCandidatesClearsTheirTitle() async throws {
+        let first = record(0, visit: 1)
+        let next = record(0, visit: 0)
+        let visits = [visit(1, photoCount: 1), visit(0, photoCount: 1)]
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "Library", kind: .collection),
+            places: visits, configuration: .standard, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: DelayedOpeningThumbnailProvider(delay: .milliseconds(400))),
+            makeSnapshot: { try frozen([first, next]) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .earthIntro }
+        #expect(show.displayedChapter?.visit == visits[0])
+        #expect(show.currentItem == nil)
+
+        show.removeAssets([first.id])
+        #expect(show.phase == .preparing)
+        #expect(show.displayedChapter == nil)
+
+        try await waitUntil { show.phase == .earthIntro }
+        #expect(show.displayedChapter?.visit == visits[1])
+    }
+
     @Test func allMissingMediaCanBeRetriedWithoutReplayingSuccessfulItems() async throws {
         let source = [record(0, visit: 0), record(1, visit: 0)]
         var config = EarthSlideshowConfiguration.standard
@@ -452,9 +544,9 @@ struct EarthSlideshowTests {
         try await waitUntil { if case .failed = show.phase { true } else { false } }
         #expect(show.viewedCount == 1)
         show.retry()
-        try await waitUntil { show.phase == .presentingItem }
-        #expect(show.currentItem?.id == source[1].id)
+        try await waitUntil { show.currentItem?.id == source[1].id }
         show.markCurrentItemReady(source[1].id)
+        try await waitUntil { show.phase == .presentingItem }
         #expect(show.viewedCount == 2)
         show.cancel()
     }
@@ -543,14 +635,53 @@ struct EarthSlideshowTests {
 
         coordinator.start()
         try await waitUntil { coordinator.phase == .presentingItem }
+        coordinator.markCurrentItemReady(source[0].id)
         coordinator.move(forward: true)
+        #expect(coordinator.activeTransition == nil)
+        try await Task.sleep(for: .milliseconds(190))
+        #expect(coordinator.canvasPage?.record.id == source[0].id)
+        #expect(coordinator.phase == .transitioningItem)
+        coordinator.markCurrentItemReady(source[1].id)
 
         #expect(coordinator.phase == .transitioningItem)
         #expect(coordinator.itemIndex == 1)
-        #expect(coordinator.activeTransitionDuration == 0.48)
+        #expect(coordinator.activeTransition == .init(kind: .dissolve, duration: 0.16))
+        coordinator.setPaused(true)
+        let frozenProgress = coordinator.transitionProgress(at: .now)
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(coordinator.transitionProgress(at: .now) == frozenProgress)
+        #expect(coordinator.phase == .transitioningItem)
+        coordinator.setPaused(false)
         try await waitUntil(timeout: .seconds(1)) { coordinator.phase == .presentingItem }
-        #expect(coordinator.activeTransitionDuration == nil)
+        #expect(coordinator.activeTransition == nil)
         coordinator.cancel()
+    }
+
+    @Test func enablingReduceMotionFinishesTheCurrentTransitionAndShortensTheNextAutomaticTransition() async throws {
+        let place = visit(0, photoCount: 3)
+        let records = (0..<3).map { record($0, visit: 0) }
+        var configuration = EarthSlideshowConfiguration.standard
+        configuration.earthIntroDuration = 0.02
+        configuration.stillDuration = 0.08
+        let coordinator = EarthSlideshowCoordinator(
+            scope: EarthSlideshowScope(id: place.id, title: place.name, kind: .recentVisit),
+            places: [place], configuration: configuration, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            makeSnapshot: { try frozen(records) }, cameraAction: { _, _ in }
+        )
+        defer { coordinator.cancel() }
+        coordinator.start()
+        try await waitUntil { coordinator.phase == .presentingItem }
+        coordinator.markCurrentItemReady(records[0].id)
+        try await waitUntil { coordinator.currentItem?.id == records[1].id }
+        coordinator.markCurrentItemReady(records[1].id)
+        #expect(coordinator.activeTransition != nil)
+        coordinator.updateReduceMotion(true)
+        #expect(coordinator.activeTransition == nil)
+        #expect(coordinator.canvasPage?.record.id == records[1].id)
+        try await waitUntil { coordinator.currentItem?.id == records[2].id }
+        coordinator.markCurrentItemReady(records[2].id)
+        #expect(coordinator.activeTransition == .init(kind: .dissolve, duration: 0.20))
     }
 
     @Test func selectingAPhotoAcrossChaptersPreviewsItWithoutResumingPlayback() async throws {
@@ -566,9 +697,9 @@ struct EarthSlideshowTests {
         defer { show.cancel() }
 
         show.start()
-        try await waitUntil { show.phase == .presentingItem && show.selectionRecords.count == 2 }
+        try await waitUntil { show.phase == .presentingItem && show.filmstrip.count == 2 }
         let first = try #require(show.currentItem?.id)
-        let other = try #require(show.selectionRecords.first { $0.id != first })
+        let other = try #require(show.filmstrip.first { $0.id != first })
         show.selectPausedItem(other.id)
         #expect(show.currentItem?.id == first)
         show.setPaused(true)
@@ -701,7 +832,7 @@ struct EarthSlideshowTests {
         coordinator.start()
         try await waitUntil(timeout: .seconds(1)) { provider.requestCount == 7 }
         #expect(coordinator.phase == .earthIntro)
-        #expect(coordinator.retainedCount == 3)
+        #expect(coordinator.filmstrip.count == 3)
         #expect(coordinator.preparation.stage == .analyzing)
         #expect(provider.requestCount == 7)
         coordinator.cancel()
@@ -719,10 +850,10 @@ struct EarthSlideshowTests {
             makeSnapshot: { try frozen(source, journeys: journeys) }, cameraAction: { _, _ in })
         defer { show.cancel() }
         show.start()
-        try await waitUntil { show.phase == .presentingItem && show.retainedCount > 4 }
+        try await waitUntil { show.phase == .presentingItem && show.filmstrip.count > 4 }
         #expect(show.currentJourneyNumber == 1 && show.journeyCount == 2 && show.canSkipToNextJourney)
         #expect(show.currentJourney?.id == "newer")
-        #expect(show.selectionRecords.allSatisfy { $0.placeID == recent.id })
+        #expect(show.filmstrip.allSatisfy { $0.placeID == recent.id })
         show.markCurrentItemReady(source[0].id)
         show.setPaused(paused)
         show.skipToNextJourney()
@@ -743,6 +874,68 @@ struct EarthSlideshowTests {
         #expect(show.currentJourney?.id == "newer" && show.canSkipToNextJourney)
     }
 
+    @Test func tripFiltersIncludeEveryVisitedCityAndBothYearsOfACrossYearTrip() {
+        let calendar = Calendar(identifier: .gregorian)
+        func stop(_ id: String, _ name: String, _ code: String, year: Int) -> TravelPlace {
+            let date = calendar.date(from: DateComponents(year: year, month: 1, day: 2))!
+            return TravelPlace(id: id, name: name, country: code, regionCode: code, offlinePlaceID: id,
+                               coordinate: .init(latitude: 0, longitude: 0), startDate: date, endDate: date,
+                               photoCount: 5, coverAssetID: nil)
+        }
+        let tokyo = stop("t", "Tokyo", "JP", year: 2024)
+        let paris = stop("p", "Paris", "FR", year: 2025)
+        let osaka = stop("o", "Osaka", "JP", year: 2023)
+        let trip = EarthSlideshowSegment(id: "cross", visits: [tokyo, paris])
+        let index = SlideshowJourneyFilter([trip, .init(id: "domestic", visits: [osaka])], calendar: calendar)
+        #expect(index.years == [2025, 2024, 2023])
+        #expect(index.citiesByCountry["region:JP"]?.count == 2)
+        #expect(index.matches(year: 2024, country: "region:FR", query: "tOkYO  páris") == [trip])
+        #expect(index.matches(year: 2025, country: "region:JP", city: .catalog("t"), query: "") == [trip])
+        #expect(index.matches(year: 2023, country: "region:JP", query: "Tokyo").isEmpty)
+        #expect(index.matches(year: nil, country: nil, query: "OSAKA").map(\.id) == ["domestic"])
+    }
+
+    @Test func homeTripSelectionReplacesPreloadedItemsAndSurvivesSkipAndReplay() async throws {
+        var stops = (0..<3).map { visit($0, photoCount: 1) }
+        for i in stops.indices { stops[i].offlinePlaceID = "tokyo" }
+        let source = stops.indices.map { record(0, visit: $0, date: stops[$0].startDate) }
+        let trips = [journey("new", [stops[2]]), journey("middle", [stops[1]])]
+        let show = EarthSlideshowCoordinator(scope: .init(id: "library", title: "Show", kind: .library),
+            places: stops, configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            makeSnapshot: { try frozen(source, journeys: trips) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start(waitingForConfirmation: true)
+        try await waitUntil { show.filmstrip.count == 3 }
+        let old = "visit:" + stops[0].id
+        show.chooseJourneys(["middle", old])
+        try await waitUntil { show.filmstrip.count == 2 }
+        #expect(show.availableJourneys.count == 3)
+        #expect(show.journeys.map(\.id) == ["middle", old])
+        #expect(show.filmstrip.map(\.id) == [source[1].id, source[0].id])
+        show.chooseJourneys([])
+        #expect(show.selectedJourneyIDs == ["middle", old])
+        show.chooseJourneys(nil)
+        try await waitUntil { show.filmstrip.count == 3 }
+        show.chooseJourneys([old, "middle"])
+        show.beginPlayback()
+        try await waitUntil { show.phase == .presentingItem }
+        #expect(show.currentItem?.id == source[1].id)
+        show.skipToNextJourney()
+        try await waitUntil { show.currentItem?.id == source[0].id }
+        #expect(!show.canSkipToNextJourney)
+        show.restart()
+        try await waitUntil { show.phase == .presentingItem }
+        #expect(show.currentItem?.id == source[1].id && show.journeyCount == 2)
+        show.removeAssets([source[0].id, source[1].id])
+        show.restart()
+        try await waitUntil { if case .failed = show.phase { return true }; return false }
+        #expect(show.currentItem == nil)
+        show.chooseJourneys(["new"])
+        try await waitUntil { show.currentItem?.id == source[2].id }
+        #expect(show.awaitsPlaybackConfirmation && show.journeyCount == 1)
+    }
+
     @Test func repeatVisitsToTheSameCityUseDatesAndSeparateJourneysWithoutFlyingAgain() async throws {
         var stops = (0..<3).map { visit($0, photoCount: 1) }
         for index in stops.indices { stops[index].offlinePlaceID = "tokyo" }
@@ -756,14 +949,128 @@ struct EarthSlideshowTests {
             cameraAction: { _, _ in cameraMoves += 1 })
         defer { show.cancel() }
         show.start()
-        try await waitUntil { show.phase == .presentingItem && show.retainedCount == 3 }
+        try await waitUntil { show.phase == .presentingItem && show.filmstrip.count == 3 }
         #expect(show.currentItem?.id == source[1].id && cameraMoves == 1)
         show.move(forward: true)
         #expect(show.currentItem?.id == source[2].id)
-        #expect(show.currentItem?.transition.kind == .dateReveal && show.phase == .transitioningItem)
+        #expect(show.phase == .transitioningItem)
         show.move(forward: true)
         #expect(show.currentItem?.id == source[0].id && show.currentJourneyNumber == 2)
         #expect(show.phase == .chapterTitle && cameraMoves == 1)
+    }
+
+    @Test func collageUsesFullImageAreaAndKeepsTheLargerPairWhenItFitsBetter() {
+        let skinny: CGFloat = 9.0 / 16
+        let landscape: CGFloat = 4.0 / 3
+        let cases: [([CGFloat], Int)] = [
+            ([0.75, 0.75, 0.75], 2), ([skinny, skinny, skinny], 3),
+            ([0.75, landscape], 2), ([landscape, 0.75], 2), ([1 / skinny, 0.75], 1),
+            ([1, 0.75], 1), ([0.75, 0], 1), ([skinny, skinny], 1), ([1.5, 1.5], 1)
+        ]
+        for (ratios, expected) in cases {
+            #expect(SlideshowCollageLayout.count(for: ratios) == expected)
+        }
+        let sizes = SlideshowCollageLayout.sizes(for: [0.75, 4/3], in: CGSize(width: 1920, height: 1080))
+        #expect(sizes[0].height == sizes[1].height)
+        #expect(abs(sizes[0].width / sizes[0].height - 0.75) < 0.00001)
+        #expect(abs(sizes[0].width + sizes[1].width + 6 - 1920) < 0.00001)
+    }
+
+    @Test func collageCountsVisibleMembersAndResumesFromTheInspectedPhoto() async throws {
+        let photos = (0..<3).map { record($0, visit: 0, pixelWidth: 900, pixelHeight: 1600) }
+            + [record(3, visit: 0, mediaKind: .livePhoto)]
+        var config = quickChapters
+        config.stillDuration = 0.04
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "", kind: .library),
+            places: [visit(0, photoCount: 4)], configuration: config, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            imageScheduler: SharedPhotoImageScheduler(requester: CollageTestRequester()),
+            makeSnapshot: { try frozen(photos) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem && show.collageTiles.count == 3 }
+        let ids = photos.prefix(3).map(\.id)
+        #expect(show.viewedCount == 0)
+        show.markCurrentItemReady(ids[0])
+        #expect(show.viewedCount == 0)
+        show.markCollageDisplayed(ids)
+        #expect(show.viewedCount == 3 && show.nextItemForPrefetch?.record == photos[3])
+        show.setPaused(true)
+        show.move(forward: true)
+        #expect(show.currentItem?.record == photos[3] && show.collageTiles.isEmpty)
+        show.move(forward: false)
+        #expect(show.collageTiles.map(\.id) == ids)
+        show.selectPausedItem(ids[1])
+        #expect(show.isPaused && show.collageTiles.isEmpty && show.currentItem?.id == ids[1])
+        show.markCurrentItemReady(ids[1])
+        show.setPaused(false)
+        try await waitUntil { show.currentItem?.id == ids[2] }
+    }
+
+    @Test func slowTileFallsBackWithoutLosingItsPlaceOrRevivingAWithdrawnPhoto() async throws {
+        let photos = (0..<3).map { record($0, visit: 0, pixelWidth: 750, pixelHeight: 1000) }
+        let requester = CollageTestRequester()
+        requester.delayedID = photos[1].id
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "", kind: .library),
+            places: [visit(0, photoCount: 3)], configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            imageScheduler: SharedPhotoImageScheduler(requester: requester),
+            makeSnapshot: { try frozen(photos) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem && !show.preparingCollage }
+        #expect(show.collageTiles.isEmpty && show.currentItem?.id == photos[0].id)
+        #expect(show.singlePreview?.id == photos[0].id)
+        show.markCurrentItemReady(photos[0].id)
+        #expect(show.viewedCount == 1)
+        show.move(forward: true)
+        #expect(show.currentItem?.id == photos[1].id)
+        show.removeAssets([photos[1].id])
+        requester.deliverDelayed()
+        #expect(show.collageTiles.isEmpty && show.currentItem?.id == photos[2].id)
+        #expect(!show.filmstrip.contains { $0.id == photos[1].id })
+        #expect(requester.networkRequests == 0)
+    }
+
+    @Test func visibleCollageDropsRevokedMemberAndRejectsStaleDisplay() async throws {
+        let photos = (0..<3).map { record($0, visit: 0, pixelWidth: 900, pixelHeight: 1600) }
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "", kind: .library),
+            places: [visit(0, photoCount: 3)], configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            imageScheduler: SharedPhotoImageScheduler(requester: CollageTestRequester()),
+            makeSnapshot: { try frozen(photos) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem && show.collageTiles.count == 3 }
+        let ids = show.collageTiles.map(\.id)
+        show.setPaused(true)
+        show.removeAssets([ids[1]])
+        show.markCollageDisplayed(ids)
+        #expect(show.viewedCount == 0)
+        #expect(show.currentItem?.id == ids[0] && show.collageTiles.isEmpty)
+        show.move(forward: true)
+        #expect(show.currentItem?.id == ids[2] && show.isPaused)
+    }
+
+    @Test func collageStaysWithinTheSameVisitDayAndHalfHour() async throws {
+        let midnight = Calendar.current.startOfDay(for: Date(timeIntervalSince1970: 1_750_000_000))
+        let photos = [-60.0, 0, 1801, 1861, 1921].enumerated().map { index, interval in
+            record(index, visit: index == 4 ? 1 : 0, date: midnight.addingTimeInterval(interval),
+                   mediaKind: index == 3 ? .livePhoto : .photo, pixelWidth: 750, pixelHeight: 1000)
+        }
+        let show = EarthSlideshowCoordinator(scope: .init(id: "all", title: "", kind: .library),
+            places: [visit(0, photoCount: 4), visit(1, photoCount: 1)], configuration: quickChapters, reduceMotion: false,
+            analyzer: PhotoSimilarityAnalyzer(thumbnailProvider: NilThumbnailProvider()),
+            imageScheduler: SharedPhotoImageScheduler(requester: CollageTestRequester()),
+            makeSnapshot: { try frozen(photos) }, cameraAction: { _, _ in })
+        defer { show.cancel() }
+        show.start()
+        try await waitUntil { show.phase == .presentingItem && show.filmstrip.count == photos.count }
+        show.setPaused(true)
+        for _ in photos {
+            #expect(show.collageTiles.isEmpty)
+            show.move(forward: true)
+        }
     }
 
     private var quickChapters: EarthSlideshowConfiguration {
@@ -824,7 +1131,7 @@ struct EarthSlideshowTests {
         PhotoAssetRecord(
             id: "asset-\(visit)-\(index)",
             coordinate: GeoCoordinate(latitude: Double(visit), longitude: Double(visit)),
-            creationDate: date ?? Date(timeIntervalSince1970: 1_600_000_000 + Double(index) * 60),
+            creationDate: date ?? self.visit(visit, photoCount: 0).startDate.addingTimeInterval(Double(index) * 60),
             pixelWidth: pixelWidth,
             pixelHeight: pixelHeight,
             isFavorite: favorite,
@@ -868,7 +1175,7 @@ private final class FixedThumbnailProvider: SlideshowThumbnailProviding {
 }
 
 @MainActor
-private final class NilThumbnailProvider: SlideshowThumbnailProviding {
+final class NilThumbnailProvider: SlideshowThumbnailProviding {
     func image(for record: PhotoAssetRecord, longEdge: Int) async -> UIImage? { nil }
 }
 
@@ -888,13 +1195,38 @@ private final class BlockingAfterSixThumbnailProvider: SlideshowThumbnailProvidi
 
 @MainActor
 private final class DelayedOpeningThumbnailProvider: SlideshowThumbnailProviding {
+    private let delay: Duration
     private var waiting = 0
     private(set) var peakWaiting = 0
+
+    init(delay: Duration = .milliseconds(80)) { self.delay = delay }
+
     func image(for record: PhotoAssetRecord, longEdge: Int) async -> UIImage? {
         waiting += 1
         peakWaiting = max(peakWaiting, waiting)
         defer { waiting -= 1 }
-        try? await Task.sleep(for: .milliseconds(80))
+        try? await Task.sleep(for: delay)
         return nil
     }
+}
+
+@MainActor private final class CollageTestRequester: SharedPhotoImageRequesting {
+    var delayedID: String?
+    var networkRequests = 0
+    private var delayed: [@MainActor @Sendable (OverviewImageDelivery) -> Void] = []
+    private let tile = UIGraphicsImageRenderer(size: CGSize(width: 4, height: 4)).image { _ in }
+
+    func request(_ key: SharedPhotoImageKey, network: Bool, token: UUID,
+                 completion: @escaping @MainActor @Sendable (OverviewImageDelivery) -> Void) {
+        if network { networkRequests += 1 }
+        if key.assetID == delayedID { delayed.append(completion) }
+        else { completion(.init(image: tile)) }
+    }
+
+    func deliverDelayed() {
+        for completion in delayed { completion(.init(image: tile)) }
+        delayed.removeAll()
+    }
+    func cancel(_ token: UUID) {}
+    func invalidate(_ ids: Set<String>?) {}
 }

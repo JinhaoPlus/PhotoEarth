@@ -214,6 +214,6 @@ final class PrivateLibrarySlideshowUITests: XCTestCase {
         let summary = XCTAttachment(string: "At least \(samples.count) distinct real assets observed during 60 minutes.")
         summary.lifetime = .keepAlways
         add(summary)
-        XCUIRemote.shared.press(.menu)
+        app.confirmSlideshowExit()
     }
 }

@@ -113,6 +113,29 @@ nonisolated enum AppLocalization {
         return String(format: format, locale: locale, arguments: [Int64(count)])
     }
 
+    static func itemCount(_ count: Int, locale: Locale = locale) -> String {
+        let format = string("count.item", defaultValue: "%lld items", locale: locale)
+        return String(format: format, locale: locale, arguments: [Int64(count)])
+    }
+
+    static func visitFilterNotice(belowMinimum: Bool, hiddenTransitItems: Int) -> (title: String, help: String)? {
+        if belowMinimum {
+            return (string("journey.minimum.empty", defaultValue: "No visits meet the minimum"),
+                    string("journey.minimum.help", defaultValue: "Lower the minimum per visit in Settings."))
+        }
+        if hiddenTransitItems > 0 {
+            return (string("home.transit_empty", defaultValue: "Likely transit photos are hidden"),
+                    string("home.transit_help", defaultValue: "Turn off the transit filter in Settings to show them."))
+        }
+        return nil
+    }
+
+    static func globeInputHint(supportsTouchPan: Bool) -> String {
+        supportsTouchPan
+            ? string("globe.controls.touch_accessibility", defaultValue: "Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls.")
+            : string("globe.controls.accessibility", defaultValue: "Use the direction buttons to turn it. Press the center button to view photos. Press Play/Pause to open zoom controls.")
+    }
+
     static func placeCount(_ count: Int, locale: Locale = locale) -> String {
         let format = string("count.place", defaultValue: "%lld places", locale: locale)
         return String(format: format, locale: locale, arguments: [Int64(count)])
@@ -167,8 +190,7 @@ nonisolated enum AppLocalization {
         }
         let formatter = DateIntervalFormatter()
         formatter.locale = locale
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
+        formatter.dateTemplate = "yMMMd"
         return formatter.string(from: startDate, to: endDate)
     }
 }

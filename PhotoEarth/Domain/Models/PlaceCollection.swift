@@ -43,6 +43,41 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
         case city(country: String, name: String)
     }
     var scope: Scope = .visits
+    var countryJourneyCoverAssetID: String?
+    var usesCountryJourneyCover: Bool {
+        if case let .country(key) = scope { return key != "unresolved" }
+        return false
+    }
+    var groupsPhotosByJourney = false
+    var journeyDates: ClosedRange<Date>?
+
+    private static let flagRegions = Set(Locale.Region.isoRegions.map(\.identifier).filter { $0.utf8.count == 2 })
+
+    private var countryFlag: String? {
+        guard case let .country(key) = scope, key.hasPrefix("region:") else { return nil }
+        let code = String(key.dropFirst("region:".count))
+        guard Self.flagRegions.contains(code) else { return nil }
+
+        let regionalIndicatorA: UInt32 = 0x1F1E6
+        return code.unicodeScalars.map { letter in
+            String(UnicodeScalar(regionalIndicatorA + letter.value - 65)!)
+        }.joined()
+    }
+
+    var titleWithCountryFlag: String {
+        countryFlag.map { "\($0) \(title)" } ?? title
+    }
+
+    var journeyDateText: String? {
+        journeyDates.map { AppLocalization.dateRange(from: $0.lowerBound, to: $0.upperBound) }
+    }
+
+    func journeySegments(in journeys: [TravelJourney]) -> [PlaceCollection] {
+        EarthSlideshowSegment.scoped(to: places, journeys: journeys).map { segment in
+            PlaceCollection(id: "city-trip:\(segment.visits[0].id)", title: title, subtitle: subtitle,
+                            places: Self.sorted(segment.visits), journeyDates: segment.startDate...segment.endDate)
+        }
+    }
 
     /// Resolve semantic country/city membership in the same SQLite read version
     /// used by every page. A reused visit ID at a new coordinate is not the
@@ -146,18 +181,27 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
         }
     }
 
-    static func countries(_ places: [TravelPlace]) -> [PlaceCollection] {
-        Dictionary(grouping: places, by: countryKey)
+    static func countries(_ places: [TravelPlace], journeys: [TravelJourney] = [],
+                          excluding excluded: Set<String> = []) -> [PlaceCollection] {
+        var journeyByVisit: [String: String] = [:]
+        for journey in journeys {
+            for id in journey.placeIDs where journeyByVisit[id] == nil {
+                journeyByVisit[id] = journey.id
+            }
+        }
+        return Dictionary(grouping: places, by: countryKey)
             .map { countryKey, members in
                 let ordered = sorted(members)
                 let cityCount = Set(ordered.lazy.filter { PlaceDisplayLabel(place: $0).isComplete }.map { cityKey($0) }).count
                 let country = ordered.lazy.compactMap { PlaceDisplayLabel(place: $0).displayCountry }.first
+                let cover = countryKey == "unresolved" ? nil
+                    : latestJourneyCover(in: ordered, journeyByVisit: journeyByVisit, excluding: excluded)
                 return PlaceCollection(id: countryKey == "unresolved" ? "country:unresolved" : "country:\(countryKey)",
                                        title: countryKey == "unresolved"
                                            ? AppLocalization.unresolvedPlace
                                            : (country ?? AppLocalization.unresolvedPlace),
                                        subtitle: countryKey == "unresolved" ? AppLocalization.placeCount(ordered.count) : AppLocalization.cityCount(cityCount),
-                                       places: ordered, scope: .country(countryKey))
+                                       places: ordered, scope: .country(countryKey), countryJourneyCoverAssetID: cover)
             }
             .sorted {
                 // Unresolved places remain accessible without disguising them as a country.
@@ -165,6 +209,19 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
                 if $1.id == "country:unresolved" { return true }
                 return Self.collectionComesFirstByRecency($0, $1)
             }
+    }
+
+    private static func latestJourneyCover(in ordered: [TravelPlace], journeyByVisit: [String: String],
+                                          excluding excluded: Set<String>) -> String? {
+        guard let latest = ordered.first else { return nil }
+        // A visit without indexed journey membership forms a trip of its own.
+        let trip: EarthSlideshowSegment
+        if let id = journeyByVisit[latest.id] {
+            trip = EarthSlideshowSegment(id: id, visits: ordered.filter { journeyByVisit[$0.id] == id })
+        } else {
+            trip = EarthSlideshowSegment(id: "visit:" + latest.id, visits: [latest])
+        }
+        return trip.coverAssetID(excluding: excluded)
     }
 
     /// Home cards represent a city even when several time-separated visits
@@ -201,7 +258,7 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
             let ordered = Self.sorted(members)
             let label = PlaceDisplayLabel(place: ordered[0])
             return PlaceCollection(id: "\(id)/city:\(ordered.map(\.id).joined(separator: ","))", title: label.displayCity,
-                                   subtitle: label.displaySubtitle, places: ordered, scope: .visits)
+                                   subtitle: label.displaySubtitle, places: ordered, groupsPhotosByJourney: true)
         }.sorted(by: Self.collectionComesFirstByRecency)
     }
 
@@ -211,7 +268,7 @@ nonisolated struct PlaceCollection: Identifiable, Hashable, Sendable {
         return PlaceDisplayLabel(place: place).isComplete ? name : "unresolved:\(place.id)"
     }
 
-    private static func countryKey(_ place: TravelPlace) -> String {
+    static func countryKey(_ place: TravelPlace) -> String {
         let label = PlaceDisplayLabel(place: place)
         guard label.isComplete || (!normalized(place.regionCode).isEmpty && label.displayCountry != nil) else {
             return "unresolved"

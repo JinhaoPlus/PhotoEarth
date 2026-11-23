@@ -47,7 +47,9 @@ final class ExperienceScopeUITests: XCTestCase {
         XCTAssertTrue(focus(globe))
         XCTAssertFalse(scope.exists, "The city-only indicator disappears when the globe follows the current view")
         XCUIRemote.shared.press(.select)
-        XCTAssertTrue(app.staticTexts["Memories in This View"].waitForExistence(timeout: 6))
+        let wallTitle = app.staticTexts["photo-wall-title"]
+        XCTAssertTrue(wallTitle.waitForExistence(timeout: 6))
+        XCTAssertEqual(wallTitle.label, "Photos in this view")
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focus(globe))
         XCTAssertFalse(scope.exists, "The city-only indicator disappears when the globe follows the current view")

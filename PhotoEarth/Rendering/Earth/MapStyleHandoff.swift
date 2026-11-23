@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Fetch the destination style through MapKit before releasing the working
 /// basemap. There is one resident MKMapView and at most one pending snapshot.
-/// Only the outgoing live view is held for the final dissolve.
+/// A still of the outgoing map bridges the renderer change at a stationary camera.
 @MainActor
 final class MapStyleHandoff {
     struct Style: Equatable {
@@ -54,8 +54,20 @@ final class MapStyleHandoff {
 
     func holdSatelliteFrame(in map: MKMapView) {
         discardFrame()
-        guard map.window != nil, !UIAccessibility.isReduceMotionEnabled,
-              let frame = map.snapshotView(afterScreenUpdates: false) else { return }
+        let bounds = map.bounds
+        guard map.window != nil, bounds.width > 0, bounds.height > 0 else { return }
+        // snapshotView can follow MapKit's replacement render surface and
+        // show its orbital fallback. Copy the displayed pixels before switching.
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        format.opaque = true
+        var captured = false
+        let image = UIGraphicsImageRenderer(bounds: bounds, format: format).image { _ in
+            captured = map.drawHierarchy(in: bounds, afterScreenUpdates: false)
+        }
+        guard captured else { return }
+        let frame = UIImageView(image: image)
+        frame.layer.zPosition = 1
         frame.isUserInteractionEnabled = false
         frame.accessibilityElementsHidden = true
         frame.frame = map.bounds
@@ -72,6 +84,10 @@ final class MapStyleHandoff {
         guard let frame = outgoingView, revealDeadline != nil else { return }
         revealDeadline?.cancel()
         revealDeadline = nil
+        if UIAccessibility.isReduceMotionEnabled {
+            discardFrame()
+            return
+        }
         UIView.animate(withDuration: 0.55, delay: 0, options: [.curveEaseInOut, .allowUserInteraction]) {
             frame.alpha = 0
         } completion: { [weak self] _ in

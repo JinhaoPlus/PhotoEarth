@@ -185,7 +185,8 @@ struct MapReviewView: View {
                             .onMoveCommand { camera.fallbackNudge($0) }
                             .onPlayPauseCommand(perform: openControls)
                             .onExitCommand(perform: close)
-                            .accessibilityLabel(text("globe.controls.touch_accessibility", "Explore the globe. Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls."))
+                            .accessibilityLabel(text("review.title", "Photo Map"))
+                            .accessibilityHint(AppLocalization.globeInputHint(supportsTouchPan: camera.supportsTouchPan))
                             .accessibilityIdentifier("map-review-direct-manipulation")
                             .accessibilityValue(mapPositionDescription)
                     }
@@ -204,11 +205,15 @@ struct MapReviewView: View {
                     if !showsControls {
                         VStack {
                             HStack(alignment: .top) {
-                                Text(text("review.title", "Map Review")).font(.system(size: 30, weight: .medium))
+                                Text(text("review.title", "Photo Map")).font(.system(size: 30, weight: .medium))
                                 Spacer()
                                 Grid(alignment: .leading, horizontalSpacing: 26, verticalSpacing: 12) {
                                     GridRow {
-                                        Label(text("globe.controls.swipe", "Drag"), systemImage: camera.remoteSymbolNames.touchSurface)
+                                        if camera.supportsTouchPan {
+                                            Label(text("globe.controls.swipe", "Drag"), systemImage: camera.remoteSymbolNames.touchSurface)
+                                        } else {
+                                            Color.clear.frame(width: 1, height: 1).accessibilityHidden(true)
+                                        }
                                         Label(text("globe.controls.arrows", "Turn"), systemImage: camera.remoteSymbolNames.directionalPad)
                                     }
                                     GridRow {
@@ -287,7 +292,7 @@ struct MapReviewView: View {
 
     private var photoWall: some View {
         let active = selectedPhoto == nil && slideshow == nil
-        let countError = session.countFailed ? text("error.wall.count", "Couldn’t count all photos.") : nil
+        let countError = session.countFailed ? text("error.wall.count", "Couldn’t count all items.") : nil
         let countRetry: (() -> Void)? = hasCurrentWallSnapshot ? { retryCount() } : nil
         return ViewportPhotoWall(
             records: session.records, isLoading: session.isLoading, hasMore: session.nextOffset != nil,
@@ -341,7 +346,7 @@ struct MapReviewView: View {
     private func startSlideshow() {
         guard showsWall, selectedPhoto == nil, slideshow == nil, let snapshot = session.snapshot else { return }
         let scope = EarthSlideshowScope(id: "review-viewport",
-            title: text("wall.viewport.title", "Memories in This View"), kind: .currentView)
+            title: text("memory_strip.title", "Photos in this view"), kind: .currentView)
         // This map owns the frozen viewport of the underlying wall. Chapter
         // motion must leave that projection and return camera intact.
         let show = app.makeEarthSlideshow(scope: scope, places: placeSnapshot, viewport: snapshot,

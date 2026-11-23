@@ -33,11 +33,11 @@ nonisolated enum LibraryPreparationNotice: String, Codable, Sendable {
         case .geocoderBusy:
             AppLocalization.string("preparation.message.geocoder_busy", defaultValue: "Place naming is paused. Your progress is saved and will resume later.", locale: locale)
         case .noLocatedPhotos:
-            AppLocalization.string("preparation.message.no_located_photos", defaultValue: "No accessible photos or videos have location data yet. Future changes will update automatically.", locale: locale)
+            AppLocalization.string("preparation.message.no_located_photos", defaultValue: "No photos or videos matched this scan. Check the scan scope and the locations in Photos.", locale: locale)
         case .savedOnDevice:
             AppLocalization.string("preparation.message.saved_on_device", defaultValue: "Your scan results are saved on this Apple TV.", locale: locale)
         case .partialLabels:
-            AppLocalization.string("preparation.message.partial_labels", defaultValue: "Some locations have no reliable city or country yet. Their photos and coordinates remain available.", locale: locale)
+            AppLocalization.string("preparation.message.partial_labels", defaultValue: "You can still browse these photos and videos.", locale: locale)
         }
     }
 }
@@ -84,7 +84,7 @@ nonisolated struct LibraryPreparationProgress: Codable, Equatable, Sendable {
         case .complete: locatedPhotos == 0
             ? AppLocalization.string("preparation.title.checked", defaultValue: "Photo Check Complete")
             : AppLocalization.string("preparation.title.complete", defaultValue: "Scan Complete")
-        case .partial: AppLocalization.string("preparation.title.partial", defaultValue: "Place Preparation Complete for Now")
+        case .partial: AppLocalization.string("preparation.title.partial", defaultValue: "Some place names are unavailable")
         case .failed: AppLocalization.string("preparation.title.failed", defaultValue: "Update Not Complete")
         }
     }
@@ -92,21 +92,21 @@ nonisolated struct LibraryPreparationProgress: Codable, Equatable, Sendable {
     var countText: String {
         switch phase {
         case .checking: totalPhotos > 0
-            ? AppLocalization.format("preparation.count.photos", defaultValue: "Photos checked: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(totalPhotos))
+            ? AppLocalization.format("preparation.count.checked", defaultValue: "Items checked: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(totalPhotos))
             : AppLocalization.string("preparation.count.checking_changes", defaultValue: "Checking for photo changes")
         case .organizing:
-            AppLocalization.format("preparation.count.located", defaultValue: "Photos with location data: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(locatedPhotos))
+            AppLocalization.format("preparation.count.located", defaultValue: "Items organized: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(locatedPhotos))
         case .labeling:
             AppLocalization.format("preparation.count.places", defaultValue: "Places named: %1$@ / %2$@", AppLocalization.number(completePlaces), AppLocalization.number(totalPlaces))
         case .paused, .waiting: needsMetadata
             ? (totalPhotos > 0
-                ? AppLocalization.format("preparation.count.checked", defaultValue: "Photos checked: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(totalPhotos))
+                ? AppLocalization.format("preparation.count.checked", defaultValue: "Items checked: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(totalPhotos))
                 : AppLocalization.string("preparation.count.metadata_pending", defaultValue: "Photo information check not complete"))
             : AppLocalization.format("preparation.count.remaining", defaultValue: "%lld places still need names", Int64(remainingPlaces))
         case .partial:
             AppLocalization.format("preparation.count.remaining", defaultValue: "%lld places still need names", Int64(remainingPlaces))
         case .complete:
-            AppLocalization.format("preparation.count.complete", defaultValue: "Photos with location data: %1$@ · Places: %2$@", AppLocalization.number(locatedPhotos), AppLocalization.number(totalPlaces))
+            AppLocalization.format("preparation.count.complete", defaultValue: "Items with a location: %1$@ · Places: %2$@", AppLocalization.number(locatedPhotos), AppLocalization.number(totalPlaces))
         case .failed: AppLocalization.string("preparation.count.saved", defaultValue: "Your saved memories are still here")
         case .saving: AppLocalization.string("preparation.count.saving", defaultValue: "Saving progress on this Apple TV")
         case .idle: AppLocalization.string("preparation.count.idle", defaultValue: "View photos and places")

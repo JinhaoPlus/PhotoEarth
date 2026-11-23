@@ -19,7 +19,7 @@ struct LibraryPreparationView: View {
                 .focused($focus, equals: .status)
                 .accessibilityIdentifier("preparation-status")
             if progress.mode == .rebuild && progress.phase.isWorking {
-                Text(AppLocalization.string("preparation.hero.rebuild", defaultValue: "Rediscovering the paths in your photos while keeping known place names."))
+                Text(AppLocalization.string("preparation.hero.rebuild", defaultValue: "Existing place names are kept."))
                     .font(.system(size: 25)).foregroundStyle(.secondary)
                     .padding(.top, 16)
             }
@@ -27,7 +27,7 @@ struct LibraryPreparationView: View {
             VStack(alignment: .leading, spacing: 18) {
                 if progress.phase != .complete, model.isInitialLibraryReady, let index = model.index {
                     Text(AppLocalization.format("preparation.ready.count", defaultValue: "%1$@ · %2$@ ready to explore",
-                                                AppLocalization.photoCount(index.locatedPhotoCount),
+                                                AppLocalization.itemCount(index.locatedPhotoCount),
                                                 AppLocalization.placeCount(index.places.count)))
                         .font(.system(size: 32, weight: .light))
                         .accessibilityIdentifier("preparation-ready")

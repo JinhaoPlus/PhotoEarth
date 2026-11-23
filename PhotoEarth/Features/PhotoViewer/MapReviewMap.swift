@@ -3,7 +3,7 @@ import MapKit
 import Combine
 
 struct MapReviewPin: Identifiable {
-    let clusters: [MapReviewCluster]
+    var clusters: [MapReviewCluster]
     let point: CGPoint
     var id: String { clusters.map(\.id).sorted().joined(separator: "|") }
     var count: Int { clusters.reduce(0) { $0 + $1.count } }
@@ -342,7 +342,7 @@ struct MapReviewMap: UIViewRepresentable {
         let pin = annotation.pin
         host.rootView = MapReviewPinContent(assetID: pin.assetID, count: pin.count, isActive: annotation.isActive)
         isHidden = !annotation.isActive
-        accessibilityLabel = AppLocalization.photoCount(pin.count)
+        accessibilityLabel = AppLocalization.itemCount(pin.count)
         accessibilityIdentifier = "map-review-pin-\(pin.id)"
     }
 

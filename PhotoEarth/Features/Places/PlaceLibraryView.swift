@@ -9,7 +9,10 @@ struct PlaceLibraryView: View {
     @State private var selectedCountryID: String?
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
-    private var countries: [PlaceCollection] { PlaceCollection.countries(model.index?.places ?? []) }
+    private var countries: [PlaceCollection] {
+        guard let index = model.index else { return [] }
+        return PlaceCollection.countries(index.places, journeys: index.journeys, excluding: model.excludedAssetIDs)
+    }
 
     var body: some View {
         Group {
@@ -129,9 +132,9 @@ private struct PlaceCollectionGrid: View {
                     if let allPhotos {
                         HStack(alignment: .center, spacing: 32) {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text(allPhotos.title).font(.system(size: 52, weight: .light))
+                                Text(allPhotos.titleWithCountryFlag).font(.system(size: 52, weight: .light))
                                     .accessibilityAddTraits(.isHeader)
-                                Text(AppLocalization.format("library.country.summary", defaultValue: "%1$@ · %2$@", allPhotos.subtitle, AppLocalization.photoCount(allPhotos.photoCount)))
+                                Text(AppLocalization.format("library.country.summary", defaultValue: "%1$@ · %2$@", allPhotos.subtitle, AppLocalization.itemCount(allPhotos.photoCount)))
                                     .font(.system(size: 26)).foregroundStyle(.white.opacity(0.65))
                             }
                             Button(AppLocalization.string("library.all_photos", defaultValue: "View All Photos"), systemImage: "photo.on.rectangle") { open(allPhotos) }
@@ -151,12 +154,16 @@ private struct PlaceCollectionGrid: View {
                     }
 
                     if collections.isEmpty && allPhotos == nil {
-                        ContentUnavailableView(AppLocalization.string("library.empty.title", defaultValue: "No Travel Places Yet"), systemImage: "globe.asia.australia",
-                                               description: Text(groupsVisitsByMonth && !(model.index?.places.isEmpty ?? true)
-                                                   ? AppLocalization.string("journey.minimum.empty", defaultValue: "No visits meet the minimum. Lower it in Settings to see more.")
-                                                   : (model.index?.hiddenTransitPhotoCount ?? 0 > 0
-                                                       ? AppLocalization.string("home.transit_empty", defaultValue: "Passing-through photos are hidden. Show them again in Settings.")
-                                                       : AppLocalization.string("library.empty.message", defaultValue: "Photos with a date and location will appear here."))))
+                        let notice = AppLocalization.visitFilterNotice(
+                            belowMinimum: groupsVisitsByMonth && !(model.index?.places.isEmpty ?? true),
+                            hiddenTransitItems: model.index?.hiddenTransitPhotoCount ?? 0
+                        )
+                        ContentUnavailableView(
+                            notice?.title ?? AppLocalization.string("library.empty.title", defaultValue: "No Travel Places Yet"),
+                            systemImage: "globe.asia.australia",
+                            description: Text(notice?.help ?? AppLocalization.string(
+                                "library.empty.message", defaultValue: "Photos with a date and location will appear here."))
+                        )
                             .focusable()
                             .focusEffectDisabled()
                             .focused($focusedID, equals: emptyFocusID)
@@ -303,6 +310,7 @@ private struct PlaceCollectionGrid: View {
             let id = card.collection.id
             let place = card.collection.latestPlace
             let key = scenicKey(for: card)
+            if card.collection.usesCountryJourneyCover { continue }
             if card.usesScenicCover, let place, let winner = saved[place.id] {
                 scenicAssets[id] = EvaluatedCover(assetID: winner.assetID, key: key, visitID: place.id)
             } else if !card.usesScenicCover, let held = scenicAssets[id],
@@ -365,7 +373,7 @@ private struct PlaceCollectionGrid: View {
                previous.cards[index].collection == collection {
                 return previous.cards[index]
             }
-            let count = AppLocalization.photoCount(collection.photoCount, locale: input.locale)
+            let count = AppLocalization.itemCount(collection.photoCount, locale: input.locale)
             let summary: String
             let accessibilitySummary: String?
             if groupsVisitsByMonth, let place = collection.latestPlace {
@@ -474,9 +482,12 @@ private struct PlaceCollectionGrid: View {
                                 isOpeningCard: Bool, isFocused focused: Bool, imagePriority: PhotoImagePriority) -> some View {
         let collection = card.collection
         let visitCover = card.usesScenicCover
+        let usesOriginalCover = visitCover || collection.usesCountryJourneyCover
         let selected = scenicAssets[collection.id]
         let key = scenicKey(for: card)
-        let displayAsset = selected?.key == key ? selected?.assetID : nil
+        let displayAsset = collection.usesCountryJourneyCover
+            ? collection.countryJourneyCoverAssetID
+            : (selected?.key == key ? selected?.assetID : nil)
         let input = coverInputs[collection.id]
         let needsSelection = isActive && loadsImage && input?.key == key && displayAsset == nil
         return Button { open(collection) } label: {
@@ -484,9 +495,9 @@ private struct PlaceCollectionGrid: View {
                 Group {
                     if loadsImage, let asset = displayAsset, !model.excludedAssetIDs.contains(asset) {
                         PhotoAssetImage(assetID: asset, targetSize: CGSize(width: 640, height: 400),
-                                        isActive: isActive, priority: imagePriority, usesOriginalCover: visitCover,
-                                        initialImage: SharedPhotoImageScheduler.shared.cachedPreview(for: asset, maximumLongEdge: 640, fullFrameOnly: visitCover))
-                    } else if loadsImage {
+                                        isActive: isActive, priority: imagePriority, usesOriginalCover: usesOriginalCover,
+                                        initialImage: SharedPhotoImageScheduler.shared.cachedPreview(for: asset, maximumLongEdge: 640, fullFrameOnly: usesOriginalCover))
+                    } else if loadsImage && !collection.usesCountryJourneyCover {
                         WaitingCoverView()
                     } else {
                         Rectangle().fill(.white.opacity(0.07))
@@ -541,7 +552,7 @@ private struct PlaceCollectionGrid: View {
            groupsVisitsByMonth || allPhotos?.scope == .country("unresolved") {
             return PlaceDisplayLabel(place: place).styledName(citySize: 29)
         }
-        return AttributedString(collection.title)
+        return AttributedString(collection.titleWithCountryFlag)
     }
 
     private func scenicKey(for card: Card) -> String {

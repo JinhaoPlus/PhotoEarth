@@ -1,3 +1,4 @@
+import AVFoundation
 import Foundation
 import Testing
 @testable import PhotoEarth
@@ -185,6 +186,71 @@ struct AppleMusicSlideshowTests {
         try await Task.sleep(for: .milliseconds(40))
         #expect(driver.playCount == playCountAfterManualPause)
         #expect(!controller.wantsMusicPlayback)
+    }
+
+    @Test func onlineMusicDucksAndRecoversWhileBothPlayersKeepAdvancing() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(UUID()).caf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try writeTestAudio(to: url)
+        let suite = UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let recommendations = OnlineMusicRecommendations(defaults: defaults)
+        let musicPlayer = AVPlayer()
+        let originalPlayer = AVPlayer(url: url)
+        defer { originalPlayer.pause() }
+        let driver = TestSlideshowMusicDriver(authorization: .denied)
+        let controller = SlideshowMusicController(
+            readAuthorization: { driver.authorizationStatus },
+            requestPermission: { await driver.requestAuthorization() },
+            makeDriver: { driver },
+            onlineDriver: OnlineSlideshowMusicDriver(makePlayer: { musicPlayer }),
+            recommendations: recommendations
+        )
+        defer { controller.stopAndReset() }
+        func setOriginalAudio(_ active: Bool) {
+            controller.updatePlaybackContext(
+                slideshowPaused: false, presentationActive: true, originalAudioActive: active, sceneActive: true
+            )
+        }
+
+        let track = OnlineSlideshowPlaylist.Track(title: "Fixture", artist: "", url: url, themeID: "fixture")
+        let playlist = OnlineSlideshowPlaylist(id: "fixture", tracks: [track], presentation: nil)
+        setOriginalAudio(false)
+        try #require(await controller.selectOnline(playlist, startingAt: track.id, explicitTrackChoice: false))
+        try await waitUntil(timeout: .seconds(3)) { controller.isActuallyPlaying }
+        #expect(musicPlayer.volume == 1)
+        #expect(recommendations.recentCategoryChoices.isEmpty)
+        #expect(recommendations.recentlyPlayedStreams == [track.id.absoluteString])
+
+        originalPlayer.play()
+        try await waitUntil(timeout: .seconds(3)) { originalPlayer.timeControlStatus == .playing }
+        let musicTime = musicPlayer.currentTime()
+        let originalTime = originalPlayer.currentTime()
+        setOriginalAudio(true)
+        #expect(controller.isActuallyPlaying)
+        try await waitUntil { musicPlayer.volume == 0.5 }
+        #expect(controller.isActuallyPlaying)
+        #expect(musicPlayer.currentTime() > musicTime)
+        #expect(originalPlayer.currentTime() > originalTime)
+
+        originalPlayer.pause()
+        setOriginalAudio(false)
+        try await waitUntil { musicPlayer.volume == 1 }
+        #expect(controller.isActuallyPlaying)
+        controller.toggleMusicPlayback()
+        try await waitUntil { !controller.isActuallyPlaying }
+        setOriginalAudio(true)
+        setOriginalAudio(false)
+        #expect(!controller.wantsMusicPlayback)
+        #expect(musicPlayer.timeControlStatus == .paused)
+
+        let mix = recommendations.playlists(for: [playlist])[0]
+        try #require(await controller.selectOnline(mix, startingAt: track.id, explicitTrackChoice: true))
+        #expect(controller.selectedChoice?.id == OnlineSlideshowPlaylist.recommendedID)
+        await controller.skipToNext()
+        #expect(controller.nowPlaying?.onlineTrack?.themeID == playlist.id)
+        #expect(recommendations.recentCategoryChoices == [playlist.id])
     }
 
     @Test func losingCatalogPlaybackStopsMusicWithoutCancellingTheSlideshow() async throws {

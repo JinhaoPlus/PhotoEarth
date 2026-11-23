@@ -80,43 +80,38 @@ extension MapReviewGrid {
         }
     }
 
-    /// Merge neighboring SQL cells whose native screen projections overlap.
-    /// Counts and member cells are preserved, including transitive overlaps.
+    /// Measure overlap from the visible cover, so a street of neighboring
+    /// cells cannot chain together into one pin spanning the entire screen.
     func pins(_ clusters: [MapReviewCluster]) -> [MapReviewPin] {
-        var groups: [(clusters: [MapReviewCluster], points: [CGPoint])] = []
-        for cluster in clusters {
+        var groups: [MapReviewPin] = []
+        func nearest(to point: CGPoint) -> (index: Int, distance: CGFloat)? {
+            groups.indices.lazy.map { i in
+                (index: i, distance: hypot(groups[i].point.x - point.x, groups[i].point.y - point.y))
+            }.min { $0.distance < $1.distance }
+        }
+        let ordered = clusters.sorted {
+            $0.count == $1.count ? $0.cell < $1.cell : $0.count > $1.count
+        }
+        for cluster in ordered {
             guard let point = point(cluster.coordinate) else { continue }
-            let overlaps = groups.indices.filter { index in
-                groups[index].points.contains { hypot($0.x - point.x, $0.y - point.y) < 100 }
+            if let anchor = nearest(to: point), anchor.distance < 100 {
+                groups[anchor.index].clusters.append(cluster)
+            } else {
+                groups.append(MapReviewPin(clusters: [cluster], point: point))
             }
-            var members = [cluster], points = [point]
-            for index in overlaps.reversed() {
-                members += groups[index].clusters; points += groups[index].points
-                groups.remove(at: index)
-            }
-            groups.append((members, points))
         }
         if groups.count > 32 {
-            // Keep the largest groups, then assign each remaining group to its
-            // nearest retained anchor. At most 240 × 32 comparisons; avoid a
-            // repeated all-pairs search for every one of 208 discarded groups.
             groups.sort {
-                let lhs = $0.clusters.reduce(0) { $0 + $1.count }
-                let rhs = $1.clusters.reduce(0) { $0 + $1.count }
-                return lhs == rhs ? $0.clusters[0].cell < $1.clusters[0].cell : lhs > rhs
+                $0.count == $1.count ? $0.clusters[0].cell < $1.clusters[0].cell : $0.count > $1.count
             }
             let remaining = Array(groups.dropFirst(32))
-            groups = Array(groups.prefix(32))
+            groups.removeLast(remaining.count)
             for other in remaining {
-                let nearest = groups.indices.min { lhs, rhs in
-                    let point = other.points[0]
-                    let a = groups[lhs].points[0], b = groups[rhs].points[0]
-                    return hypot(a.x - point.x, a.y - point.y) < hypot(b.x - point.x, b.y - point.y)
-                }!
-                groups[nearest].clusters += other.clusters
+                if let anchor = nearest(to: other.point) {
+                    groups[anchor.index].clusters += other.clusters
+                }
             }
         }
-        return groups.map { MapReviewPin(clusters: $0.clusters, point: $0.points[0]) }
-
+        return groups
     }
 }

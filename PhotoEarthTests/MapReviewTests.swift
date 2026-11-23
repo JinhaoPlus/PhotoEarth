@@ -46,6 +46,29 @@ struct MapReviewTests {
         #expect(try await store.mapReviewClusters(placeIDs: ids, grid: grid).isEmpty)
     }
 
+    @Test func cityLandingFitsDistinctPositionsAcrossDateLineAndIgnoresIsolatedOutlier() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("city-frame-\(UUID()).sqlite")
+        defer { cleanup(url) }
+        let store = SQLiteTravelIndexStore(databaseURL: url)
+        let walk = (0..<64).map { i in
+            photo(i, latitude: 41 + Double(i) / 10_000,
+                  longitude: MapReviewGrid.normalizedLongitude(179.998 + Double(i) / 10_000))
+        }
+        let repeats = (64..<400).map { photo($0, latitude: 41, longitude: 179.998) }
+        let distant = photo(401, latitude: 45, longitude: 150)
+        let photos = walk + repeats + [distant]
+        try await store.save(snapshot(photos))
+        let actual = try #require(try await store.cityLandingFrame(placeIDs: ["visit"], reference: 180, excluding: []))
+        let expected = try #require(CityLandingFrame.demo(coordinates: Set(photos.map(\.coordinate)), reference: 180))
+        #expect(actual.camera == expected.camera)
+        #expect(abs(actual.camera.center.longitude) > 179.9)
+        #expect((1_500...3_000).contains(actual.camera.distance))
+        let single = try #require(try await store.cityLandingFrame(placeIDs: ["visit"], reference: 180,
+                                                                   excluding: Set(walk.dropFirst().map(\.id) + [distant.id])))
+        #expect(single.camera.distance == 1_500)
+        #expect(try await store.cityLandingFrame(placeIDs: ["elsewhere"], reference: 180, excluding: []) == nil)
+    }
+
     @Test @MainActor func viewportReviewCanMoveAndZoomWithoutChangingTheSourceWallProjection() async throws {
         let source = MKMapView(frame: CGRect(x: 0, y: 0, width: 1920, height: 1080))
         source.preferredConfiguration = MKImageryMapConfiguration(elevationStyle: .realistic)
@@ -72,6 +95,24 @@ struct MapReviewTests {
         #expect(source.camera.centerCoordinate.longitude == original.centerCoordinate.longitude)
         #expect(source.camera.centerCoordinateDistance == original.centerCoordinateDistance)
         #expect(frozen.snapshot.containsCoordinate(frozen.camera.center))
+    }
+
+    @Test @MainActor func aChainOfNearbyShootingLocationsKeepsDistinctVisibleAnchors() throws {
+        let camera = MapReviewCamera()
+        defer { camera.stop() }
+        camera.map.frame = CGRect(x: 0, y: 0, width: 1920, height: 1080)
+        camera.show(center: .init(latitude: 41, longitude: 2), distance: 14_000)
+        let clusters = (0..<6).map { i in
+            let native = camera.map.convert(CGPoint(x: 500 + i * 80, y: 500), toCoordinateFrom: camera.map)
+            let coordinate = GeoCoordinate(latitude: native.latitude, longitude: native.longitude)
+            return MapReviewCluster(cell: .init(column: i, row: 0), count: 6 - i, coordinate: coordinate,
+                                    south: native.latitude, north: native.latitude, west: native.longitude,
+                                    east: native.longitude, assetID: "cover-\(i)")
+        }
+        let pins = camera.pins(clusters.reversed())
+        #expect(pins.count == 3)
+        #expect(pins.map(\.count).reduce(0, +) == 21)
+        #expect(pins.map { $0.clusters[0].cell.column } == [0, 2, 4])
     }
 
     @Test @MainActor func coastalAggregationUsesTheCoverGPSInsteadOfAMidpoint() async throws {

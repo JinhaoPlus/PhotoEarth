@@ -26,7 +26,8 @@ struct MapKitEarthView: UIViewRepresentable {
     var advanceHomeDrift: ((GlobeCameraState, Double) -> GlobeCameraState?)?
     var mapStyle: PhotoMapStyle = .satellite
     var focusedSatelliteCity: GeoCoordinate?
-    var cityLanding: GlobeCameraState?
+    var isCityFlight = false
+    var regionalBasemapTarget: GlobeCameraState?
     var scalePresentation: GlobeScalePresentation? = nil
     var onScaleChanged: ((GlobeScale) -> Void)? = nil
     let onViewportSettled: (PhotoViewportSnapshot) -> Void
@@ -79,7 +80,8 @@ struct MapKitEarthView: UIViewRepresentable {
             advanceHomeDrift: advanceHomeDrift,
             mapStyle: mapStyle,
             focusedSatelliteCity: focusedSatelliteCity,
-            cityLanding: cityLanding,
+            isCityFlight: isCityFlight,
+            regionalBasemapTarget: regionalBasemapTarget,
             scalePresentation: scalePresentation,
             onScaleChanged: onScaleChanged,
             onViewportSettled: onViewportSettled,
@@ -93,6 +95,7 @@ struct MapKitEarthView: UIViewRepresentable {
         coordinator.cancelPendingSnapshot()
         coordinator.cancelPendingInitialRender()
         coordinator.stopHomeDrift()
+        coordinator.cityStreets.cancel()
         coordinator.styleHandoff.cancel()
         coordinator.styleHandoff.discardFrame()
         coordinator.imageryStatus.finish()
@@ -127,6 +130,7 @@ struct MapKitEarthView: UIViewRepresentable {
         private var lastDriftCamera: GlobeCameraState?
 
         fileprivate let styleHandoff = MapStyleHandoff()
+        fileprivate let cityStreets = CityStreetMapTransition()
         fileprivate let imageryStatus = MapImageryStatus()
         private var deliveredScale: GlobeScale?
         private var onScaleChanged: ((GlobeScale) -> Void)?
@@ -185,7 +189,8 @@ struct MapKitEarthView: UIViewRepresentable {
             advanceHomeDrift: ((GlobeCameraState, Double) -> GlobeCameraState?)? = nil,
             mapStyle: PhotoMapStyle = .satellite,
             focusedSatelliteCity: GeoCoordinate? = nil,
-            cityLanding: GlobeCameraState? = nil,
+            isCityFlight: Bool = false,
+            regionalBasemapTarget: GlobeCameraState? = nil,
             scalePresentation: GlobeScalePresentation? = nil,
             onScaleChanged: ((GlobeScale) -> Void)? = nil,
             onViewportSettled: @escaping (PhotoViewportSnapshot) -> Void,
@@ -216,7 +221,6 @@ struct MapKitEarthView: UIViewRepresentable {
             let beginsObservingScale = self.onScaleChanged == nil && onScaleChanged != nil
             self.onScaleChanged = onScaleChanged
             if onScaleChanged == nil { deliveredScale = nil }
-            photoWallViewportCapture?.attach(mapView)
             let wasWaitingForInitialRender = self.waitsForInitialRender
             let beganWaitingForInitialRender = waitsForInitialRender && !wasWaitingForInitialRender
             self.waitsForInitialRender = waitsForInitialRender
@@ -234,10 +238,35 @@ struct MapKitEarthView: UIViewRepresentable {
             }
             let flatTerrain = scalePresentation?.scale == .map && mapStyle == .standard
             let targetStyle = MapStyleHandoff.Style(map: mapStyle, flat: flatTerrain)
-            if photoWallViewportCapture?.isFrozen != true, lastMapStyle == .satellite, mapStyle == .satellite,
+            let canBlend = onScaleChanged != nil && photoWallViewportCapture?.isFrozen != true
+                && !UIAccessibility.isReduceMotionEnabled
+            if photoWallViewportCapture?.isFrozen == true {
+                cityStreets.freeze()
+            } else if !canBlend || (cityStreets.isVisible && !flatTerrain) {
+                cityStreets.cancel()
+            } else if isCityFlight, lastMapStyle == .satellite, let regionalBasemapTarget {
+                cityStreets.prepare(regionalBasemapTarget, in: mapView)
+            } else if !cityStreets.isVisible {
+                cityStreets.cancel()
+            }
+
+            if canBlend, cityStreets.isPrepared, flatTerrain {
+                styleHandoff.cancel()
+                cityStreets.blend(at: camera, flightFinished: !isCityFlight) { [weak self, weak mapView] in
+                    guard let self, let mapView else { return }
+                    self.cityStreets.onResidentReady = { [weak self, weak mapView] in
+                        if let mapView { self?.scheduleViewportSnapshot(from: mapView) }
+                    }
+                    if self.lastMapStyle != .standard { self.install(targetStyle, on: mapView) }
+                }
+            } else if photoWallViewportCapture?.isFrozen != true, lastMapStyle == .satellite, mapStyle == .satellite,
                nativeCameraFeedback?.renderedSatelliteCamera != nil,
-               let landing = cityLanding ?? (onScaleChanged != nil && styleHandoff.cityTarget == camera ? camera : nil) {
-                styleHandoff.warmCity(landing, from: camera, in: mapView)
+               let landing = regionalBasemapTarget ?? (onScaleChanged != nil && styleHandoff.cityTarget == camera ? camera : nil) {
+                if cityStreets.isPrepared {
+                    styleHandoff.warmSatellite(to: landing, from: camera, in: mapView)
+                } else {
+                    styleHandoff.warmCity(landing, from: camera, in: mapView)
+                }
             } else if photoWallViewportCapture?.isFrozen != true, lastMapStyle == .satellite,
                       mapStyle == .satellite, nativeCameraFeedback?.renderedSatelliteCamera != nil,
                       let focusedSatelliteCity, mapView.window != nil {
@@ -248,7 +277,7 @@ struct MapKitEarthView: UIViewRepresentable {
                 styleHandoff.cancel()
             } else if lastMapStyle != nil, mapView.window != nil, onScaleChanged != nil {
                 imageryStatus.start(in: mapView)
-                styleHandoff.prepare(targetStyle, at: camera, in: mapView) { [weak self, weak mapView, weak photoWallViewportCapture] in
+                styleHandoff.prepare(targetStyle, at: regionalBasemapTarget ?? camera, in: mapView) { [weak self, weak mapView, weak photoWallViewportCapture] in
                     guard let self, let mapView, photoWallViewportCapture?.isFrozen != true else { return }
                     self.install(targetStyle, on: mapView)
                     self.scheduleViewportSnapshot(from: mapView)
@@ -310,6 +339,7 @@ struct MapKitEarthView: UIViewRepresentable {
                 if let interval { signposter.endInterval("GlobeCameraApply", interval) }
             }
 
+            photoWallViewportCapture?.attach(mapView, cityStreets: cityStreets)
             if beginsObservingScale { recordNativeCamera(from: mapView) }
             if let markers = scalePresentation?.markers, markerPresentation != markers {
                 let hadPhotoPins = showsPhotoPins
@@ -422,6 +452,7 @@ struct MapKitEarthView: UIViewRepresentable {
                 if !hasDeliveredInitialRender { cancelPendingInitialRender() }
             } else {
                 if lastMapStyle == .satellite { nativeCameraFeedback?.renderedSatelliteCamera = lastCamera }
+                if lastMapStyle == .standard { cityStreets.residentDidRenderStreets() }
                 styleHandoff.revealMap()
                 homeFrame.didRender(camera: lastCamera)
                 fullyRenderedCamera = lastCamera
@@ -474,8 +505,10 @@ struct MapKitEarthView: UIViewRepresentable {
             deliveredProjectionIsCurrent = nil
             fullyRenderedCamera = nil
             cancelPendingInitialRender()
-            if lastMapStyle == .satellite, style.map == .standard,
-               lastCamera?.distance == GlobeCameraState.regionalDistance {
+            if cityStreets.isVisible {
+                styleHandoff.discardFrame()
+            } else if lastMapStyle == .satellite, style.map == .standard, preservingCamera,
+               !isManipulating || lastCamera?.distance == GlobeCameraState.regionalDistance {
                 styleHandoff.holdSatelliteFrame(in: mapView)
             } else {
                 styleHandoff.discardFrame()
@@ -619,7 +652,7 @@ struct MapKitEarthView: UIViewRepresentable {
 
         private func scheduleViewportSnapshot(from mapView: MKMapView, attempt: Int = 0) {
             cancelPendingSnapshot()
-            guard !isManipulating,
+            guard !isManipulating, !cityStreets.isVisible,
                   lastDeliveredSettleRevision != lastSettleRevision else { return }
             let generation = viewportGeneration
             let revision = lastSettleRevision

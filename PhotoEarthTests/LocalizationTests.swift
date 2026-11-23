@@ -25,7 +25,7 @@ struct LocalizationTests {
         let expectations: [(StaticString, String, String)] = [
             ("preparation.count.remaining", "1 place still needs a name", "2 places still need names"),
             ("preparation.detail.checking", "1 item with location data", "2 items with location data"),
-            ("settings.transit_count", "1 photo hidden", "2 photos hidden"),
+            ("settings.transit_count", "1 item hidden", "2 items hidden"),
             ("slideshow.ready_count", "1 memory ready", "2 memories ready"),
         ]
         for (key, singular, plural) in expectations {
@@ -84,11 +84,11 @@ struct LocalizationTests {
         }
 
         verify("settings.photos_and_scan", simplified: "照片与扫描", traditional: "照片與掃描")
-        verify("settings.journeys_on_home", simplified: "显示最近到访的城市", traditional: "顯示最近造訪的城市")
+        verify("settings.journeys_on_home", simplified: "显示最近到访的城市", traditional: "顯示最近到訪的城市")
         verify("settings.label_summary", simplified: "已命名地点 %1$@ / %2$@", traditional: "已命名地點 %1$@ / %2$@")
         verify("settings.last_organized", simplified: "上次整理：%@", traditional: "上次整理：%@")
         verify("settings.complete_places", simplified: "继续补充地点名称", traditional: "繼續補充地點名稱")
-        verify("settings.rebuild", simplified: "重新整理照片与地点", traditional: "重新整理照片與地點")
+        verify("settings.rebuild", simplified: "重新扫描照片和视频", traditional: "重新掃描照片和影片")
         verify("settings.globe_controls", simplified: "地球操作", traditional: "地球操作")
         verify("state.on", simplified: "已开启", traditional: "已開啟")
         verify("state.off", simplified: "已关闭", traditional: "已關閉")
@@ -144,6 +144,10 @@ struct LocalizationTests {
     }
 
     @Test func pluralCatalogUsesLanguageRules() {
+        #expect(AppLocalization.itemCount(1, locale: Locale(identifier: "en")) == "1 item")
+        #expect(AppLocalization.itemCount(2, locale: Locale(identifier: "en")) == "2 items")
+        #expect(AppLocalization.itemCount(2, locale: Locale(identifier: "zh-Hans")) == "2 项")
+        #expect(AppLocalization.itemCount(2, locale: Locale(identifier: "zh-Hant")) == "2 項")
         #expect(AppLocalization.photoCount(1, locale: Locale(identifier: "en")) == "1 photo")
         #expect(AppLocalization.photoCount(2, locale: Locale(identifier: "en")) == "2 photos")
         #expect(AppLocalization.placeCount(2, locale: Locale(identifier: "de")) == "2 Orte")
@@ -218,7 +222,7 @@ struct LocalizationTests {
         let locale = Locale(identifier: localeID)
         let directControl = AppLocalization.string(
             "globe.controls.touch_accessibility",
-            defaultValue: "Explore the globe. Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls.",
+            defaultValue: "Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls.",
             locale: locale
         )
         let zoomControl = AppLocalization.string(
@@ -279,10 +283,10 @@ struct LocalizationTests {
         let centerActionCopy = [
             AppLocalization.string("detail.playable_viewing_hint", defaultValue: "Left/right: Change memory · Center: Play/pause · Up: More actions", locale: locale),
             AppLocalization.string("detail.viewing_hint", defaultValue: "Left/right: Change photo · Center: More actions", locale: locale),
-            AppLocalization.string("globe.controls.accessibility", defaultValue: "Explore the globe. Use the direction buttons to turn it. Press the center button to view photos. Press Play/Pause to open zoom controls.", locale: locale),
+            AppLocalization.string("globe.controls.accessibility", defaultValue: "Use the direction buttons to turn it. Press the center button to view photos. Press Play/Pause to open zoom controls.", locale: locale),
             AppLocalization.string("globe.controls.zoom_shortcut", defaultValue: "Play/Pause · Zoom controls", locale: locale),
             AppLocalization.string("globe.controls.select", defaultValue: "Photos", locale: locale),
-            AppLocalization.string("globe.controls.touch_accessibility", defaultValue: "Explore the globe. Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls.", locale: locale),
+            AppLocalization.string("globe.controls.touch_accessibility", defaultValue: "Swipe on the clickpad or touch surface to drag it, or press the clickpad ring to turn it. Press the clickpad center or touch surface to view photos. Press Play/Pause to open zoom controls.", locale: locale),
             AppLocalization.string("globe.zoom.hint", defaultValue: "Press left or right to choose a zoom control. Press center to activate it, or press Back to close.", locale: locale),
             AppLocalization.string("globe.zoom.touch_hint", defaultValue: "Swipe on the clickpad or touch surface to drag the globe. Press left or right to choose a zoom control. Press the clickpad center or touch surface to activate it, or press Back to close.", locale: locale),
             AppLocalization.string("home.explore_hint", defaultValue: "Turn the globe with the remote, then press the clickpad center or touch surface to browse visible photos.", locale: locale),

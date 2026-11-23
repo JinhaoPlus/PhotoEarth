@@ -228,7 +228,11 @@ final class PhotoSimilarityAnalyzer {
 
     struct Selection {
         let records: [PhotoAssetRecord]
-        let commit: @MainActor () -> Void
+        fileprivate let remember: @MainActor (Set<String>) -> Void
+
+        @MainActor func commit(keeping accepted: [PhotoAssetRecord]? = nil) {
+            remember(Set((accepted ?? records).map(\.id)))
+        }
     }
 
     /// A page is selected atomically. Completed pages keep compact visual
@@ -282,8 +286,8 @@ final class PhotoSimilarityAnalyzer {
         // Ranking chooses the representative of a similar burst. Keep distinct
         // memories, including movies and favorites, on their original timeline.
         batch.sort { SlideshowOrdering.recordComesFirst($0.record, $1.record) }
-        return Selection(records: batch.map(\.record)) { [weak self, batch] in
-            self?.remember(batch)
+        return Selection(records: batch.map(\.record)) { [weak self, batch] accepted in
+            self?.remember(batch.filter { accepted.contains($0.record.id) })
         }
     }
 

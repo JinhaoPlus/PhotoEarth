@@ -25,10 +25,11 @@ struct EarthSlideshowView: View {
     private enum OpeningFocus: Hashable {
         case play
         case soundtrack
+        case trips
     }
 
-    private enum MusicPickerPlayback {
-        case pausedWhileBrowsing(resume: Bool)
+    private enum OverlayPlayback {
+        case holding(resume: Bool)
         case resumeOnForeground
     }
 
@@ -49,8 +50,11 @@ struct EarthSlideshowView: View {
     @State private var preparedFrames: [String: UIImage] = [:]
     @State private var controlAutoHideTask: Task<Void, Never>?
     @State private var controlsEntryFocus: WatchingControlFocus = .slideshowPlayPause
+    @State private var openingRevision = 0
+    @State private var showsJourneyPicker = false
     @State private var showsMusicPicker = false
-    @State private var musicPickerPlayback: MusicPickerPlayback?
+    @State private var showsExitConfirmation = false
+    @State private var overlayPlayback: OverlayPlayback?
     @Namespace private var openingFocusScope
     @FocusState private var viewingSurfaceFocused: Bool
     @FocusState private var preparationStatusFocused: Bool
@@ -66,20 +70,24 @@ struct EarthSlideshowView: View {
             imagePreloadLayer
 
             if coordinator.awaitsPlaybackConfirmation {
-                openingView
+                openingView.id(openingRevision)
             } else {
                 switch coordinator.phase {
                 case .idle, .cancelled:
                     Color.clear
                 case .preparing:
                     preparationView
-                case .earthIntro, .earthChapterBridge:
+                case .earthChapterBridge:
                     earthTransitionView
-                case .chapterTitle:
-                    chapterView
+                case .earthIntro, .chapterTitle:
+                    ZStack {
+                        earthTransitionView
+                        chapterView
+                    }
                 case .presentingItem, .transitioningItem:
                     mediaView
                         .id(coordinator.mediaRetryRevision)
+                        .transition(.identity)
                 case .ending:
                     endingView
                 case .completed:
@@ -130,6 +138,12 @@ struct EarthSlideshowView: View {
         .onChange(of: coordinator.currentItem?.record.id, initial: true) { _, _ in
             prepareCurrentMedia()
         }
+        .onChange(of: coordinator.collageTiles.map(\.id), initial: true) { _, ids in
+            coordinator.markCollageDisplayed(ids)
+        }
+        .onChange(of: reduceMotion, initial: true) { _, enabled in coordinator.updateReduceMotion(enabled) }
+        .onChange(of: coordinator.preloadsNextSingle) { _, _ in trimPreparedFrames() }
+        .onChange(of: coordinator.preparingCollage) { _, _ in trimPreparedFrames() }
         .onChange(of: coordinator.mediaRetryRevision) { _, _ in
             playback.releaseContent()
             prepareCurrentMedia()
@@ -140,9 +154,11 @@ struct EarthSlideshowView: View {
         }
         .onChange(of: coordinator.phase) { _, phase in
             if isWatching, !coordinator.showsControls { focusWatchingSurface() }
-            if phase == .presentingItem {
-                if let id = coordinator.currentItem?.id, readyStaticAssetID == id {
-                    coordinator.markCurrentItemReady(id)
+            if phase == .transitioningItem || phase == .presentingItem {
+                if !coordinator.collageTiles.isEmpty {
+                    coordinator.markCollageDisplayed(coordinator.collageTiles.map(\.id))
+                } else if let id = coordinator.currentItem?.id, readyStaticAssetID == id {
+                    coordinator.markCurrentItemReady(id, image: preparedFrames[id])
                 }
                 startDynamicMediaIfNeeded()
                 synchronizeDynamicDwellIfNeeded()
@@ -152,7 +168,6 @@ struct EarthSlideshowView: View {
             }
             trimPreparedFrames()
             synchronizeMusicPlayback()
-            refreshControlAutoHide()
         }
         .onChange(of: coordinator.isPaused) { _, paused in
             if paused {
@@ -210,8 +225,18 @@ struct EarthSlideshowView: View {
             }
             refreshControlAutoHide()
         }
-        .onChange(of: watchingControlFocus) { _, focus in
+        .onChange(of: watchingControlFocus) { previous, focus in
             if focus != nil, showsWatchingControls {
+                if case .photo = focus {
+                    // tvOS can briefly focus a thumbnail while moving down from the music panel.
+                    // That press belongs to the playback bar. Entering the filmstrip takes another Down.
+                    switch previous {
+                    case .musicChoose, .musicPrevious, .musicPlayPause, .musicNext:
+                        watchingControlFocus = .slideshowPlayPause
+                    default:
+                        coordinator.setPaused(true)
+                    }
+                }
                 refreshControlAutoHide()
             }
         }
@@ -222,7 +247,7 @@ struct EarthSlideshowView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 coordinator.resumeAfterSuspension()
-                resumePlaybackAfterMusicPicker()
+                resumePlaybackAfterOverlay()
                 prepareCurrentMedia(resetPresentation: false)
                 Task { @MainActor in
                     await music.refreshAccess()
@@ -233,6 +258,7 @@ struct EarthSlideshowView: View {
             }
             synchronizeMusicPlayback()
             playback.suspend()
+            preparedFrames.removeAll()
             // Music authorization can temporarily make the scene inactive
             // while the picker is already holding playback.
             if phase == .background || !showsMusicPicker {
@@ -240,35 +266,66 @@ struct EarthSlideshowView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: PhotoAssetChangeNotice.name)) { notice in
+            if let changed = notice.userInfo?["changed"] as? Set<String>, !changed.isEmpty {
+                preparedFrames = preparedFrames.filter { !changed.contains($0.key) }
+                coordinator.invalidateEditedPhotos(changed)
+            }
             if let removed = notice.userInfo?["removed"] as? Set<String> {
+                preparedFrames = preparedFrames.filter { !removed.contains($0.key) }
                 coordinator.removeAssets(removed)
             }
         }
         .onPlayPauseCommand {
-            if !showsMusicPicker, musicPickerPlayback == nil {
+            if !showsMusicPicker, !showsJourneyPicker, overlayPlayback == nil {
                 noteControlInteraction()
                 toggleViewerPlayback()
             }
         }
         .onExitCommand {
-            if showsMusicPicker {
+            if showsJourneyPicker {
+                showsJourneyPicker = false
+            } else if showsMusicPicker {
                 cancelMusicPicker()
-            } else if musicPickerPlayback != nil {
+            } else if overlayPlayback != nil {
                 return
             } else if showsWatchingControls {
                 hideWatchingControls()
+            } else if isWatching && !coordinator.awaitsPlaybackConfirmation {
+                holdPlaybackForOverlay()
+                showsExitConfirmation = true
             } else {
                 leaveSlideshow()
             }
         }
         .onDisappear {
             updateIdleTimer(false)
-            guard !showsMusicPicker else { return }
+            guard !showsMusicPicker, !showsJourneyPicker else { return }
             controlAutoHideTask?.cancel()
             music.stopAndReset()
             playback.releaseContent()
             preparedFrames.removeAll()
             coordinator.cancel()
+        }
+        .alert(AppLocalization.string("slideshow.exit.prompt", defaultValue: "Exit the slideshow?"),
+               isPresented: $showsExitConfirmation) {
+            Button(AppLocalization.string("slideshow.exit.stay", defaultValue: "Cancel"), role: .cancel) {}
+                .accessibilityIdentifier("slideshow-exit-stay")
+            Button(AppLocalization.string("slideshow.exit.confirm", defaultValue: "Exit"), role: .destructive) {
+                overlayPlayback = nil
+                leaveSlideshow()
+            }
+            .accessibilityIdentifier("slideshow-exit-confirm")
+        }
+        .onChange(of: showsExitConfirmation) { _, showing in
+            if !showing {
+                finishOverlayPlayback()
+                focusWatchingSurface()
+            }
+        }
+        .sheet(isPresented: $showsJourneyPicker, onDismiss: {
+            openingRevision += 1
+        }) {
+            SlideshowJourneyPicker(coordinator: coordinator) { showsJourneyPicker = false }
         }
         .sheet(isPresented: $showsMusicPicker, onDismiss: finishMusicPicker) {
             SlideshowMusicSourceView(controller: music, dismiss: { showsMusicPicker = false }, cancel: cancelMusicPicker)
@@ -295,17 +352,16 @@ struct EarthSlideshowView: View {
         }
     }
 
-    /// Two decoded stills are the entire visual look-ahead budget: the memory
-    /// about to be shown and, once an outgoing transition has settled, its
-    /// successor. The shared scheduler deduplicates these requests with the
-    /// visible image surface and keeps them inside the global 4/2 budget.
+    /// A collage owns its slot-sized frames. Only single-photo pages use full-canvas preloads.
     @ViewBuilder
     private var imagePreloadLayer: some View {
-        if scenePhase == .active, let current = coordinator.currentItem?.record {
+        if scenePhase == .active, !coordinator.preparingCollage, let current = coordinator.currentItem?.record {
             ZStack {
-                preloadImage(current, priority: .focus, revision: coordinator.mediaRetryRevision)
-                    .id(coordinator.mediaRetryRevision)
-                if coordinator.phase != .transitioningItem,
+                if coordinator.collageTiles.isEmpty {
+                    preloadImage(current, priority: .focus, revision: coordinator.mediaRetryRevision)
+                        .id(coordinator.mediaRetryRevision)
+                }
+                if coordinator.phase != .transitioningItem, coordinator.preloadsNextSingle,
                    let next = coordinator.nextItemForPrefetch?.record,
                    next.id != current.id {
                     preloadImage(next, priority: .visible)
@@ -324,14 +380,20 @@ struct EarthSlideshowView: View {
             assetID: record.id,
             contentMode: .fit,
             targetSize: CGSize(width: 3_840, height: 2_160),
+            allowsRetry: revision != nil,
             isActive: scenePhase == .active,
             priority: priority,
-            initialImage: preparedFrames[record.id],
+            initialImage: preparedFrames[record.id] ?? (coordinator.singlePreview?.id == record.id ? coordinator.singlePreview?.image : nil),
             onImageChange: { image in
                 guard let image, revision == nil || revision == coordinator.mediaRetryRevision else { return }
                 retainPreparedFrame(image, for: record.id)
                 if coordinator.currentItem?.record.id == record.id {
                     currentMediaBecameReady(record)
+                }
+            },
+            onRetryVisibilityChange: { visible in
+                if visible, let revision, !record.mediaKind.isPlayable {
+                    coordinator.markCurrentItemUnavailable(record.id, revision: revision)
                 }
             }
         )
@@ -345,7 +407,18 @@ struct EarthSlideshowView: View {
                 .lineLimit(2)
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("slideshow-opening-title")
+            if coordinator.scope.kind == .library {
+                Text(journeySelectionTitle)
+                    .lineLimit(2)
+                    .font(.headline)
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("slideshow-opening-range")
+            }
             HStack(spacing: TVControlLayout.actionSpacing) {
+                if coordinator.scope.kind == .library {
+                    journeyPickerButton
+                        .focused($openingFocus, equals: .trips)
+                }
                 Button {
                     coordinator.beginPlayback(music: music.selectedChoice == nil ? .none : (music.isUsingOnlineMusic ? .online : .appleMusic))
                 } label: {
@@ -388,11 +461,29 @@ struct EarthSlideshowView: View {
         .accessibilityIdentifier("slideshow-opening")
     }
 
+    private var journeySelectionTitle: String {
+        guard let ids = coordinator.selectedJourneyIDs else { return SlideshowJourneyPicker.allTrips }
+        if ids.count == 1, let journey = coordinator.journeys.first {
+            return "\(journey.routeTitle) · \(journey.dateTitle)"
+        }
+        return SlideshowJourneyPicker.selectionCount(ids.count)
+    }
+
+    private var journeyPickerButton: some View {
+        Button { showsJourneyPicker = true } label: {
+            Label(SlideshowJourneyPicker.title, systemImage: "checklist")
+                .labelStyle(PageActionLabelStyle())
+        }
+        .buttonStyle(.glass)
+        .disabled(coordinator.availableJourneys.isEmpty)
+        .accessibilityIdentifier("slideshow-opening-trips")
+    }
+
     private var openingSoundtrackTitle: String {
         if let title = music.selectedChoice?.title {
             AppLocalization.format("slideshow.music.shortcut.current", defaultValue: "Soundtrack · %@", title)
         } else {
-            AppLocalization.string("slideshow.music.choose", defaultValue: "Choose Soundtrack")
+            AppLocalization.string("slideshow.music.choose", defaultValue: "Choose Music")
         }
     }
 
@@ -402,7 +493,7 @@ struct EarthSlideshowView: View {
             Image(systemName: "globe.americas.fill")
                 .font(.system(size: 62, weight: .ultraLight))
                 .foregroundStyle(.cyan)
-            Text(AppLocalization.string("slideshow.preparing", defaultValue: "Preparing Your Slideshow"))
+            Text(coordinator.scope.title)
                 .font(.system(size: 42, weight: .semibold))
                 .focusable()
                 .focusEffectDisabled()
@@ -424,39 +515,47 @@ struct EarthSlideshowView: View {
 
     private var earthTransitionView: some View {
         LinearGradient(
-            colors: [.clear, .clear, .black.opacity(0.2)],
+            colors: [.clear, .clear, .black.opacity(0.46)],
             startPoint: .top,
             endPoint: .bottom
         )
         .accessibilityLabel(
-            coordinator.currentChapter.map { PlaceDisplayLabel(place: $0.visit).displayCity }
+            coordinator.displayedChapter.map { PlaceDisplayLabel(place: $0.visit).displayCity }
                 ?? coordinator.scope.title
         )
         .accessibilityIdentifier("slideshow-earth-transition")
     }
 
     private var chapterView: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Spacer()
-            if let chapter = coordinator.currentChapter {
-                Text(PlaceDisplayLabel(place: chapter.visit).styledName(citySize: 82))
-                    .font(.system(size: 82, weight: .ultraLight))
-                    .lineLimit(2)
-                Text(AppLocalization.dateRange(from: chapter.visit.startDate, to: chapter.visit.endDate))
-                    .font(.system(size: 28, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.76))
+        GeometryReader { proxy in
+            let canvasWidth = min(proxy.size.width, presentationScreenSize.width)
+            let canvasHeight = min(proxy.size.height, presentationScreenSize.height)
+            let canvasTopCorrection = max(0, -proxy.frame(in: .global).minY)
+
+            if let chapter = coordinator.displayedChapter {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(PlaceDisplayLabel(place: chapter.visit).styledName(citySize: 82))
+                        .font(.system(size: 82, weight: .ultraLight))
+                        .lineLimit(2)
+                    Text(AppLocalization.dateRange(from: chapter.visit.startDate, to: chapter.visit.endDate))
+                        .font(.system(size: 28, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.76))
+                }
+                .shadow(color: .black.opacity(0.75), radius: 12, y: 3)
+                .padding(.horizontal, 96)
+                .padding(.bottom, 104)
+                .frame(width: canvasWidth, height: canvasHeight, alignment: .bottomLeading)
+                .offset(y: canvasTopCorrection)
+                .accessibilityElement(children: .combine)
+                .accessibilityIdentifier("slideshow-chapter")
             }
-            Spacer().frame(height: 104)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-        .padding(.horizontal, 96)
+        .allowsHitTesting(false)
         .transition(
             reduceMotion
                 ? .opacity
                 : .offset(y: 22).combined(with: .opacity)
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("slideshow-chapter")
     }
 
     private var mediaView: some View {
@@ -466,6 +565,8 @@ struct EarthSlideshowView: View {
             let canvasTopCorrection = max(0, -proxy.frame(in: .global).minY)
 
             mediaCanvas
+                .id(coordinator.visibilityRevision)
+                .transition(.identity)
                 .frame(width: canvasWidth, height: canvasHeight)
                 .clipped()
                 .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
@@ -475,51 +576,35 @@ struct EarthSlideshowView: View {
 
     private var mediaCanvas: some View {
         ZStack {
-            if let item = coordinator.currentItem {
-                let revision = coordinator.mediaRetryRevision
-                CinematicSlideshowMediaLayer(
-                    item: item,
-                    initialImage: preparedFrames[item.record.id],
-                    playback: playback,
-                    reduceMotion: reduceMotion,
-                    isPaused: coordinator.isPaused,
-                    motionDuration: cinematicMotionDuration(for: item.record),
-                    isActive: scenePhase == .active,
-                    onImageChange: { image in
-                        guard let image, revision == coordinator.mediaRetryRevision else { return }
-                        retainPreparedFrame(image, for: item.record.id)
-                        currentMediaBecameReady(item.record)
-                    },
-                    onDynamicDisplay: {
-                        guard revision == coordinator.mediaRetryRevision else { return }
-                        currentDynamicMediaBecameReady(item.record.id)
-                    },
-                    onFullFrameUnavailable: {
-                        if !item.record.mediaKind.isPlayable {
-                            coordinator.markCurrentItemUnavailable(item.record.id, revision: revision)
-                        }
+            if scenePhase == .active {
+                SlideshowMediaTimeline(coordinator: coordinator, playback: playback, onDisplay: currentDynamicMediaBecameReady)
+                if let item = coordinator.currentItem, !coordinator.preparingCollage, coordinator.collageTiles.isEmpty,
+                   coordinator.canvasPage?.descriptor.ids != [item.id] {
+                    // A movie can become displayable before Photos delivers its still cover.
+                    if playback.preparedAssetID == item.id, let player = playback.player {
+                        PhotoVideoPlaybackView(player: player, onDisplay: { currentDynamicMediaBecameReady(item.id) })
+                            .opacity(0.001)
                     }
-                )
-                .id(item.record.id)
-                .zIndex(Double(coordinator.presentationOrder))
-                .transition(itemTransition(item.transition))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .task(id: MediaAvailabilityKey(id: item.id, paused: coordinator.isPaused, active: scenePhase == .active)) {
-                    guard scenePhase == .active, !coordinator.isPaused else { return }
-                    do { try await Task.sleep(for: .seconds(20)) } catch { return }
-                    coordinator.markCurrentItemUnavailable(item.record.id, revision: revision)
-                }
-
-                if coordinator.phase == .transitioningItem,
-                   item.transition.kind == .dateReveal {
-                    cinematicDateReveal(item.record.creationDate)
-                        .zIndex(Double(coordinator.presentationOrder) + 0.5)
-                        .transition(.opacity.animation(.easeInOut(duration: 0.52)))
+                    if coordinator.canvasPage == nil {
+                        PhotoAssetImage(assetID: item.id, contentMode: .fit, targetSize: CGSize(width: 3840, height: 2160),
+                            allowsRetry: true, priority: .detail, initialImage: preparedFrames[item.id],
+                            onImageChange: { image in
+                                if let image {
+                                    retainPreparedFrame(image, for: item.id)
+                                    currentMediaBecameReady(item.record)
+                                }
+                            })
+                    }
                 }
             }
         }
-        .animation(mediaAnimation, value: coordinator.currentItem?.record.id)
+        .transaction { $0.animation = nil }
+        .task(id: MediaAvailabilityKey(id: coordinator.currentItem?.id ?? "", paused: coordinator.isPaused, active: scenePhase == .active)) {
+            guard scenePhase == .active, !coordinator.isPaused, let id = coordinator.currentItem?.id else { return }
+            let revision = coordinator.mediaRetryRevision
+            do { try await Task.sleep(for: .seconds(20)) } catch { return }
+            coordinator.markCurrentItemUnavailable(id, revision: revision)
+        }
         .accessibilityLabel(currentMediaAccessibilityLabel)
         .accessibilityValue(currentMediaAccessibilityValue)
         .accessibilityIdentifier("slideshow-media")
@@ -569,6 +654,7 @@ struct EarthSlideshowView: View {
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 760)
             Spacer()
+            if coordinator.selectedJourneyIDs != nil { journeyPickerButton }
             Button(AppLocalization.string("common.retry", defaultValue: "Try Again")) {
                 coordinator.retry()
             }
@@ -736,8 +822,7 @@ struct EarthSlideshowView: View {
     }
 
     private var showsPhotoSelection: Bool {
-        coordinator.isPaused && coordinator.currentItem != nil
-            && scenePhase == .active
+        coordinator.currentItem != nil && scenePhase == .active
     }
 
     private var isPhotoSelectionFocused: Bool {
@@ -746,36 +831,58 @@ struct EarthSlideshowView: View {
     }
 
     private var photoSelectionRail: some View {
-        HStack(spacing: 12) {
-            ForEach(coordinator.selectionRecords) { record in
-                photoSelectionButton(record)
+        ScrollViewReader { scroll in
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 6) {
+                    ForEach(coordinator.filmstrip) { item in
+                        photoSelectionButton(item)
+                            .id(item.id)
+                    }
+                }
+                .padding(.horizontal, 5)
             }
+            .scrollIndicators(.hidden)
+            .defaultScrollAnchor(.center, for: .alignment)
+            .onChange(of: filmstripAnchorID, initial: true) { _, id in
+                coordinator.prepareFilmstrip(around: id)
+                guard let id, !isPhotoSelectionFocused else { return }
+                scroll.scrollTo(id, anchor: .center)
+            }
+            .onDisappear { coordinator.prepareFilmstrip(around: nil) }
         }
-        .frame(maxWidth: .infinity)
+        .frame(height: 96)
         .focusSection()
         .accessibilityElement(children: .contain)
         .accessibilityLabel(AppLocalization.string("slideshow.select_memory", defaultValue: "Choose a Photo"))
         .accessibilityIdentifier("slideshow-photo-selection")
     }
 
-    private func photoSelectionButton(_ record: PhotoAssetRecord) -> some View {
-        let isCurrent = coordinator.currentItem?.id == record.id
+    private var filmstripAnchorID: String? {
+        if case let .photo(id) = watchingControlFocus { return id }
+        return coordinator.currentItem?.id
+    }
+
+    private func photoSelectionButton(_ record: EarthSlideshowCoordinator.FilmstripItem) -> some View {
+        let isCurrent = coordinator.currentItem?.id == record.id || coordinator.collageTiles.contains { $0.id == record.id }
         let isFocused = watchingControlFocus == .photo(record.id)
-        let shape = RoundedRectangle(cornerRadius: 10)
+        let shape = RoundedRectangle(cornerRadius: 6)
         return Button {
+            coordinator.setPaused(true)
             coordinator.selectPausedItem(record.id)
         } label: {
             PhotoAssetImage(
                 assetID: record.id,
-                targetSize: CGSize(width: 280, height: 176)
+                targetSize: CGSize(width: 264, height: 164)
             )
-            .frame(width: 126, height: 80)
+            .frame(width: isCurrent ? 132 : 106, height: isCurrent ? 82 : 66)
             .clipShape(shape)
+            .brightness(isCurrent || isFocused ? 0 : -0.16)
             .overlay {
-                shape.strokeBorder(.white.opacity(isFocused ? 1 : isCurrent ? 0.82 : 0.20),
-                                   lineWidth: isFocused ? 3 : isCurrent ? 2 : 1)
+                shape.strokeBorder(.white.opacity(isCurrent || isFocused ? 1 : 0.22),
+                                   lineWidth: isCurrent ? 4 : isFocused ? 2 : 1)
             }
             .shadow(color: .black.opacity(0.44), radius: isFocused ? 8 : 3, y: 3)
+            .contentShape([.interaction, .accessibility], shape)
             .accessibilityHidden(true)
         }
         .buttonStyle(QuietPhotoButtonStyle())
@@ -783,7 +890,7 @@ struct EarthSlideshowView: View {
         .focused($watchingControlFocus, equals: .photo(record.id))
         .scaleEffect(isFocused && !reduceMotion ? 1.06 : 1)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isFocused)
-        .accessibilityLabel(itemStatus(record))
+        .accessibilityLabel(itemStatus(date: record.date, kind: record.mediaKind))
         .accessibilityAddTraits(isCurrent ? .isSelected : [])
         .accessibilityIdentifier("slideshow-select-photo-\(record.id)")
     }
@@ -793,13 +900,11 @@ struct EarthSlideshowView: View {
         let hasSoundtrack = music.selectedChoice != nil
         let title = hasSoundtrack
             ? AppLocalization.string("slideshow.music.change", defaultValue: "Change Music")
-            : AppLocalization.string("slideshow.music.choose", defaultValue: "Choose Soundtrack")
+            : AppLocalization.string("slideshow.music.choose", defaultValue: "Choose Music")
         return Button {
             noteControlInteraction()
-            musicPickerPlayback = .pausedWhileBrowsing(resume: !coordinator.isPaused)
+            holdPlaybackForOverlay()
             showsMusicPicker = true
-            coordinator.setPaused(true)
-            synchronizeMusicPlayback()
             refreshControlAutoHide()
         } label: {
             Group {
@@ -885,7 +990,9 @@ struct EarthSlideshowView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(.white.opacity(0.09))
         return Group {
-            if let url = music.nowPlaying?.artworkURL ?? music.selectedChoice?.artworkURL {
+            if let track = music.nowPlaying?.onlineTrack {
+                OnlineTrackArtwork(title: track.title, theme: track.themeID)
+            } else if let url = music.nowPlaying?.artworkURL ?? music.selectedChoice?.artworkURL {
                 AsyncImage(url: url) { image in
                     image.resizable().scaledToFill()
                 } placeholder: {
@@ -983,7 +1090,7 @@ struct EarthSlideshowView: View {
             .accessibilityLabel(currentMediaAccessibilityLabel)
             .accessibilityHint(AppLocalization.string(
                 "slideshow.remote_hint",
-                defaultValue: "Left or right changes memory. Up shows controls. Play/Pause pauses the slideshow."
+                defaultValue: "Press left or right to skip, up for controls, or Play/Pause to pause or resume."
             ))
             .accessibilityIdentifier("slideshow-viewing-surface")
     }
@@ -1001,13 +1108,15 @@ struct EarthSlideshowView: View {
         isWatching && coordinator.showsControls
     }
 
-    private var showsLocationGlobe: Bool {
-        guard !showsWatchingControls, coordinator.currentItem != nil else { return false }
+    private var inspectingWithControls: Bool {
+        showsWatchingControls && coordinator.isPaused && coordinator.inspectingPhoto
+    }
+
+    private var showsPhotoCaption: Bool {
+        guard !showsWatchingControls || inspectingWithControls, coordinator.currentItem != nil else { return false }
         switch coordinator.phase {
-        case .presentingItem:
+        case .presentingItem, .transitioningItem:
             return true
-        case .transitioningItem:
-            return coordinator.currentItem?.transition.kind != .dateReveal
         default:
             return false
         }
@@ -1015,7 +1124,6 @@ struct EarthSlideshowView: View {
 
     private var watchingContext: some View {
         GeometryReader { proxy in
-            let locationSize = CGSize(width: 280, height: 176)
             let canvasWidth = min(proxy.size.width, presentationScreenSize.width)
             let canvasHeight = min(proxy.size.height, presentationScreenSize.height)
             // Collection walls are presented in a tvOS full-screen cover. That
@@ -1027,19 +1135,18 @@ struct EarthSlideshowView: View {
             let canvasTopCorrection = max(0, -proxy.frame(in: .global).minY)
 
             ZStack(alignment: .topLeading) {
-                if showsLocationGlobe, let record = coordinator.currentItem?.record,
-                   let destination = PhotoGlobeDestination(record: record) {
-                    SlideshowLocationGlobe(destination: destination)
-                        .position(
-                            x: 80 + locationSize.width / 2,
-                            y: canvasHeight - 52 - locationSize.height / 2
-                        )
+                if let page = coordinator.canvasPage {
+                    watchingPhotoCaption(page)
+                        .padding(.leading, 80)
+                        // Leave the filmstrip and its playback controls below the inspected photo's caption.
+                        .padding(.bottom, inspectingWithControls ? 272 : 52)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+                        .opacity(showsPhotoCaption ? 1 : 0)
+                        .accessibilityHidden(!showsPhotoCaption)
                 }
-                if coordinator.currentJourney != nil || coordinator.isBuffering {
-                    journeyIndicator
-                        .padding(.leading, 72)
-                        .padding(.top, 58)
-                }
+                journeyContext
+                    .padding(.leading, 72)
+                    .padding(.top, 58)
             }
             .frame(width: canvasWidth, height: canvasHeight, alignment: .topLeading)
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
@@ -1054,30 +1161,44 @@ struct EarthSlideshowView: View {
         .accessibilityIdentifier("slideshow-immersive-chrome")
     }
 
-    private var journeyIndicator: some View {
-        HStack(spacing: 12) {
-            if let journey = coordinator.currentJourney {
-                Text(AppLocalization.format(
-                    "slideshow.current_journey",
-                    defaultValue: "Trip %1$lld of %2$lld · %3$@",
-                    Int64(coordinator.currentJourneyNumber), Int64(coordinator.journeyCount),
-                    AppLocalization.dateRange(from: journey.startDate, to: journey.endDate)
-                ))
-                .font(.system(size: 23, weight: .medium))
-                .foregroundStyle(.white)
-                .accessibilityIdentifier("slideshow-current-journey")
+    private func watchingPhotoCaption(_ page: SlideshowCanvasPage) -> some View {
+        let record = page.record
+        let locationName = PlaceDisplayLabel(place: page.visit).photoCaptionName
+        return HStack(alignment: .bottom, spacing: 22) {
+            if page.descriptor.ids.count == 1, let destination = PhotoGlobeDestination(record: record) {
+                SlideshowLocationGlobe(destination: destination, isVisible: showsPhotoCaption)
+            }
+            if showsPhotoCaption {
+                PhotoCaptureCaption(
+                    date: record.creationDate,
+                    locationName: locationName,
+                    showsTime: page.descriptor.ids.count == 1,
+                    identifierPrefix: "slideshow"
+                )
+                .contentTransition(.opacity)
+                .transition(.opacity)
+            }
+        }
+    }
+
+    private var journeyContext: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if coordinator.journeys.count > 1, let index = coordinator.displayedJourneyIndex {
+                SlideshowJourneyList(
+                    journeys: coordinator.journeys,
+                    currentIndex: index
+                )
             }
             if coordinator.isBuffering {
                 ProgressView()
                     .tint(.white)
                     .controlSize(.small)
+                    .padding(9)
+                    .background(.black.opacity(reduceTransparency ? 0.95 : 0.66), in: Circle())
                     .accessibilityLabel(AppLocalization.string(
                         "slideshow.loading_more", defaultValue: "Preparing the next memories…"))
             }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 9)
-        .background(.black.opacity(reduceTransparency ? 0.95 : 0.66), in: Capsule())
     }
 
     /// The slideshow can be hosted in a presentation view whose unconstrained
@@ -1112,9 +1233,9 @@ struct EarthSlideshowView: View {
         }
     }
 
-    private func itemStatus(_ record: PhotoAssetRecord) -> String {
+    private func itemStatus(date: Date, kind mediaKind: PhotoMediaKind) -> String {
         let kind: String
-        switch record.mediaKind {
+        switch mediaKind {
         case .photo: kind = AppLocalization.string("detail.media_photo", defaultValue: "Photo")
         case .livePhoto: kind = AppLocalization.string("detail.media_live_photo", defaultValue: "Live Photo")
         case .video: kind = AppLocalization.string("detail.media_video", defaultValue: "Video")
@@ -1122,137 +1243,33 @@ struct EarthSlideshowView: View {
         return AppLocalization.format(
             "slideshow.item_status",
             defaultValue: "%1$@ · %2$@",
-            AppLocalization.shortDate(record.creationDate),
+            AppLocalization.shortDate(date),
             kind
         )
     }
 
     private var currentMediaAccessibilityLabel: String {
-        coordinator.currentItem.map { itemStatus($0.record) }
-            ?? coordinator.currentChapter.map { PlaceDisplayLabel(place: $0.visit).displayCity }
-            ?? coordinator.scope.title
+        if let page = coordinator.canvasPage {
+            if page.descriptor.ids.count > 1 {
+                return [PlaceDisplayLabel(place: page.visit).displayCity, AppLocalization.shortDate(page.record.creationDate),
+                        AppLocalization.photoCount(page.descriptor.ids.count)].joined(separator: ", ")
+            }
+            return itemStatus(date: page.record.creationDate, kind: page.record.mediaKind)
+        }
+        return coordinator.currentChapter.map { PlaceDisplayLabel(place: $0.visit).displayCity } ?? coordinator.scope.title
     }
 
     private var currentMediaAccessibilityValue: String {
 #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--slideshow-transition-fixture"), let page = coordinator.canvasPage {
+            let transition = coordinator.observedTransition
+            return "\(page.record.id) \(transition?.kind.rawValue ?? "opening") \(Int(((transition?.duration ?? 0) * 1000).rounded()))"
+        }
         if ProcessInfo.processInfo.arguments.contains("--slideshow-observe-media") {
             return coordinator.lastViewedAssetID == coordinator.currentItem?.id ? coordinator.lastViewedAssetID ?? "" : ""
         }
 #endif
         return ""
-    }
-
-    private var mediaAnimation: Animation? {
-        guard !reduceMotion, let transition = coordinator.currentItem?.transition else { return nil }
-        let duration = coordinator.activeTransitionDuration ?? transition.duration
-        return .timingCurve(0.33, 0, 0.2, 1, duration: duration)
-    }
-
-    private func itemTransition(_ transition: EarthSlideshowTransition) -> AnyTransition {
-        guard !reduceMotion else { return .identity }
-        let direction: CGFloat = coordinator.navigationDirection >= 0 ? 1 : -1
-        switch transition.kind {
-        case .dissolve:
-            return cinematicDissolve(
-                incomingScale: 0.998,
-                outgoingScale: 0.998
-            )
-        case .directional:
-            return cinematicDissolve(
-                incomingScale: 0.994,
-                incomingOffset: 16 * direction,
-                outgoingScale: 0.998,
-                outgoingOffset: -6 * direction
-            )
-        case .settle:
-            return cinematicDissolve(
-                incomingScale: 0.989,
-                outgoingScale: 0.996
-            )
-        case .dateReveal:
-            return cinematicDissolve(
-                incomingScale: 0.996,
-                outgoingScale: 0.994
-            )
-        }
-    }
-
-    /// Every photo change shares one visual grammar: the two memories overlap
-    /// and dissolve. Content relationships may add a barely perceptible drift
-    /// or pull-back, but never turn the photograph into a page being pushed off
-    /// screen. Scales stay at or below one so the original frame is not cropped.
-    private func cinematicDissolve(
-        incomingScale: CGFloat,
-        incomingOffset: CGFloat = 0,
-        outgoingScale: CGFloat,
-        outgoingOffset: CGFloat = 0
-    ) -> AnyTransition {
-        .asymmetric(
-            insertion: .modifier(
-                active: CinematicMemoryTransitionModifier(
-                    opacity: 0,
-                    scale: incomingScale,
-                    horizontalOffset: incomingOffset
-                ),
-                identity: .identity
-            ),
-            // The incoming image supplies the fade. Keeping the backing image
-            // opaque avoids dipping through black halfway through the dissolve.
-            removal: .modifier(
-                active: CinematicMemoryTransitionModifier(
-                    opacity: 1,
-                    scale: outgoingScale,
-                    horizontalOffset: outgoingOffset
-                ),
-                identity: .identity
-            )
-        )
-    }
-
-    private func cinematicDateReveal(_ date: Date) -> some View {
-        VStack {
-            Spacer()
-            HStack {
-                Text(AppLocalization.shortDate(date))
-                    .font(.system(size: 32, weight: .light))
-                    .monospacedDigit()
-                    .tracking(2.4)
-                    .foregroundStyle(.white.opacity(0.82))
-                    .shadow(color: .black.opacity(0.7), radius: 12, y: 4)
-                    .accessibilityIdentifier("slideshow-date-reveal")
-                Spacer()
-            }
-            .padding(.horizontal, 104)
-            .padding(.bottom, 96)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0.42),
-                    .init(color: .black.opacity(0.08), location: 0.68),
-                    .init(color: .black.opacity(0.28), location: 1),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
-        .allowsHitTesting(false)
-    }
-
-    private func cinematicMotionDuration(for record: PhotoAssetRecord) -> TimeInterval {
-        let dwell: TimeInterval
-        switch record.mediaKind {
-        case .photo:
-            dwell = coordinator.configuration.stillDuration
-        case .livePhoto:
-            dwell = coordinator.configuration.livePhotoDuration
-        case .video:
-            dwell = record.duration > 0
-                ? min(record.duration, coordinator.configuration.maximumVideoDuration)
-                : coordinator.configuration.maximumVideoDuration
-        }
-        return max(2.5, dwell + (coordinator.currentItem?.transition.duration ?? 0))
     }
 
     private func retainPreparedFrame(_ image: UIImage, for assetID: String) {
@@ -1261,6 +1278,7 @@ struct EarthSlideshowView: View {
         var retained = preparedFrames.filter { allowed.contains($0.key) }
         retained[assetID] = image
         preparedFrames = retained
+        coordinator.releaseSinglePreview(for: assetID)
     }
 
     private func trimPreparedFrames() {
@@ -1270,8 +1288,8 @@ struct EarthSlideshowView: View {
 
     private var preparedFrameIDs: Set<String> {
         guard let currentID = coordinator.currentItem?.record.id else { return [] }
-        var ids: Set<String> = [currentID]
-        if coordinator.phase != .transitioningItem,
+        var ids: Set<String> = coordinator.collageTiles.isEmpty && !coordinator.preparingCollage ? [currentID] : []
+        if coordinator.phase != .transitioningItem, coordinator.preloadsNextSingle,
            let nextID = coordinator.nextItemForPrefetch?.record.id {
             ids.insert(nextID)
         }
@@ -1297,7 +1315,7 @@ struct EarthSlideshowView: View {
     private func currentMediaBecameReady(_ record: PhotoAssetRecord) {
         guard coordinator.currentItem?.record.id == record.id else { return }
         readyStaticAssetID = record.id
-        coordinator.markCurrentItemReady(record.id)
+        coordinator.markCurrentItemReady(record.id, image: preparedFrames[record.id])
         startDynamicMediaIfNeeded()
     }
 
@@ -1357,10 +1375,7 @@ struct EarthSlideshowView: View {
 
     private func finishMusicPicker() {
         music.cancelSelection()
-        if case .pausedWhileBrowsing(let resume) = musicPickerPlayback {
-            musicPickerPlayback = resume ? .resumeOnForeground : nil
-        }
-        resumePlaybackAfterMusicPicker()
+        finishOverlayPlayback()
         refreshControlAutoHide()
         Task { @MainActor in
             await Task.yield()
@@ -1373,9 +1388,22 @@ struct EarthSlideshowView: View {
         }
     }
 
-    private func resumePlaybackAfterMusicPicker() {
-        guard case .resumeOnForeground = musicPickerPlayback, scenePhase == .active else { return }
-        musicPickerPlayback = nil
+    private func holdPlaybackForOverlay() {
+        overlayPlayback = .holding(resume: !coordinator.isPaused)
+        coordinator.setPaused(true)
+        synchronizeMusicPlayback()
+    }
+
+    private func finishOverlayPlayback() {
+        if case .holding(let resume) = overlayPlayback {
+            overlayPlayback = resume ? .resumeOnForeground : nil
+        }
+        resumePlaybackAfterOverlay()
+    }
+
+    private func resumePlaybackAfterOverlay() {
+        guard case .resumeOnForeground = overlayPlayback, scenePhase == .active else { return }
+        overlayPlayback = nil
         coordinator.setPaused(false)
     }
 
@@ -1474,212 +1502,12 @@ struct EarthSlideshowView: View {
     }
 }
 
-private struct CinematicMemoryTransitionModifier: ViewModifier {
-    let opacity: Double
-    let scale: CGFloat
-    let horizontalOffset: CGFloat
-
-    static let identity = CinematicMemoryTransitionModifier(
-        opacity: 1,
-        scale: 1,
-        horizontalOffset: 0
-    )
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(opacity)
-            .scaleEffect(scale)
-            .offset(x: horizontalOffset)
-    }
-}
-
-/// A memory is presented as a small cinematic composition rather than a bare
-/// image on black: a restrained ambient wash carries the photograph's color to
-/// the television edges, while the original remains fully visible above it.
-private struct CinematicSlideshowMediaLayer: View {
-    let item: EarthSlideshowItem
-    let initialImage: UIImage?
-    @ObservedObject var playback: PhotoDetailPlaybackModel
-    let reduceMotion: Bool
-    let isPaused: Bool
-    let motionDuration: TimeInterval
-    let isActive: Bool
-    let onImageChange: (UIImage?) -> Void
-    let onDynamicDisplay: () -> Void
-    let onFullFrameUnavailable: () -> Void
-    @State private var videoPlayer: AVPlayer?
-
-    var body: some View {
-        GeometryReader { proxy in
-            mediaContent(size: proxy.size)
-                .frame(width: proxy.size.width, height: proxy.size.height)
-                .clipped()
-        }
-        .onChange(of: playback.player, initial: true) { _, player in
-            // Retain the outgoing, paused video frame until its dissolve ends.
-            if playback.preparedAssetID == item.id { videoPlayer = player }
-        }
-    }
-
-    private func mediaContent(size: CGSize) -> some View {
-        ZStack {
-            Color.black
-
-            if let initialImage {
-                Image(uiImage: initialImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
-                    .scaleEffect(1.1)
-                    .saturation(0.78)
-                    .brightness(-0.16)
-                    .blur(radius: 52)
-                    .opacity(0.56)
-                    .transition(.opacity)
-            }
-
-            Color.black.opacity(0.34)
-
-            CinematicMotionSurface(
-                assetID: item.record.id,
-                duration: motionDuration,
-                reduceMotion: reduceMotion || item.record.mediaKind == .video,
-                isPaused: isPaused
-            ) {
-                PhotoAssetImage(
-                    assetID: item.record.id,
-                    contentMode: .fit,
-                    targetSize: CGSize(width: 3_840, height: 2_160),
-                    allowsRetry: true,
-                    isActive: isActive,
-                    priority: .detail,
-                    initialImage: initialImage,
-                    onImageChange: onImageChange,
-                    onRetryVisibilityChange: { visible in
-                        if visible { onFullFrameUnavailable() }
-                    }
-                )
-            }
-
-            if let videoPlayer {
-                PhotoVideoPlaybackView(player: videoPlayer, onDisplay: onDynamicDisplay)
-                    .transition(.opacity.animation(.easeOut(duration: 0.22)))
-            } else if playback.preparedAssetID == item.id, let livePhoto = playback.livePhoto {
-                LivePhotoPlaybackView(
-                    livePhoto: livePhoto,
-                    command: playback.liveCommand,
-                    playbackModel: playback,
-                    isMuted: playback.isMuted,
-                    onDisplay: onDynamicDisplay
-                )
-                .transition(.opacity.animation(.easeOut(duration: 0.22)))
-            }
-
-            LinearGradient(
-                stops: [
-                    .init(color: .black.opacity(0.2), location: 0),
-                    .init(color: .clear, location: 0.28),
-                    .init(color: .clear, location: 0.7),
-                    .init(color: .black.opacity(0.28), location: 1),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .allowsHitTesting(false)
-        }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.32), value: initialImage != nil)
-    }
-}
-
-/// A slow push or pull gives still memories a sense of a held camera without
-/// cropping them. Both endpoints stay at or below 1.0 scale; the small offset
-/// fits inside the resulting inset even for a full-screen 16:9 photograph.
-private struct CinematicMotionSurface<Content: View>: View {
-    let assetID: String
-    let duration: TimeInterval
-    let reduceMotion: Bool
-    let isPaused: Bool
-    private let content: Content
-
-    @State private var startedAt = Date()
-    @State private var pausedAt: Date?
-    @State private var accumulatedPause: TimeInterval = 0
-
-    init(
-        assetID: String,
-        duration: TimeInterval,
-        reduceMotion: Bool,
-        isPaused: Bool,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.assetID = assetID
-        self.duration = duration
-        self.reduceMotion = reduceMotion
-        self.isPaused = isPaused
-        self.content = content()
-    }
-
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: reduceMotion || isPaused)) { context in
-            let progress = motionProgress(at: context.date)
-            let transform = transform(at: progress)
-            content
-                .scaleEffect(transform.scale)
-                .offset(x: transform.x, y: transform.y)
-        }
-        .onAppear {
-            startedAt = Date()
-            pausedAt = isPaused ? Date() : nil
-        }
-        .onChange(of: isPaused) { _, paused in
-            if paused {
-                pausedAt = Date()
-            } else if let pausedAt {
-                accumulatedPause += max(0, Date().timeIntervalSince(pausedAt))
-                self.pausedAt = nil
-            }
-        }
-    }
-
-    private func motionProgress(at date: Date) -> Double {
-        guard !reduceMotion else { return 1 }
-        let effectiveDate = pausedAt ?? date
-        let elapsed = max(0, effectiveDate.timeIntervalSince(startedAt) - accumulatedPause)
-        let linear = min(1, elapsed / max(0.1, duration))
-        return linear * linear * (3 - 2 * linear)
-    }
-
-    private func transform(at progress: Double) -> (scale: CGFloat, x: CGFloat, y: CGFloat) {
-        guard !reduceMotion else { return (1, 0, 0) }
-        let seed = stableSeed
-        let pushesIn = seed & 1 == 0
-        let horizontalSign: CGFloat = seed & 2 == 0 ? -1 : 1
-        let verticalSign: CGFloat = seed & 4 == 0 ? -1 : 1
-        let travel = pushesIn ? 1 - progress : progress
-        let scale = pushesIn ? 0.955 + 0.045 * progress : 1 - 0.045 * progress
-        return (
-            CGFloat(scale),
-            horizontalSign * 16 * CGFloat(travel),
-            verticalSign * 9 * CGFloat(travel)
-        )
-    }
-
-    private var stableSeed: UInt64 {
-        assetID.utf8.reduce(14_695_981_039_346_656_037) { value, byte in
-            (value ^ UInt64(byte)) &* 1_099_511_628_211
-        }
-    }
-}
-
-/// A passive version of the photo-detail globe: it keeps the real capture
-/// coordinate visible without introducing another focus target or a caption
-/// over the memory. MapKit's own legal attribution remains unobstructed.
 private struct SlideshowLocationGlobe: View {
     let destination: PhotoGlobeDestination
+    let isVisible: Bool
 
     var body: some View {
-        PhotoLocationMap(destination: destination, style: .slideshow)
+        PhotoLocationMap(destination: destination, style: .slideshow, isVisible: isVisible)
             .frame(width: 280, height: 176)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay {
