@@ -3,6 +3,25 @@ import XCTest
 /// Run on the dedicated simulator seeded by Scripts/PrivateLibraryFixture/seed_scan_scope.py.
 /// The normal app and PhotoKit provide every photo, album, scan, and count.
 final class JourneyScanScopeUITests: XCTestCase {
+    @MainActor func testFirstScanAlbumListKeepsItsColumnWhileScrolling() throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] == "Photo Earth · Scan Gates",
+                          "Requires the isolated album fixture and a fresh app installation")
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launch()
+        XCTAssertTrue(waitForFocus(app.buttons["scan-scope-save"]))
+        let first = app.buttons["scan-scope-album-0"]
+        XCTAssertTrue(seek(first, direction: .down))
+        let firstX = first.frame.minX
+        for _ in 0..<10 { XCUIRemote.shared.press(.down) }
+        let lower = app.buttons["scan-scope-album-10"]
+        XCTAssertTrue(waitForFocus(lower))
+        XCTAssertEqual(lower.frame.minX, firstX, accuracy: 2)
+        for _ in 0..<10 { XCUIRemote.shared.press(.up) }
+        XCTAssertTrue(waitForFocus(first))
+        XCTAssertEqual(first.frame.minX, firstX, accuracy: 2)
+    }
+
     @MainActor func testFirstScanScopeOverlappingAlbumsAndRecovery() throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] == "Photo Earth · Scan Gates",
                           "Requires the isolated five-photo album fixture and a fresh app installation")
@@ -92,10 +111,12 @@ final class JourneyScanScopeUITests: XCTestCase {
 
         try openScope(app, expectedPhotos: 1)
         let excluded = app.descendants(matching: .any)["scan-count-2"].firstMatch
+        let lastAlbum = album(41, app: app)
+        XCTAssertTrue(seek(lastAlbum, direction: .down))
         XCTAssertTrue(excluded.waitForExistence(timeout: 8))
         XCTAssertTrue(excluded.label.contains("3"), "The shared photo contributes once")
         capture(app, "03 查验排除计数")
-        XCTAssertTrue(seek(first, direction: .down))
+        XCTAssertTrue(seek(first, direction: .up))
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(seek(save, direction: .up))
         XCUIRemote.shared.press(.select)
@@ -107,6 +128,7 @@ final class JourneyScanScopeUITests: XCTestCase {
         XCUIRemote.shared.press(.select)
 
         try openScope(app, expectedPhotos: 4)
+        XCTAssertTrue(seek(lastAlbum, direction: .down))
         XCTAssertFalse(excluded.exists)
         capture(app, "04 取消排除后恢复")
     }
@@ -151,12 +173,12 @@ final class JourneyScanScopeUITests: XCTestCase {
     }
 
     @MainActor private func seek(_ element: XCUIElement, direction: XCUIRemote.Button) -> Bool {
-        for _ in 0..<7 {
-            if element.hasFocus { return true }
+        for _ in 0..<18 {
+            if element.exists && element.hasFocus { return true }
             XCUIRemote.shared.press(direction)
             settle()
         }
-        return element.hasFocus
+        return element.exists && element.hasFocus
     }
 
     @MainActor private func settle() {

@@ -227,6 +227,7 @@ final class MapReviewUITests: XCTestCase {
         if !restoredFirst { print(app.debugDescription) }
         XCTAssertTrue(restoredFirst, "Back after scrolling down restores the first photo")
         XCTAssertEqual(first.frame.minY, firstFrame.minY, accuracy: 2)
+        XCTAssertEqual(first.frame.minX, firstFrame.minX, accuracy: 2)
     }
 
     @MainActor private func enterReview(_ app: XCUIApplication) throws -> XCUIElement {

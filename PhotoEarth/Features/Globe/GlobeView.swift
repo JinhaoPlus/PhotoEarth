@@ -115,7 +115,7 @@ struct GlobeView: View {
     @State private var isInitialGlobeReady = false
     @State private var didPrepareOverview = false
     @State private var overviewReturnCamera: GlobeCameraState?
-    @AppStorage("photoEarth.waitsForInitialGlobeRender") private var waitsForInitialGlobeRenderExperiment = false
+    @AppStorage("photoEarth.waitsForInitialGlobeRender") private var isGlobeImageryWaitEnabled = true
 
     private var places: [TravelPlace] { model.index?.places ?? [] }
     private var navigationVisible: Bool {
@@ -130,11 +130,11 @@ struct GlobeView: View {
             && followsScan && !reduceMotion && scenePhase == .active
     }
     private var waitsForInitialGlobeRender: Bool {
-        waitsForInitialGlobeRenderExperiment && !isInitialGlobeReady
+        isGlobeImageryWaitEnabled && !isInitialGlobeReady
             && navigationVisible && !model.isPreparationPresented && !isAwaitingUserLocation
     }
     private var showsInitialGlobeCover: Bool {
-        waitsForInitialGlobeRenderExperiment && !isInitialGlobeReady
+        isGlobeImageryWaitEnabled && !isInitialGlobeReady
             && navigationVisible && !model.isPreparationPresented
             && (destination == .home || layer != .overview)
     }
@@ -562,9 +562,7 @@ struct GlobeView: View {
             guard waitsForInitialGlobeRender else { return }
             do { try await Task.sleep(for: .seconds(10)) } catch { return }
             guard !Task.isCancelled, waitsForInitialGlobeRender else { return }
-            // MapKit can finish with missing imagery or never produce a fully
-            // rendered callback on a poor connection. The experiment must not
-            // leave the app permanently covered in that case.
+            // MapKit may never report a fully rendered frame on a poor connection.
             revealInitialGlobe()
         }
     }
@@ -919,7 +917,7 @@ struct GlobeView: View {
     }
 
     private func revealInitialGlobe() {
-        guard waitsForInitialGlobeRenderExperiment, !isInitialGlobeReady else { return }
+        guard isGlobeImageryWaitEnabled, !isInitialGlobeReady else { return }
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.8)) {
             isInitialGlobeReady = true
         }

@@ -162,9 +162,9 @@ final class RealTVAlbumScopeUITests: XCTestCase {
             } else if app.buttons["进入我的旅行地球"].exists {
                 try focus(app.buttons["进入我的旅行地球"], direction: .left)
                 XCUIRemote.shared.press(.select)
-            } else if app.buttons["扫描范围"].exists && !settings.exists {
+            } else if app.buttons["empty-library-scan-scope"].exists && !settings.exists {
                 // Empty indexed library still permits restoration of an excluded album.
-                try focus(app.buttons["扫描范围"], direction: .right)
+                try focus(app.buttons["empty-library-scan-scope"], direction: .right)
                 XCUIRemote.shared.press(.select)
                 break
             } else if app.buttons["overview-explore-button"].exists && app.buttons["overview-explore-button"].isEnabled {

@@ -23,15 +23,18 @@ final class OverviewScrollingUITests: XCTestCase {
         }
         let focused = app.buttons.matching(NSPredicate(format: "hasFocus == true")).firstMatch
         let card = app.buttons[focused.identifier]
+        let columnX = card.frame.minX
         let loaded = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "照片已加载"), object: card)
         XCTAssertEqual(XCTWaiter.wait(for: [loaded], timeout: 10), .completed)
         for row in 2...4 {
             XCUIRemote.shared.press(.down)
             XCTAssertTrue(waitForRow(row, app: app))
+            XCTAssertEqual(focused.frame.minX, columnX, accuracy: 2)
         }
         for row in stride(from: 3, through: 1, by: -1) {
             XCUIRemote.shared.press(.up)
             XCTAssertTrue(waitForRow(row, app: app))
+            XCTAssertEqual(focused.frame.minX, columnX, accuracy: 2)
         }
         XCTAssertTrue(card.hasFocus)
         XCTAssertEqual(card.value as? String, "照片已加载")

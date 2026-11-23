@@ -63,6 +63,7 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         XCTAssertEqual(first.frame.width / first.frame.height, 1.5, accuracy: 0.02)
         XCTAssertEqual(portrait.frame.width / portrait.frame.height, 2.0 / 3.0, accuracy: 0.02)
         let firstWidth = first.frame.width
+        let firstX = first.frame.minX
         let last = app.buttons["viewport-photo-sample-ratio-portrait-1"]
         // The summary knows there are 60 photos before page two is loaded.
         // Reach the actual final record to prove pagination, rather than using
@@ -79,10 +80,12 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         XCTAssertTrue(focus(last))
         XCTAssertTrue(app.staticTexts["60 项"].waitForExistence(timeout: 8))
         let selectedID = last.identifier
+        let lastX = last.frame.minX
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(app.descendants(matching: .any)["photo-detail-image"].firstMatch.waitForExistence(timeout: 5))
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focus(app.buttons[selectedID]))
+        XCTAssertEqual(last.frame.minX, lastX, accuracy: 2)
         for _ in 0..<30 {
             if [first, panorama, portrait].contains(where: { $0.exists && $0.hasFocus }) { break }
             XCUIRemote.shared.press(.up)
@@ -95,6 +98,7 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         }
         XCTAssertTrue(focus(first))
         XCTAssertEqual(firstWidth, first.frame.width, accuracy: 1)
+        XCTAssertEqual(first.frame.minX, firstX, accuracy: 2)
         attach(app, "First row retains its geometry after pagination")
     }
 
@@ -163,10 +167,12 @@ final class OriginalPhotoRatioUITests: XCTestCase {
         XCUIRemote.shared.press(.down)
         XCTAssertTrue(focus(below))
         attach(app, "Mosaic with focus in the lower row")
+        let belowX = below.frame.minX
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(app.descendants(matching: .any)["photo-detail-image"].firstMatch.waitForExistence(timeout: 5))
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focus(below))
+        XCTAssertEqual(below.frame.minX, belowX, accuracy: 2)
         XCUIRemote.shared.press(.menu)
         let backSettled = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
             (collection.exists && collection.hasFocus) || (first.exists && first.hasFocus)

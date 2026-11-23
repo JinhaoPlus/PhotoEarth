@@ -20,11 +20,11 @@
 
 | 场景 | 看到什么才算通过 |
 | --- | --- |
-| 换到前一天，用日期选择器回到今天。打开单项、左右翻阅并返回，展开和收起该年，再放映。 | 空年份保留灰色刻度。返回到最后观看的素材，放映跨过空年进入更早年份。[那年今日遥控器用例](../../PhotoEarthUITests/OnThisDayUITests.swift) · [模拟器截图](../Evidence/2026-11-23/anniversary/) |
+| 换到前一天，用日期选择器回到今天。打开单项、左右翻阅并返回，展开和收起该年，再放映。 | 空年份保留灰色刻度。上下滚动时年份刻度与照片列的横向位置固定。返回到最后观看的素材，放映跨过空年进入更早年份。[那年今日遥控器用例](../../PhotoEarthUITests/OnThisDayUITests.swift) · [模拟器截图](../Evidence/2026-11-23/anniversary/) |
 | 用遥控器走完首页、最近到访、地点和设置，分别打开所选国家或地区及其中一个城市的照片墙再返回。 | 回到原页面和原卡片。国家或地区详情页保留「查看所有照片」，页首 Back 退回原卡片。首页从城市探索退出回同一张城市卡。 [SidebarNavigationTests](../../PhotoEarthUITests/SidebarNavigationTests.swift) · [PhotoEarthUITests](../../PhotoEarthUITests/PhotoEarthUITests.swift) |
 | 打开两趟旅程都到过的东京，其中一趟中途去了京都。 | 同一面墙中能看到两趟各自的日期和一行照片。展开新旅程后可看完整的两次东京到访，旧旅程仍保留一行。收起、打开单张及返回城市卡可用遥控器完成。[SidebarNavigationTests](../../PhotoEarthUITests/SidebarNavigationTests.swift) |
 | 将首页、最近到访、国家或地区列表或其中的城市列表滚到下方，再按两次 Back。 | 第一下回页首，聚焦「滚动地球」、第一张卡或「查看所有照片」。第二下移到原生侧边栏或退回原卡片。 [OverviewScrollingUITests](../../PhotoEarthUITests/OverviewScrollingUITests.swift) · [SidebarNavigationTests](../../PhotoEarthUITests/SidebarNavigationTests.swift) · [RecentVisitFocusUITests](../../PhotoEarthUITests/RecentVisitFocusUITests.swift) |
-| 从最近到访双列移动到中间只有一张卡的月份，再继续上下滚动。 | 中间月份能聚焦，往返时行与封面稳定。同城的不同访问分别有自己的日期和封面。 [RecentVisitFocusUITests](../../PhotoEarthUITests/RecentVisitFocusUITests.swift) |
+| 从最近到访双列移动到中间只有一张卡的月份，再继续上下滚动。 | 中间月份能聚焦。上下往返经过宽幅封面时，同列卡片的焦点边缘仍与可见边缘对齐。同城的不同访问分别有自己的日期和封面。 [RecentVisitFocusUITests](../../PhotoEarthUITests/RecentVisitFocusUITests.swift) |
 | 滚动大示例库，模拟慢图。 | 图片慢时卡片仍可聚焦，离开子页面再返回能恢复位置。 [OverviewScrollingUITests](../../PhotoEarthUITests/OverviewScrollingUITests.swift) |
 | 修改最低素材数并重启，核对两次到访素材数不同的同城样本。 | 设置值能读回。首页、最近到访和 Top Shelf 按门槛更新，城市墙仍包含该城的可见素材。 [OverviewContentTests](../../PhotoEarthTests/OverviewContentTests.swift) · [JourneyScanGateTests](../../PhotoEarthTests/JourneyScanGateTests.swift) · [JourneyShelfTests](../../PhotoEarthTests/JourneyShelfTests.swift) |
 

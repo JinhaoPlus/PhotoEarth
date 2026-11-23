@@ -476,6 +476,17 @@ final class EarthSlideshowUITests: XCTestCase {
             remote.press(.right)
             let trip = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'slideshow-picker-trip-'")).firstMatch
             XCTAssertTrue(waitForFocus(trip))
+            let firstID = trip.identifier
+            let firstTrip = app.buttons[firstID]
+            let columnX = firstTrip.frame.minX
+            for _ in 0..<7 { remote.press(.down) }
+            let lower = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'slideshow-picker-trip-' AND hasFocus == true")).firstMatch
+            XCTAssertTrue(lower.exists)
+            XCTAssertNotEqual(lower.identifier, firstID)
+            XCTAssertEqual(lower.frame.minX, columnX, accuracy: 2)
+            for _ in 0..<7 { remote.press(.up) }
+            XCTAssertTrue(waitForFocus(firstTrip))
+            XCTAssertEqual(firstTrip.frame.minX, columnX, accuracy: 2)
             remote.press(.up)
             XCTAssertTrue(waitForFocus(bulk), app.debugDescription)
         }
@@ -943,6 +954,14 @@ final class EarthSlideshowUITests: XCTestCase {
         let choice = app.buttons["slideshow-music-choice-recent:fixture:playlist:quiet-journeys"]
         XCTAssertTrue(choice.waitForExistence(timeout: 5))
         XCTAssertTrue(waitForFocus(choice), "The first playable choice receives focus after the library loads")
+        let choiceX = choice.frame.minX
+        let song = app.buttons["slideshow-music-choice-songs:fixture:song:sea-of-memory"]
+        for _ in 0..<2 { XCUIRemote.shared.press(.down) }
+        XCTAssertTrue(waitForFocus(song))
+        XCTAssertEqual(song.frame.minX, choiceX, accuracy: 2)
+        for _ in 0..<2 { XCUIRemote.shared.press(.up) }
+        XCTAssertTrue(waitForFocus(choice))
+        XCTAssertEqual(choice.frame.minX, choiceX, accuracy: 2)
         attach(app, "Earth Slideshow — Apple Music picker")
         XCUIRemote.shared.press(.select)
 
@@ -1104,10 +1123,15 @@ final class EarthSlideshowUITests: XCTestCase {
         let first = tiles.element(boundBy: 0)
         XCTAssertTrue(waitForFocus(first))
         let firstID = first.identifier
+        let columnX = first.frame.minX
         for _ in 0..<3 { XCUIRemote.shared.press(.down) }
         let focused = tiles.matching(NSPredicate(format: "hasFocus == true")).firstMatch
         XCTAssertTrue(focused.exists)
         XCTAssertNotEqual(focused.identifier, firstID)
+        XCTAssertEqual(focused.frame.minX, columnX, accuracy: 2)
+        for _ in 0..<3 { XCUIRemote.shared.press(.up) }
+        XCTAssertTrue(waitForFocus(app.buttons[firstID]))
+        XCTAssertEqual(app.buttons[firstID].frame.minX, columnX, accuracy: 2)
         XCUIRemote.shared.press(.left)
         XCTAssertTrue(waitForFocus(category))
     }
@@ -1298,6 +1322,7 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertTrue(waitForFocus(firstQuiet))
         XCUIRemote.shared.press(.right)
         XCTAssertTrue(waitForFocus(secondQuiet))
+        let trackX = secondQuiet.frame.minX
         XCUIRemote.shared.press(.select)
 
         XCTAssertTrue(waitForFocus(app.buttons["slideshow-begin"]))
@@ -1308,6 +1333,7 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertTrue(waitForFocus(quiet, timeout: 15))
         XCTAssertTrue(quiet.isSelected)
         XCTAssertTrue(secondQuiet.isSelected)
+        XCTAssertEqual(secondQuiet.frame.minX, trackX, accuracy: 2)
         XCTAssertTrue(turnOff.isEnabled)
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(waitForFocus(soundtrack))

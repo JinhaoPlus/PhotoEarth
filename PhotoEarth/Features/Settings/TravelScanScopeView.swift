@@ -16,7 +16,7 @@ struct TravelScanScopeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             HStack(spacing: TVControlLayout.actionSpacing) {
-                Text(AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings")).font(.title2)
+                Text(AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning")).font(.title2)
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
                 if saveTask != nil { ProgressView() }
@@ -101,7 +101,7 @@ struct TravelScanScopeView: View {
                 albums = try await Task.detached(priority: .utility) { try TravelScanScope.albums() }.value
                 fetchedAlbums = true
             }
-            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Couldn’t load your albums. Reopen Scan Settings to try again.") }
+            catch { failure = AppLocalization.string("scan.scope.unavailable", defaultValue: "Couldn’t load your albums. Close this screen and reopen it to try again.") }
             while !Task.isCancelled {
                 counts = await model.scanCounts()
                 do { try await Task.sleep(for: .seconds(2)) } catch { return }

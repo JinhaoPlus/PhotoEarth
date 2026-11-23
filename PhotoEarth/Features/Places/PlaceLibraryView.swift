@@ -535,6 +535,7 @@ private struct PlaceCollectionGrid: View {
                 .padding(.horizontal, 4)
             }
             .frame(width: width, alignment: .leading)
+            .contentShape(Rectangle())
             .scaleEffect(focused && !reduceMotion ? 1.025 : 1)
             .shadow(color: .black.opacity(0.3), radius: focused ? 16 : 0, y: 6)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: focused)

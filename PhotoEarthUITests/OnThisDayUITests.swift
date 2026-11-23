@@ -87,6 +87,35 @@ import XCTest
         XCTAssertTrue(focused(app.buttons["anniversary-play"]), app.debugDescription)
     }
 
+    func testVerticalScrollingKeepsPhotosAlignedWithTheYearColumn() {
+        let app = launch(empty: false)
+        let remote = XCUIRemote.shared
+        let first = app.buttons["viewport-photo-sample-paris-1"]
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        let year = Calendar.current.component(.year, from: .now)
+        let location = app.staticTexts["anniversary-locations-\(year)"]
+        let columnX = location.frame.minX
+        XCTAssertGreaterThan(columnX, app.buttons["anniversary-previous"].frame.maxX)
+        remote.press(.down)
+        XCTAssertTrue(focused(first))
+        for _ in 0..<5 { remote.press(.right) }
+        let expand = app.buttons["anniversary-expand-\(year)"]
+        XCTAssertTrue(focused(expand))
+        XCTAssertEqual(location.frame.minX, columnX, accuracy: 2)
+        remote.press(.select)
+        for _ in 0..<5 { remote.press(.left) }
+        XCTAssertTrue(focused(first))
+        let focusedX = first.frame.minX
+        for _ in 0..<5 { remote.press(.down) }
+        let lower = app.buttons["viewport-photo-sample-banff-126"]
+        XCTAssertTrue(focused(lower), app.debugDescription)
+        XCTAssertEqual(lower.frame.minX, focusedX, accuracy: 2)
+        XCTAssertGreaterThan(lower.frame.minX, app.buttons["anniversary-previous"].frame.maxX)
+        for _ in 0..<5 { remote.press(.up) }
+        XCTAssertTrue(focused(first))
+        XCTAssertEqual(location.frame.minX, columnX, accuracy: 2)
+    }
+
     func testDetailCrossesFoldAndReturnsToNewlyVisiblePhoto() {
         let app = launch(empty: false)
         let remote = XCUIRemote.shared
@@ -94,6 +123,7 @@ import XCTest
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         remote.press(.down)
         XCTAssertTrue(focused(first))
+        let firstColumnX = first.frame.minX
         for _ in 0..<4 { remote.press(.right) }
         XCTAssertTrue(focused(app.buttons["viewport-photo-sample-banff-105"]))
         remote.press(.select)
@@ -102,7 +132,9 @@ import XCTest
         remote.press(.right)
         XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "value CONTAINS %@", "6"), object: image)], timeout: 8), .completed)
         remote.press(.menu)
-        XCTAssertTrue(focused(app.buttons["viewport-photo-sample-cape-town-106"]), app.debugDescription)
+        let sixth = app.buttons["viewport-photo-sample-cape-town-106"]
+        XCTAssertTrue(focused(sixth), app.debugDescription)
+        XCTAssertEqual(sixth.frame.minX, firstColumnX, accuracy: 2)
     }
 
     func testEmptyAnniversaryReturnsToNativeSidebar() {
@@ -113,6 +145,27 @@ import XCTest
         attach("06-empty-years", app)
         app.openSidebarDestination("tab-home")
         XCTAssertTrue(app.buttons["overview-explore-button"].waitForExistence(timeout: 8))
+    }
+
+    func testReturningToAnOffscreenPhotoPreservesItsColumn() {
+        let app = launch(empty: false)
+        let remote = XCUIRemote.shared
+        let first = app.buttons["viewport-photo-sample-paris-1"]
+        let fifth = app.buttons["viewport-photo-sample-banff-105"]
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        remote.press(.down)
+        XCTAssertTrue(focused(first))
+        for _ in 0..<4 { remote.press(.right) }
+        XCTAssertTrue(focused(fifth))
+        let columnX = fifth.frame.minX
+        remote.press(.select)
+        let image = app.descendants(matching: .any)["photo-detail-image"].firstMatch
+        XCTAssertTrue(focused(image))
+        for _ in 0..<25 { remote.press(.right) }
+        remote.press(.menu)
+        let thirtieth = app.buttons["viewport-photo-sample-istanbul-130"]
+        XCTAssertTrue(focused(thirtieth), app.debugDescription)
+        XCTAssertEqual(thirtieth.frame.minX, columnX, accuracy: 2)
     }
 
     private func launch(empty: Bool) -> XCUIApplication {

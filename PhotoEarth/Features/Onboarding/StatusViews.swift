@@ -23,6 +23,7 @@ struct MessageView: View {
     let primaryAction: () -> Void
     let secondaryTitle: String?
     let secondaryAction: (() -> Void)?
+    var secondaryIdentifier = "message-secondary-action"
 
     var body: some View {
         ZStack {
@@ -44,6 +45,7 @@ struct MessageView: View {
                     if let secondaryTitle, let secondaryAction {
                         Button(secondaryTitle, action: secondaryAction)
                             .buttonStyle(.bordered)
+                            .accessibilityIdentifier(secondaryIdentifier)
                     }
                 }
                 .padding(.top, 18)

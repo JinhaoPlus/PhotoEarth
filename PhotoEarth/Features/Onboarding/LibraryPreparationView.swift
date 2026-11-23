@@ -78,7 +78,7 @@ struct LibraryPreparationView: View {
                     }
 
                     if model.usesLivePhotoLibrary && progress.phase == .failed {
-                        Button(AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings"), action: model.showScanScope)
+                        Button(AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning"), action: model.showScanScope)
                             .focused($focus, equals: .scope)
                             .accessibilityIdentifier("preparation-scan-scope")
                     }

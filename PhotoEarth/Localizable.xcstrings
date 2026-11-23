@@ -4007,49 +4007,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t load your albums. Reopen Scan Settings to try again."
+            "value" : "Couldn’t load your albums. Close this screen and reopen it to try again."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "无法载入相册列表。请重新打开「扫描范围」。"
+            "value" : "无法载入相册列表。请关闭此页面后重新打开。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "無法載入相簿列表。請重新開啟「掃描範圍」。"
+            "value" : "無法載入相簿列表。請關閉此頁面後重新開啟。"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アルバムを読み込めませんでした。スキャン範囲を開き直してください。"
+            "value" : "アルバムを読み込めませんでした。この画面を閉じて、もう一度開いてください。"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Die Alben konnten nicht geladen werden. Öffne den Scanbereich erneut."
+            "value" : "Die Alben konnten nicht geladen werden. Schließe diese Ansicht und öffne sie erneut."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible de charger vos albums. Rouvrez les réglages de l’analyse pour réessayer."
+            "value" : "Impossible de charger vos albums. Fermez cet écran, puis rouvrez-le."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No se han podido cargar tus álbumes. Vuelve a abrir «Opciones de análisis» para intentarlo de nuevo."
+            "value" : "No se han podido cargar tus álbumes. Cierra esta pantalla y vuelve a abrirla."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossibile caricare gli album. Riapri «Ambito della scansione» per riprovare."
+            "value" : "Impossibile caricare gli album. Chiudi e riapri questa schermata."
           }
         }
       }
@@ -4272,49 +4272,49 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scan Settings"
+            "value" : "Albums to Exclude from Scanning"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "扫描范围"
+            "value" : "扫描时需要排除的相册"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "掃描範圍"
+            "value" : "掃描時要排除的相簿"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "スキャン範囲"
+            "value" : "スキャンから除外するアルバム"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scanbereich"
+            "value" : "Vom Scan ausgeschlossene Alben"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Réglages de l’analyse"
+            "value" : "Albums à exclure de l’analyse"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opciones de análisis"
+            "value" : "Álbumes que se excluirán del análisis"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ambito della scansione"
+            "value" : "Album da escludere dalla scansione"
           }
         }
       }
@@ -16030,49 +16030,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Auf Satellitenbilder warten (experimentell)"
+            "value" : "Auf Satellitenbilder warten"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wait for Globe Imagery (Experimental)"
+            "value" : "Wait for Globe Imagery"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Esperar las imágenes del globo (experimental)"
+            "value" : "Esperar las imágenes del globo"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attendre les images du globe (expérimental)"
+            "value" : "Attendre les images du globe"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Attendi le immagini del globo (sperimentale)"
+            "value" : "Attendi le immagini del globo"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "衛星画像の読み込みを待つ（試験機能）"
+            "value" : "衛星画像の読み込みを待つ"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "等待地球影像（实验功能）"
+            "value" : "等待地球影像"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "等待地球影像（實驗功能）"
+            "value" : "等待地球影像"
           }
         }
       }

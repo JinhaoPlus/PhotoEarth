@@ -63,11 +63,12 @@ struct ContentView: View {
                     message: AppLocalization.string("empty_library.message", defaultValue: "Check the albums included in your scan and the location information in Photos."),
                     primaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Trip"),
                     primaryAction: model.useSampleData,
-                    secondaryTitle: model.usesLivePhotoLibrary ? AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings") : AppLocalization.string("library.rescan", defaultValue: "Scan Again"),
+                    secondaryTitle: model.usesLivePhotoLibrary ? AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning") : AppLocalization.string("library.rescan", defaultValue: "Scan Again"),
                     secondaryAction: {
                         if model.usesLivePhotoLibrary { model.showScanScope() }
                         else { Task { await model.rescan() } }
-                    }
+                    },
+                    secondaryIdentifier: model.usesLivePhotoLibrary ? "empty-library-scan-scope" : "empty-library-rescan"
                 )
             case .denied:
                 MessageView(

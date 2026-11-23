@@ -42,7 +42,9 @@ sample = docs / "sample"
 sample.mkdir(parents=True, exist_ok=True)
 (docs / "fixture-simulator").write_text(args.udid)
 rows = []
-for index, memberships in enumerate([[1], [1, 2], [2], [], []]):
+# Keep albums 1 and 2 for the exclusion check. The unlocated asset supplies
+# enough extra album rows to scroll without changing the indexed photo count.
+for index, memberships in enumerate([[1], [1, 2], [2], [], list(range(30, 42))]):
     filename = f"sample-{index}.jpg"
     picture = Image.new("RGB", (640, 360), (30, 40 + index * 35, 210))
     tags = Image.Exif()
@@ -63,7 +65,9 @@ for _ in range(90):
         break
     time.sleep(1)
 result = json.loads(progress.read_text())
-if result.get("readBack") != 5 or result.get("failed") != 0:
+album_count = len({album for row in rows for album in row["albums"]})
+if (result.get("readBack") != len(rows) or result.get("failed") != 0
+        or result.get("albums") != album_count or result.get("albumMembershipDifferences") != 0):
     raise SystemExit(f"Synthetic fixture failed: {result}")
 sim("terminate", args.udid, bundle)
-print("Five synthetic photos imported, including two overlapping albums and one asset without GPS.")
+print(f"Imported {len(rows)} synthetic photos and verified memberships in {album_count} albums.")

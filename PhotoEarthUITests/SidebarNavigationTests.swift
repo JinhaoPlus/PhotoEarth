@@ -136,6 +136,8 @@ final class SidebarNavigationTests: XCTestCase {
         let toggle = app.buttons["journey-toggle-city-trip:tokyo-arrival"]
         XCTAssertTrue(focus(first))
         XCTAssertEqual(app.staticTexts["photo-wall-title"].label, "东京")
+        let tripHeading = app.staticTexts["journey-date-city-trip:tokyo-arrival"]
+        let headingX = tripHeading.frame.minX
         XCTAssertEqual(app.staticTexts["photo-wall-count"].label, "15 项")
         XCTAssertTrue(lastOld.waitForExistence(timeout: 5))
         XCTAssertFalse(hidden.exists)
@@ -159,6 +161,7 @@ final class SidebarNavigationTests: XCTestCase {
         remote.press(.right)
         remote.press(.menu)
         XCTAssertTrue(focus(hidden), "Returning from the sixth photo reveals its row")
+        XCTAssertEqual(tripHeading.frame.minX, headingX, accuracy: 2)
         XCTAssertTrue(toggle.label.contains("收起"))
         remote.press(.menu)
         if !city.exists {
@@ -166,6 +169,32 @@ final class SidebarNavigationTests: XCTestCase {
             remote.press(.menu)
         }
         XCTAssertTrue(focus(city))
+    }
+
+    @MainActor func testCityWallRestoresAnOffscreenPhotoAfterBrowsingDetails() {
+        let app = XCUIApplication()
+        app.launchArguments = ["--demo", "--photo-ratio-fixture", "-photoEarth.mosaicPhotoWall", "YES"]
+        app.useTestLanguage("en", locale: "en_US")
+        app.launch()
+        app.enterHomeContent()
+        app.openSidebarDestination("tab-countries")
+        let remote = XCUIRemote.shared
+        XCTAssertTrue(focus(app.buttons["library-collection-country:name:Layout Sample"]))
+        remote.press(.select)
+        XCTAssertTrue(focus(app.buttons["library-country-photos"]))
+        remote.press(.down)
+        XCTAssertTrue(focus(app.buttons["library-collection-country:name:Layout Sample/city:sample-ratio-place-0"]))
+        remote.press(.select)
+        let first = app.buttons["viewport-photo-sample-ratio-landscape-60"]
+        XCTAssertTrue(focus(first))
+        let firstX = first.frame.minX
+        remote.press(.select)
+        XCTAssertTrue(focus(app.descendants(matching: .any)["photo-detail-image"].firstMatch))
+        for _ in 0..<29 { remote.press(.right) }
+        remote.press(.menu)
+        let lower = app.buttons["viewport-photo-sample-ratio-portrait-31"]
+        XCTAssertTrue(focus(lower), app.debugDescription)
+        XCTAssertEqual(lower.frame.minX, firstX, accuracy: 2)
     }
 
     @MainActor func testBackFromScrolledCountriesReturnsToTopBeforeOpeningSidebar() {
@@ -181,7 +210,9 @@ final class SidebarNavigationTests: XCTestCase {
         let topFrame = first.frame
         for region in ["AU", "US"] {
             XCUIRemote.shared.press(.down)
-            XCTAssertTrue(focus(app.buttons["library-collection-country:region:\(region)"]))
+            let card = app.buttons["library-collection-country:region:\(region)"]
+            XCTAssertTrue(focus(card))
+            XCTAssertEqual(card.frame.minX, topFrame.minX, accuracy: 2)
         }
         XCTAssertLessThan(first.frame.minY, topFrame.minY - 20)
         XCUIRemote.shared.press(.menu)
@@ -274,6 +305,16 @@ final class SidebarNavigationTests: XCTestCase {
         XCTAssertTrue(passage.label.contains("HoliznaCC0"))
         XCTAssertTrue(passage.label.contains("opengameart.org"))
         attach(app, "Online track credits")
+        if !passage.hasFocus { XCUIRemote.shared.press(.down) }
+        XCTAssertTrue(focus(passage))
+        let passageX = passage.frame.minX
+        for _ in 0..<6 { XCUIRemote.shared.press(.down) }
+        let seventh = app.descendants(matching: .any)["settings-reference-passage-6"].firstMatch
+        XCTAssertTrue(focus(seventh))
+        XCTAssertEqual(seventh.frame.minX, passageX, accuracy: 2)
+        for _ in 0..<6 { XCUIRemote.shared.press(.up) }
+        XCTAssertTrue(focus(passage))
+        XCTAssertEqual(passage.frame.minX, passageX, accuracy: 2)
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focus(credits))
     }
@@ -308,7 +349,16 @@ final class SidebarNavigationTests: XCTestCase {
         app.enterSettingsCategory("globe")
         XCTAssertTrue(focus(app.descendants(matching: .any)["settings-globe-hints"].firstMatch))
         XCUIRemote.shared.press(.down)
-        XCTAssertTrue(focus(app.descendants(matching: .any)["settings-wait-for-globe"].firstMatch))
+        let imagery = app.descendants(matching: .any)["settings-wait-for-globe"].firstMatch
+        XCTAssertTrue(focus(imagery))
+        XCTAssertEqual(imagery.label, "等待地球影像")
+        let originalImagery = try XCTUnwrap(imagery.value as? String)
+        XCTContext.runActivity(named: "等待地球影像 · \(originalImagery)") { _ in
+            XCUIRemote.shared.press(.select)
+            XCTAssertEqual(imagery.value as? String, originalImagery == "已开启" ? "已关闭" : "已开启")
+            XCUIRemote.shared.press(.select)
+            XCTAssertEqual(imagery.value as? String, originalImagery)
+        }
     }
 
     @MainActor func testSetRealHomeShelfVisibility() throws {

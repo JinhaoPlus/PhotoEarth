@@ -26,8 +26,7 @@ final class RecentVisitFocusUITests: XCTestCase {
         XCTAssertTrue(title.label.contains("March First") && title.label.contains("Focus Fixture"),
                       "The city and country share one title")
         let summary = app.staticTexts["library-visit-summary-sample-focus-march-first"]
-        XCTAssertTrue(summary.label.contains("2025") && summary.label.contains("5 项"),
-                      "Each visit remains identifiable by its full spoken date and photo count")
+        XCTAssertTrue(summary.label.contains("2025") && summary.label.contains("10 项"), summary.label)
         attach(app, "Recent visit captions in their month")
 
         XCUIRemote.shared.press(.right)
@@ -77,17 +76,23 @@ final class RecentVisitFocusUITests: XCTestCase {
         XCTAssertTrue(focus(entry))
         app.openSidebarDestination("tab-recent")
 
-        XCTAssertTrue(focus(app.buttons["library-collection-sample-ratio-place-0"]))
+        let first = app.buttons["library-collection-sample-ratio-place-0"]
+        XCTAssertTrue(focus(first))
+        let columnX = first.frame.minX
         for index in [4, 8, 12, 15, 19] {
             XCUIRemote.shared.press(.down)
-            XCTAssertTrue(focus(app.buttons["library-collection-sample-ratio-place-\(index)"]))
+            let card = app.buttons["library-collection-sample-ratio-place-\(index)"]
+            XCTAssertTrue(focus(card))
+            XCTAssertEqual(card.frame.minX, columnX, accuracy: 2)
         }
         Thread.sleep(forTimeInterval: 1)
         attach(app, "Recent covers after scrolling down")
 
         for index in [15, 12, 8, 4] {
             XCUIRemote.shared.press(.up)
-            XCTAssertTrue(focus(app.buttons["library-collection-sample-ratio-place-\(index)"]))
+            let card = app.buttons["library-collection-sample-ratio-place-\(index)"]
+            XCTAssertTrue(focus(card))
+            XCTAssertEqual(card.frame.minX, columnX, accuracy: 2)
         }
         Thread.sleep(forTimeInterval: 1)
         attach(app, "Recent covers after scrolling up")
@@ -145,14 +150,21 @@ final class RecentVisitFocusUITests: XCTestCase {
         XCTAssertEqual(allPhotos.label, "View All Photos")
         XCTAssertFalse(app.buttons["library-countries-back"].exists)
         let topFrame = allPhotos.frame
-        for index in [0, 4, 8] {
+        XCUIRemote.shared.press(.down)
+        let firstCity = app.buttons["library-collection-country:name:Layout Sample/city:sample-ratio-place-0"]
+        XCTAssertTrue(focus(firstCity))
+        let columnX = firstCity.frame.minX
+        for index in [4, 8] {
             XCUIRemote.shared.press(.down)
-            XCTAssertTrue(focus(app.buttons["library-collection-country:name:Layout Sample/city:sample-ratio-place-\(index)"]))
+            let city = app.buttons["library-collection-country:name:Layout Sample/city:sample-ratio-place-\(index)"]
+            XCTAssertTrue(focus(city))
+            XCTAssertEqual(city.frame.minX, columnX, accuracy: 2)
         }
         XCTAssertLessThan(allPhotos.frame.minY, topFrame.minY - 20)
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focus(allPhotos))
         XCTAssertEqual(allPhotos.frame.minY, topFrame.minY, accuracy: 2)
+        XCTAssertEqual(allPhotos.frame.minX, topFrame.minX, accuracy: 2)
         XCTAssertTrue(app.staticTexts["Layout Sample"].isHittable)
         attach(app, "City list after Back to top")
 

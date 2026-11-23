@@ -162,7 +162,7 @@ xcodebuild test -scheme PhotoEarth -destination "id=$SCAN_SIM" -parallel-testing
   -only-testing:PhotoEarthTests/JourneyScanGateTests
 ```
 
-种子程序通过 PhotoKit 在独立模拟器内创建五张合成图和两个重叠相册。重新验证首次安装时，先仅在该模拟器卸载 Photo Earth，再重新授权并运行。XCTest 附件保存首次范围、排除决定和恢复后页面的截图。
+种子程序通过 PhotoKit 在独立模拟器内创建五张合成图。两个重叠相册用于验证排除与恢复，另外十二个相册共用一张无 GPS 的图，用于验证长列表上下滚动时的列位置。重新验证首次安装时，先仅在该模拟器卸载 Photo Earth，再重新授权并运行。XCTest 附件保存首次范围、排除决定和恢复后页面的截图。
 
 ## 真机开发版的干净安装
 

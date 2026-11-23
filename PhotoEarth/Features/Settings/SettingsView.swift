@@ -44,7 +44,7 @@ struct SettingsView: View {
     @State private var showsJourneyMinimum = false
     @State private var journeyMinimumText = ""
     @AppStorage("photoEarth.showsGlobeHints") private var showsGlobeHints = true
-    @AppStorage("photoEarth.waitsForInitialGlobeRender") private var waitsForInitialGlobeRender = false
+    @AppStorage("photoEarth.waitsForInitialGlobeRender") private var waitsForInitialGlobeRender = true
 
     var body: some View {
         HStack(alignment: .top, spacing: 104) {
@@ -273,7 +273,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings-index-summary")
             }
             if model.usesLivePhotoLibrary {
-                actionRow(AppLocalization.string("scan.scope.title", defaultValue: "Scan Settings")) {
+                actionRow(AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning")) {
                     model.showScanScope()
                 }
                 .focused($focusedControl, equals: .scope)
@@ -428,7 +428,7 @@ struct SettingsView: View {
                               ProductAnalytics.shared.capture(.settingsChanged, value: "globe_hints")
                           }), identifier: "settings-globe-hints")
                 .focused($focusedControl, equals: .hints)
-            settingSwitch(AppLocalization.string("settings.wait_for_globe", defaultValue: "Wait for Globe Imagery (Experimental)"),
+            settingSwitch(AppLocalization.string("settings.wait_for_globe", defaultValue: "Wait for Globe Imagery"),
                           isOn: Binding(get: { waitsForInitialGlobeRender }, set: { enabled in
                               waitsForInitialGlobeRender = enabled
                               ProductAnalytics.shared.capture(.settingsChanged, value: "globe_imagery")

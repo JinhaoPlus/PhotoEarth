@@ -190,9 +190,6 @@ struct OnThisDayView: View {
                     .padding(.vertical, 12)
                 }
                 .focusScope(shelfFocus)
-                .onChange(of: focus) { _, target in
-                    if case .photo(_, let id) = target { proxy.scrollTo(id, anchor: nil) }
-                }
                 .task(id: restoration) {
                     guard let restoration, case .photo(_, let id) = restoration else { return }
                     proxy.scrollTo(id, anchor: nil)
