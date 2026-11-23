@@ -1,5 +1,5 @@
 #!/bin/sh
-# Empty dynamic content must not reveal a static Top Shelf from the signed app's assets.
+# Verify the required wide fallback and the app icon in compiled tvOS assets.
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 scratch=$(mktemp -d)
@@ -16,12 +16,12 @@ import sys
 root = Path(sys.argv[1])
 info = plistlib.loads((root / "partial.plist").read_bytes())
 assert info.get("CFBundleIcons", {}).get("CFBundlePrimaryIcon") == "App Icon", info
-assert b"TVTopShelf" not in plistlib.dumps(info), info
+wide = "Top Shelf Image Wide"
+assert info.get("TVTopShelfImage") == {"TVTopShelfPrimaryImageWide": wide}, info
 renditions = json.loads((root / "renditions.json").read_bytes())
-for rendition in renditions:
-    for key in ("Name", "RenditionName"):
-        name = str(rendition.get(key, "")).lower().replace(" ", "")
-        assert "topshelf" not in name and "brandhorizon" not in name, rendition
+fallbacks = {(r.get("RenditionName"), r.get("PixelWidth"), r.get("PixelHeight"))
+             for r in renditions if r.get("Name") == wide}
+assert fallbacks == {("EmptyShelf.png", 2320, 720), ("EmptyShelf@2x.png", 4640, 1440)}, fallbacks
 assert any(r.get("Name") == "App Icon" and r.get("AssetType") == "ImageStack" for r in renditions)
-print("tvOS App Icon present; no static Top Shelf rendition or Info.plist registration")
+print("Verified tvOS App Icon and both wide Top Shelf fallback sizes")
 PY

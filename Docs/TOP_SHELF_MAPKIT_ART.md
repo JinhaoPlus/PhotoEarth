@@ -14,4 +14,4 @@
 
 可用 `xcrun swift Scripts/verify_public_mapkit_shelf.swift` 独立复验现有文件。验证单次采集先截图，再隐藏原生图钉，在同一镜头重拍。逐个对比六枚图钉实际屏幕中心附近的像素，记录亮度变化。在倾斜地球边缘，macOS 的 `convert(coordinate:)` 与系统真实摆放的图钉有偏差，回执同时记录这项差异。扩展资源和用于系统传输的两张 JPEG 都会与对应原图比较整幅地表和单独的左下署名区域，并校验尺寸、个人 GPS 元数据及首卡传输字节预算。[复验工具](../Scripts/verify_public_mapkit_shelf.swift) · [16:9 原图回执](../Design/TopShelf/MapKit/PublicOrbit.json)
 
-主 App 的品牌目录只注册应用图标及商店图标。运行 `sh Scripts/verify_tv_home_brand.sh` 实际编译 tvOS 资源，并检查 `Assets.car` 与产物 Info.plist 中的注册项。两张 1600 × 900 地球图片均在动态扩展中，主 App 没有普通或宽幅静态货架图。[品牌资源门禁](../Scripts/verify_tv_home_brand.sh)
+主 App 的品牌目录注册应用图标、商店图标和 App Store Connect 要求的宽幅货架图。运行 `sh Scripts/verify_tv_home_brand.sh` 实际编译 tvOS 资源，并检查 `Assets.car` 与产物 Info.plist 中的注册项。两张 1600 × 900 地球图片均在动态扩展中，主 App 的宽幅静态图仅呈现纯黑背景。[品牌资源门禁](../Scripts/verify_tv_home_brand.sh)

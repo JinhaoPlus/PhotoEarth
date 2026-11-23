@@ -8,6 +8,10 @@
 	<string>$(AppIdentifierPrefix)com.doupi.PhotoEarth.RecentJourneys</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Show cover photos from your recently visited cities on the Apple TV Home Screen.</string>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
 	<key>NSExtension</key>
 	<dict>
 		<key>NSExtensionPointIdentifier</key>

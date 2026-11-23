@@ -18,7 +18,7 @@
 
 ## 无可展示城市时的桌面
 
-主 App 的品牌资源只包含应用图标与商店图标。扩展返回 nil 时，地图首图随整个动态区段收起。[品牌资源检查](../Scripts/verify_tv_home_brand.sh) · [首卡原图与采集](TOP_SHELF_MAPKIT_ART.md)
+主 App 的品牌资源包含应用图标、商店图标和发布所需的纯黑宽幅货架背景。扩展返回 nil 时，地图首图随整个动态区段收起。[品牌资源检查](../Scripts/verify_tv_home_brand.sh) · [首卡原图与采集](TOP_SHELF_MAPKIT_ART.md)
 
 ## 共享 JPEG 文件的签名条件
 
