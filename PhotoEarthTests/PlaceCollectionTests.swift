@@ -3,6 +3,21 @@ import Testing
 @testable import PhotoEarth
 
 struct PlaceCollectionTests {
+    @Test func fourColumnPagesFinishTheMonthRowAndExposeTheNextSectionEarly() {
+        let columns = PlaceGridPaging.libraryColumns
+        let monthStarts = [0, 3, 18]
+        func end(_ target: Int) -> Int {
+            PlaceGridPaging.pageEnd(through: target, count: 31, columns: columns, startsSection: monthStarts.contains)
+        }
+        #expect(end(8) == 11)
+        #expect(end(16) == 18)
+        #expect(PlaceGridPaging.preloadStart(in: [11..<15, 15..<18], columns: columns) == 11)
+        #expect(end(26) == 26)
+        #expect(end(29) == 30)
+        #expect(end(31) == 31)
+        #expect(PlaceGridPaging.pageEnd(through: 15, count: 33, columns: columns) { _ in false } == 16)
+    }
+
     private func place(_ id: String, city: String, country: String?, date: Double,
                        coordinate: GeoCoordinate = GeoCoordinate(latitude: 0, longitude: 0), cover: String? = nil) -> TravelPlace {
         TravelPlace(id: id, name: city, country: country, coordinate: coordinate,

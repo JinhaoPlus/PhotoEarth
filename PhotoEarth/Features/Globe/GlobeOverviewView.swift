@@ -10,12 +10,13 @@ struct GlobeOverviewView: View {
     let prepareSatelliteCity: (GeoCoordinate?) -> Void
     var isActive = true
 
+    @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focusedID: String?
     @State private var focusHandoff = OverviewFocusHandoff()
     @State private var isBelowPageTop = false
 
-    private let placesPerShelf = 5
+    private let placesPerShelf = PlaceCollection.homeRecentLimit
     private let horizontalInset: CGFloat = 80
     private let shelfSpacing: CGFloat = 34
     private var shelfInset: CGFloat { FullScreenMapLayout.contentHorizontalInset - horizontalInset }
@@ -54,16 +55,6 @@ struct GlobeOverviewView: View {
                             placeShelf(shelf, cardWidth: cardWidth)
                                 .id(shelf.id)
                         }
-
-                        if content.hasMore {
-                            Button(AppLocalization.string("library.load_more", defaultValue: "Show More Places"), action: content.expand)
-                                .font(.system(size: 29, weight: .medium))
-                                .buttonStyle(.glass)
-                                .focused($focusedID, equals: "load-more-places")
-                                .id("load-more-places")
-                                .frame(maxWidth: .infinity)
-                                .accessibilityIdentifier("overview-load-more")
-                        }
                     }
                     .padding(.horizontal, horizontalInset)
                     .padding(.bottom, 80)
@@ -86,9 +77,9 @@ struct GlobeOverviewView: View {
                 }
                 .onChange(of: focusedID) { _, _ in commitFocus() }
                 .onExitCommand(perform: handlesHomeBack ? { returnToPageTop(using: scroll) } : nil)
-                .task(id: isActive) {
-                    content.setActive(isActive)
-                    guard isActive else {
+                .onChange(of: isActive, initial: true) { _, active in content.setActive(active) }
+                .task(id: isActive && isEnabled) {
+                    guard isActive && isEnabled else {
                         focusHandoff.deactivate()
                         focusedID = nil
                         return
@@ -139,12 +130,7 @@ struct GlobeOverviewView: View {
 
     private var header: some View {
         ZStack(alignment: .topTrailing) {
-            Text(verbatim: "PHOTO EARTH")
-                .font(.custom("AvenirNext-DemiBold", fixedSize: 32))
-                .accessibilityAddTraits(.isHeader)
-                .tracking(2)
-                .foregroundStyle(.white.opacity(0.88))
-                .frame(height: 45)
+            HomeWordmark(scene: .home)
             if isUsingSampleData {
                 Text(AppLocalization.string("sample.journey", defaultValue: "Sample Trip"))
                     .font(.system(size: 23, weight: .regular))

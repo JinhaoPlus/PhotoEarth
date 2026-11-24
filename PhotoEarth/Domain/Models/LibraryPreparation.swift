@@ -53,19 +53,42 @@ nonisolated struct LibraryPreparationProgress: Codable, Equatable, Sendable {
     var completePlaces = 0
     var coveredPhotos = 0
     var attemptedPlaces = 0
+    // Pending work includes deferred lookups. Older checkpoints stored unmatched visits here.
     var remainingPlaces = 0
+    var visitNames: VisitNameSummary?
+    var readyPlaces: Int?
     var retryAt: Date?
     var userPaused = false
     var needsMetadata = false
     var notice: LibraryPreparationNotice?
     var updatedAt = Date()
 
+    var canContinuePlaceNames: Bool {
+        !phase.isWorking && !needsMetadata && (readyPlaces ?? 0) > 0
+    }
+
+    mutating func updateLabelWork(_ work: PlaceLabelWork) {
+        visitNames = work.names
+        totalPlaces = work.names.total
+        locatedPhotos = work.locatedPhotos
+        completePlaces = work.complete
+        coveredPhotos = work.coveredPhotos
+        remainingPlaces = work.pending
+        readyPlaces = work.ready
+        retryAt = work.nextRetry
+    }
+
+    mutating func finishLabelPass() {
+        phase = .complete
+        notice = locatedPhotos == 0 ? .noLocatedPhotos : .savedOnDevice
+    }
+
     var fraction: Double? {
         let counts: (Int, Int)
         switch phase {
         case .checking: counts = (checkedPhotos, totalPhotos)
         case .organizing: counts = (checkedPhotos, locatedPhotos)
-        case .labeling, .complete, .partial: counts = (completePlaces, totalPlaces)
+        case .labeling: counts = (totalPlaces - remainingPlaces, totalPlaces)
         default: return nil
         }
         guard counts.1 > 0 else { return nil }
@@ -81,9 +104,7 @@ nonisolated struct LibraryPreparationProgress: Codable, Equatable, Sendable {
         case .saving: AppLocalization.string("preparation.title.saving", defaultValue: "Saving Updates")
         case .waiting: AppLocalization.string("preparation.title.waiting", defaultValue: "Waiting to Continue")
         case .paused: AppLocalization.string("preparation.title.paused", defaultValue: "Library Scan Paused")
-        case .complete: locatedPhotos == 0
-            ? AppLocalization.string("preparation.title.checked", defaultValue: "Photo Check Complete")
-            : AppLocalization.string("preparation.title.complete", defaultValue: "Scan Complete")
+        case .complete: AppLocalization.string("preparation.title.checked", defaultValue: "Library Check Complete")
         case .partial: AppLocalization.string("preparation.title.partial", defaultValue: "Some place names are unavailable")
         case .failed: AppLocalization.string("preparation.title.failed", defaultValue: "Update Not Complete")
         }
@@ -97,7 +118,7 @@ nonisolated struct LibraryPreparationProgress: Codable, Equatable, Sendable {
         case .organizing:
             AppLocalization.format("preparation.count.located", defaultValue: "Items organized: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(locatedPhotos))
         case .labeling:
-            AppLocalization.format("preparation.count.places", defaultValue: "Places named: %1$@ / %2$@", AppLocalization.number(completePlaces), AppLocalization.number(totalPlaces))
+            AppLocalization.format("preparation.count.places", defaultValue: "Places checked: %1$@ / %2$@", AppLocalization.number(totalPlaces - remainingPlaces), AppLocalization.number(totalPlaces))
         case .paused, .waiting: needsMetadata
             ? (totalPhotos > 0
                 ? AppLocalization.format("preparation.count.checked", defaultValue: "Items checked: %1$@ / %2$@", AppLocalization.number(checkedPhotos), AppLocalization.number(totalPhotos))
@@ -132,6 +153,30 @@ nonisolated struct LibrarySyncState: Sendable {
     var lastFullCheck: Date?
     var lastCheck: Date?
     var authorization: String?
+}
+
+nonisolated struct PlaceLabelWork: Sendable {
+    var jobs: [PlaceLabelJob] = []
+    var names = VisitNameSummary()
+    var locatedPhotos = 0
+    var complete = 0
+    var coveredPhotos = 0
+    var pending = 0
+    var ready = 0
+    var nextRetry: Date?
+}
+
+nonisolated struct VisitNameSummary: Codable, Equatable, Sendable {
+    var city = 0
+    var regionOnly = 0
+    var unknown = 0
+    var total: Int { city + regionOnly + unknown }
+
+    mutating func count(_ label: PlaceDisplayLabel) {
+        if label.hasCity { city += 1 }
+        else if label.hasCountry { regionOnly += 1 }
+        else { unknown += 1 }
+    }
 }
 
 nonisolated struct PlaceLabelJob: Sendable {

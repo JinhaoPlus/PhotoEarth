@@ -48,7 +48,8 @@ nonisolated struct SlideshowPageSequence {
     struct Cursor: Hashable, Sendable {
         let date: Date
         let id: String
-        init(_ record: PhotoAssetRecord) { date = record.creationDate; id = record.id }
+        init(_ record: PhotoAssetRecord) { self.init(date: record.creationDate, id: record.id) }
+        init(date: Date, id: String) { self.date = date; self.id = id }
     }
     struct Request: Equatable, Sendable {
         let visit: TravelPlace
@@ -90,6 +91,14 @@ nonisolated struct SlideshowPageSequence {
         cursor = nil
         attempt = 0
         state = .ready
+    }
+
+    mutating func resume(inVisit id: String, after lastKept: Cursor) {
+        guard let segment = segmentByVisit[id],
+              let visit = segments[segment].visits.firstIndex(where: { $0.id == id }) else { return }
+        start(atSegment: segment)
+        visitIndex = visit
+        cursor = lastKept
     }
 
     mutating func begin() -> Request? {

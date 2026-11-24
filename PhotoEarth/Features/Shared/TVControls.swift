@@ -1,6 +1,8 @@
 import SwiftUI
 
 enum TVControlLayout {
+    static let photoHeaderInsets = EdgeInsets(top: 60, leading: 80, bottom: 26, trailing: 80)
+
     /// Breathing room for native glass buttons and their focus enlargement.
     static let actionSpacing: CGFloat = 20
     /// Custom toolbar buttons draw their focus inside their own bounds.

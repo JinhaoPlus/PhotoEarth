@@ -8,7 +8,6 @@ final class SidebarNavigationTests: XCTestCase {
         app.launchArguments = ["--demo"]
         app.useSimplifiedChineseTestLanguage()
         app.launch()
-        app.enterHomeContent()
         let entry = app.buttons["overview-explore-button"]
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
         // Accessibility can expose the new window during the system launch
@@ -199,7 +198,7 @@ final class SidebarNavigationTests: XCTestCase {
 
     @MainActor func testBackFromScrolledCountriesReturnsToTopBeforeOpeningSidebar() {
         let app = XCUIApplication()
-        app.launchArguments = ["--demo"]
+        app.launchArguments = ["--demo", "-photoEarth.minimumJourneyItems", "10"]
         app.useSimplifiedChineseTestLanguage()
         app.launch()
         app.enterHomeContent()

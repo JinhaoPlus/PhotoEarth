@@ -78,6 +78,7 @@ final class RecentVisitFocusUITests: XCTestCase {
 
         let first = app.buttons["library-collection-sample-ratio-place-0"]
         XCTAssertTrue(focus(first))
+        XCTAssertFalse(app.buttons["library-load-more"].exists)
         let columnX = first.frame.minX
         for index in [4, 8, 12, 15, 19] {
             XCUIRemote.shared.press(.down)

@@ -27,7 +27,6 @@ final class LibraryPreparationUITests: XCTestCase {
         XCUIRemote.shared.press(.select)
         let globe = app.buttons["overview-explore-button"]
         XCTAssertTrue(globe.waitForExistence(timeout: 10))
-        app.enterHomeContent()
         XCTAssertTrue(focused(globe))
         XCTAssertTrue(app.staticTexts["Sample Trip"].waitForExistence(timeout: 5))
         XCTAssertFalse(connect.exists)
@@ -79,6 +78,12 @@ final class LibraryPreparationUITests: XCTestCase {
         // remote focus, including its native Glass focus wrapper.
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(progress.waitForExistence(timeout: 5))
+        XCUIRemote.shared.press(.menu)
+        app.openSidebarDestination("tab-anniversary")
+        let play = app.buttons["anniversary-play"]
+        XCTAssertTrue(play.waitForExistence(timeout: 5))
+        XCTAssertTrue(entry.exists)
+        XCTAssertGreaterThan(entry.frame.minY, play.frame.maxY)
     }
 
     @MainActor func testFirstScanCompletesIntoSameGlobeAndSettingsReusesPage() throws {
@@ -121,7 +126,10 @@ final class LibraryPreparationUITests: XCTestCase {
         XCUIRemote.shared.press(.select)
         XCTAssertTrue(progress.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["返回地球"].exists)
-        attach(app, "Settings update uses same scene")
+        let checkFinished = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label == %@", "图库检查完成"), object: progress)
+        XCTAssertEqual(XCTWaiter.wait(for: [checkFinished], timeout: 20), .completed)
+        XCTAssertFalse(app.buttons["preparation-pause"].exists)
+        attach(app, "Completed library check")
         XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focused(update))
         let details = app.buttons["settings-scan-details"]
@@ -130,9 +138,8 @@ final class LibraryPreparationUITests: XCTestCase {
         XCTAssertFalse(app.buttons["settings-rebuild"].exists)
         XCUIRemote.shared.press(.select)
         XCUIRemote.shared.press(.down)
-        // When a place name is incomplete, the dedicated repair precedes Rebuild.
-        let completePlaces = app.buttons["settings-complete-places"]
-        if completePlaces.exists && completePlaces.hasFocus { XCUIRemote.shared.press(.down) }
+        XCTAssertTrue(app.staticTexts["settings-place-name-summary"].exists)
+        XCTAssertFalse(app.buttons["settings-complete-places"].exists)
         let rebuild = app.buttons["settings-rebuild"]
         XCTAssertTrue(focused(rebuild), app.debugDescription)
         XCUIRemote.shared.press(.select)

@@ -179,24 +179,63 @@ final class EarthSlideshowUITests: XCTestCase {
         XCUIRemote.shared.press(.down)
         let first = app.buttons["slideshow-select-photo-sample-reykjavik-1"]
         XCTAssertTrue(waitForFocus(first))
-        let initialX = first.frame.midX
-        for _ in 0..<20 { XCUIRemote.shared.press(.right) }
+        func settledX(_ button: XCUIElement) -> CGFloat {
+            var x = button.frame.midX
+            for _ in 0..<10 {
+                RunLoop.current.run(until: Date().addingTimeInterval(0.08))
+                let next = button.frame.midX
+                if abs(x - next) < 1 { return next }
+                x = next
+            }
+            return x
+        }
+
+        let initialX = settledX(first)
+        let railButton = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'slideshow-select-photo-' AND hasFocus == true")).firstMatch
+        var previousX = initialX
+        var largestBackwardJump: CGFloat = 0
+        var largestSelectionShift: CGFloat = 0
+        for ordinal in 2...21 {
+            XCUIRemote.shared.press(.right)
+            let button = app.buttons[railButton.identifier]
+            XCTAssertTrue(button.identifier.hasSuffix("-\(ordinal)"))
+            let x = settledX(button)
+            largestBackwardJump = max(largestBackwardJump, previousX - x)
+            previousX = x
+            if [15, 17, 19, 21].contains(ordinal) {
+                if ordinal == 21 { attach(app, "Right edge before choosing Tokyo") }
+                XCUIRemote.shared.press(.select)
+                XCTAssertTrue(waitForFocus(button))
+                let after = settledX(button)
+                largestSelectionShift = max(largestSelectionShift, abs(x - after))
+                previousX = after
+                if ordinal == 21 { attach(app, "Right edge after choosing Tokyo") }
+            }
+        }
         let target = app.buttons["slideshow-select-photo-sample-tokyo-21"]
         XCTAssertTrue(waitForFocus(target))
         XCTAssertTrue(app.frame.contains(target.frame))
         XCTAssertTrue(!first.exists || first.frame.maxX < initialX)
-        XCTAssertEqual(media.value as? String, "sample-reykjavik-1")
-        attach(app, "Filmstrip scrolled past the first screen")
-        XCUIRemote.shared.press(.select)
-        let selected = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "sample-tokyo-21"), object: media)
-        XCTAssertEqual(XCTWaiter.wait(for: [selected], timeout: 5), .completed)
+        waitForSlide("sample-tokyo-21", in: app)
+        XCUIRemote.shared.press(.right)
+        _ = settledX(railButton)
+        let beforeLeaving = target.frame.midX
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-play-pause"]))
+        XCUIRemote.shared.press(.down)
+        XCTAssertTrue(waitForFocus(target))
+        let returnX = settledX(target)
+        print("Filmstrip largest backward step=\(largestBackwardJump), selection shift=\(largestSelectionShift), before leaving=\(beforeLeaving), returned=\(returnX)")
+        attach(app, "Returning to the chosen photo")
+        XCTAssertEqual(returnX, beforeLeaving, accuracy: 8)
+        XCTAssertLessThan(largestBackwardJump, 20)
+        XCTAssertLessThan(largestSelectionShift, 20)
         XCUIRemote.shared.press(.playPause)
         XCTAssertTrue(waitForFocus(app.buttons["slideshow-play-pause"]))
         let neighbor = app.buttons["slideshow-select-photo-sample-filmstrip-20"]
         XCTAssertGreaterThan(target.frame.width, neighbor.frame.width * 1.2)
         XCTAssertGreaterThan(target.frame.height, neighbor.frame.height * 1.2)
         XCTAssertLessThan(neighbor.frame.maxX, target.frame.minX)
-        attach(app, "Playing photo enlarged within the scrolling filmstrip")
         XCUIRemote.shared.press(.down)
         XCTAssertTrue(waitForFocus(target))
         for _ in 0..<20 { XCUIRemote.shared.press(.left) }
@@ -580,13 +619,16 @@ final class EarthSlideshowUITests: XCTestCase {
         waitForSlide("sample-tokyo-", in: app)
         let segment = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         let inactive = app.descendants(matching: .any)["slideshow-queued-journey"].firstMatch
-        XCTAssertTrue(segment.label.contains("2025"), segment.label)
-        XCTAssertTrue(inactive.label.contains("2023"), inactive.label)
-        XCTAssertLessThan(segment.frame.minY, inactive.frame.minY)
-        attach(app, "Journey list — first trip highlighted")
+        XCTAssertFalse(segment.exists)
         XCUIRemote.shared.press(.select)
         let play = app.buttons["slideshow-play-pause"]
         XCTAssertTrue(waitForFocus(play))
+        let back = app.buttons["slideshow-previous-journey"]
+        XCTAssertFalse(back.exists)
+        XCTAssertTrue(segment.label.contains("2025"), segment.label)
+        XCTAssertTrue(inactive.label.contains("2023"), inactive.label)
+        XCTAssertLessThan(segment.frame.minY, inactive.frame.minY)
+        attach(app, "First journey with controls")
         XCUIRemote.shared.press(.right)
         XCTAssertTrue(waitForFocus(app.buttons["slideshow-next"]))
         XCUIRemote.shared.press(.right)
@@ -594,6 +636,7 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertTrue(waitForFocus(skip))
         XCUIRemote.shared.press(.select)
         waitForSlide("sample-istanbul-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2023"), segment.label)
         XCTAssertTrue(inactive.label.contains("2025"), inactive.label)
         XCTAssertGreaterThan(segment.frame.minY, inactive.frame.minY)
@@ -602,6 +645,17 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertTrue(waitForFocus(play))
         XCTAssertTrue(play.label.contains("继续"))
         XCTAssertFalse(skip.exists)
+        XCUIRemote.shared.press(.left)
+        XCUIRemote.shared.press(.left)
+        XCTAssertTrue(waitForFocus(back))
+        attach(app, "Last journey with previous trip focused")
+        XCUIRemote.shared.press(.select)
+        waitForSlide("sample-tokyo-", in: app)
+        XCTAssertTrue(segment.label.contains("2025"))
+        XCTAssertTrue(play.label.contains("继续"))
+        XCTAssertFalse(back.exists)
+        attach(app, "Previous trip returned to its first photo")
+
     }
 
     @MainActor
@@ -620,22 +674,25 @@ final class EarthSlideshowUITests: XCTestCase {
         let current = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         let moreAbove = app.descendants(matching: .any)["slideshow-journey-more-above"].firstMatch
         let moreBelow = app.descendants(matching: .any)["slideshow-journey-more-below"].firstMatch
+        XCTAssertFalse(list.exists)
+        XCUIRemote.shared.press(.playPause)
+        XCTAssertTrue(list.waitForExistence(timeout: 5))
         XCTAssertTrue(list.exists)
         XCTAssertEqual(queued.count, 2)
         XCTAssertFalse(moreAbove.exists)
         XCTAssertTrue(moreBelow.exists)
         XCTAssertGreaterThan(moreBelow.frame.minY, queued.element(boundBy: 1).frame.minY)
         attach(app, "Journey scale — start")
-
-        XCUIRemote.shared.press(.playPause)
         let play = app.buttons["slideshow-play-pause"]
         let next = app.buttons["slideshow-next"]
         let skip = app.buttons["slideshow-next-journey"]
         for prefix in ["sample-rio-", "sample-singapore-"] {
-            XCTAssertTrue(waitForFocus(play))
-            XCUIRemote.shared.press(.right)
-            XCTAssertTrue(waitForFocus(next))
-            XCUIRemote.shared.press(.right)
+            if !skip.hasFocus {
+                XCTAssertTrue(waitForFocus(play))
+                XCUIRemote.shared.press(.right)
+                XCTAssertTrue(waitForFocus(next))
+                XCUIRemote.shared.press(.right)
+            }
             XCTAssertTrue(waitForFocus(skip))
             XCUIRemote.shared.press(.select)
             waitForSlide(prefix, in: app)
@@ -647,10 +704,16 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertGreaterThan(queued.element(boundBy: 1).frame.minY, current.frame.minY)
         XCTAssertLessThan(moreAbove.frame.maxY, queued.element(boundBy: 0).frame.maxY)
         XCTAssertGreaterThan(moreBelow.frame.minY, queued.element(boundBy: 1).frame.minY)
+        XCTAssertTrue(app.buttons["slideshow-previous-journey"].exists)
+        attach(app, "Middle journey with both directions")
         XCUIRemote.shared.press(.playPause)
         let controls = app.descendants(matching: .any)["slideshow-controls"].firstMatch
         XCTAssertTrue(waitForDisappearance(controls, timeout: 8))
-        attach(app, "Journey scale — middle")
+        XCTAssertFalse(list.exists)
+        XCTAssertTrue(waitForFocus(app.descendants(matching: .any)["slideshow-viewing-surface"].firstMatch))
+        // The accessibility nodes leave before the 220 ms opacity transition has finished drawing.
+        RunLoop.current.run(until: Date().addingTimeInterval(0.35))
+        attach(app, "Playing with controls and journey scale hidden")
     }
 
     @MainActor
@@ -658,6 +721,7 @@ final class EarthSlideshowUITests: XCTestCase {
         let app = openJapanSlideshow(cityOnly: false)
         let segment = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         waitForSlide("sample-tokyo-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2025"), segment.label)
         XCTAssertTrue(app.frame.contains(segment.frame))
         attach(app, "Japan — first trip, first visit to Tokyo")
@@ -666,10 +730,13 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["slideshow-select-photo-sample-banff-2"].exists)
         XCUIRemote.shared.press(.playPause)
         waitForSlide("sample-paris-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2025"), segment.label)
         waitForSlide("sample-rio-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2025"), segment.label)
         waitForSlide("sample-istanbul-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2023"), segment.label)
         attach(app, "Japan — second trip starts in Osaka")
         waitForSlide("sample-sydney-", in: app)
@@ -686,6 +753,7 @@ final class EarthSlideshowUITests: XCTestCase {
         let segment = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         let queued = app.descendants(matching: .any)["slideshow-queued-journey"].firstMatch
         waitForSlide("sample-tokyo-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2025"), segment.label)
         XCTAssertTrue(queued.label.contains("2023"), queued.label)
 
@@ -697,6 +765,7 @@ final class EarthSlideshowUITests: XCTestCase {
             )
             XCTAssertEqual(XCTWaiter.wait(for: [next], timeout: 18), .completed, app.debugDescription)
             XCTAssertTrue((media.value as? String)?.hasPrefix(prefix) == true, media.debugDescription)
+            revealControls(in: app)
             XCTAssertTrue(segment.label.contains(year), segment.label)
         }
         attach(app, "Tokyo — older journey highlighted on the same city wall")
@@ -709,9 +778,10 @@ final class EarthSlideshowUITests: XCTestCase {
         waitForSlide("sample-tokyo-", in: app)
         let current = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         let queued = app.descendants(matching: .any)["slideshow-queued-journey"].firstMatch
+        XCUIRemote.shared.press(.up)
+        XCTAssertTrue(waitForFocus(app.buttons["slideshow-playback-music"]))
         XCTAssertTrue(current.label.contains("2025"), current.label)
         XCTAssertTrue(queued.label.contains("2023"), queued.label)
-        XCUIRemote.shared.press(.up)
         let music = app.buttons["slideshow-playback-music"]
         XCTAssertTrue(waitForFocus(music))
         waitForOnlineAudio(music, state: "playing")
@@ -723,6 +793,7 @@ final class EarthSlideshowUITests: XCTestCase {
         let app = openJapanSlideshow(cityOnly: false)
         let segment = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
         waitForSlide("sample-tokyo-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2025"), segment.label)
         XCUIRemote.shared.press(.playPause)
         let play = app.buttons["slideshow-play-pause"]
@@ -736,6 +807,7 @@ final class EarthSlideshowUITests: XCTestCase {
         attach(app, "Japan — next trip focused")
         XCUIRemote.shared.press(.select)
         waitForSlide("sample-istanbul-", in: app)
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2023"), segment.label)
         XCTAssertTrue(waitForFocus(play))
         XCTAssertTrue(play.label.contains("继续"))
@@ -787,6 +859,15 @@ final class EarthSlideshowUITests: XCTestCase {
         XCTAssertFalse(app.buttons["slideshow-opening-trips"].exists)
         beginSlideshow(in: app)
         return app
+    }
+
+    @MainActor
+    private func revealControls(in app: XCUIApplication) {
+        let play = app.buttons["slideshow-play-pause"]
+        if !play.exists {
+            XCUIRemote.shared.press(.select)
+            XCTAssertTrue(play.waitForExistence(timeout: 5))
+        }
     }
 
     @MainActor
@@ -1475,7 +1556,9 @@ final class EarthSlideshowUITests: XCTestCase {
             waitForSlide(prefix, in: app)
         }
         let segment = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
+        revealControls(in: app)
         XCTAssertTrue(segment.label.contains("2023"), segment.label)
+        XCUIRemote.shared.press(.menu)
         app.confirmSlideshowExit()
         XCTAssertTrue(waitForDisappearance(slideshow))
         XCTAssertTrue(waitForFocus(firstPhoto))

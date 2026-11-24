@@ -149,7 +149,7 @@ import Observation
                 : previousYears[$0.id] ?? calendar.component(.year, from: $0.endDate))
         })
         nearestRecentCoordinate = allPlaces.first?.coordinate
-        let count = min(source.count, max(15, previousItemCount))
+        let count = pageEnd(from: min(PlaceCollection.homeRecentLimit, source.count), through: max(15, previousItemCount))
         items = source.prefix(count).map { place in
             if let old = existing[place.id], old.place.coordinate == place.coordinate {
                 if metadataMayHaveChanged { updateMetadata(old, to: place) }
@@ -234,9 +234,17 @@ import Observation
         if !unchanged { item.latestAssetID = nil; item.previewMetadata = nil; item.thumbnail = nil }
     }
 
+    private func pageEnd(from start: Int, through target: Int) -> Int {
+        PlaceGridPaging.pageEnd(from: start, through: target, count: source.count,
+                                columns: PlaceCollection.homeRecentLimit) { index in
+            presentationYears[source[index - 1].id] != presentationYears[source[index].id]
+        }
+    }
+
     func expand() {
         guard hasMore else { return }
-        let added = source.dropFirst(items.count).prefix(10).map(OverviewPlaceItem.init)
+        let end = pageEnd(from: items.count, through: items.count + 10)
+        let added = source[items.count..<end].map(OverviewPlaceItem.init)
         items.append(contentsOf: added)
         hasPendingCovers = true
         for item in added { lookup[item.id] = item }
@@ -252,7 +260,7 @@ import Observation
         while start < items.count {
             let year = presentationYears[items[start].id]!
             var end = start + 1
-            while end < items.count, end - start < 5, presentationYears[items[end].id] == year {
+            while end < items.count, end - start < PlaceCollection.homeRecentLimit, presentationYears[items[end].id] == year {
                 end += 1
             }
             rows.append(OverviewPlaceShelf(id: "places-shelf-\(shelfRanges.count)", year: year,
@@ -354,6 +362,11 @@ import Observation
     func visibilityChanged(_ id: String, visible isVisible: Bool) {
         if isVisible {
             guard visible.insert(id).inserted else { return }
+            if active, hasMore, let position = positions["place-\(id)"], let start = PlaceGridPaging.preloadStart(in: shelfRanges, columns: PlaceCollection.homeRecentLimit),
+               position >= start {
+                expand()
+                return
+            }
         } else {
             guard visible.remove(id) != nil else { return }
         }
@@ -368,7 +381,6 @@ import Observation
     func validFocusID(_ id: String?) -> String {
         guard let id else { return OverviewFocusHandoff.entryID }
         if id == "home-slideshow" { return id }
-        if id == "load-more-places", hasMore { return id }
         return positions[id] != nil ? id : OverviewFocusHandoff.entryID
     }
 
@@ -381,13 +393,13 @@ import Observation
 
     func isPastRecentDock(_ id: String?) -> Bool {
         guard let id else { return false }
-        return id == "load-more-places" || (shelfPositions[id] ?? 0) > 0
+        return (shelfPositions[id] ?? 0) > 0
     }
 
     private func updateImages() {
         guard active else { return }
         let focus = focusID ?? restoredFocusID
-        let row = focus == "load-more-places" ? shelfRanges.indices.last : focus.flatMap { shelfPositions[$0] }
+        let row = focus.flatMap { shelfPositions[$0] }
         let focusPosition = focus.flatMap { positions[$0] }
         let focusRow = row.flatMap { shelfRanges.indices.contains($0) ? shelfRanges[$0] : nil } ?? shelfRanges.first
         let window = OverviewImageWindow.residentIndices(shelfRanges: shelfRanges, focusedShelfIndex: row)
@@ -422,10 +434,11 @@ import Observation
         images.update(demand, preheat: preheat, moving: moving, focusedRowOrder: focusedRowOrder)
         let opening = savedCovers != nil && (row ?? 0) == 0 && !moving
             ? Set(items.indices.prefix(PlaceCollection.homeRecentLimit)) : []
-        prepareScenicCovers(at: visiblePositions, opening: opening)
+        prepareScenicCovers(at: visiblePositions, opening: opening, focusRow: focusRow, focusPosition: focusPosition)
     }
 
-    private func prepareScenicCovers(at visiblePositions: Set<Int>, opening: Set<Int>) {
+    private func prepareScenicCovers(at visiblePositions: Set<Int>, opening: Set<Int>,
+                                    focusRow: Range<Int>?, focusPosition: Int?) {
         guard let scenicCover, active else { return }
         let eligible = visiblePositions.union(opening)
         let eligibleIDs = Set(eligible.map { items[$0].id })
@@ -433,7 +446,11 @@ import Observation
             scenicTasks.removeValue(forKey: id)?.cancel()
         }
         guard !moving else { return }
-        for position in eligible.sorted() {
+        func order(_ position: Int) -> (Int, Int, Int) {
+            let inFocusRow = focusRow?.contains(position) == true
+            return (inFocusRow ? 0 : 1, inFocusRow ? abs(position - (focusPosition ?? 0)) : 0, position)
+        }
+        for position in eligible.sorted(by: { order($0) < order($1) }) {
             let item = items[position]
             guard item.coverPrepared, !item.scenicPrepared, scenicTasks[item.id] == nil else { continue }
             let token = generation

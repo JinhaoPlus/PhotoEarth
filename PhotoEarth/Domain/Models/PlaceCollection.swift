@@ -20,6 +20,30 @@ nonisolated enum JourneyVisitThreshold {
     }
 }
 
+nonisolated enum PlaceGridPaging {
+    static let libraryColumns = 4
+
+    /// Returns the end of the visual row containing the requested page boundary.
+    static func pageEnd(from start: Int = 0, through target: Int, count: Int, columns: Int,
+                        startsSection: (Int) -> Bool) -> Int {
+        guard target < count else { return count }
+        var end = start
+        while end < target {
+            let rowLimit = min(end + columns, count)
+            end += 1
+            while end < rowLimit && !startsSection(end) { end += 1 }
+        }
+        return end
+    }
+
+    /// A short final row can mark a section break. Fetch its successor while the previous row is visible.
+    static func preloadStart(in rows: [Range<Int>], columns: Int) -> Int? {
+        guard let last = rows.last else { return nil }
+        if last.count < columns, let previous = rows.dropLast().last { return previous.lowerBound }
+        return last.lowerBound
+    }
+}
+
 /// A recent-visit shelf section follows the user's calendar month. Visits
 /// that span two months belong to the month of their last photo, while the
 /// card still shows the complete visit range.

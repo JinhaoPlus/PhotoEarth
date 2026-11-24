@@ -1900,14 +1900,21 @@ extension SQLiteTravelIndexStore {
         try withDatabase(create: false) { db in try execute(db, "DELETE FROM library_sync") }
     }
 
-    func placeLabelJobs(now: Date, limit: Int = 32) throws -> [PlaceLabelJob] {
+    func placeLabelWork(now: Date, limit: Int = 32) throws -> PlaceLabelWork {
         try withDatabase(create: false) { db in
-            try cacheExistingLabels(db)
             let places = try readPlaces(db).sorted { $0.endDate == $1.endDate ? $0.id < $1.id : $0.endDate > $1.endDate }
             let statement = try prepare(db, "SELECT attempts, retry_at, terminal FROM place_label_cache WHERE basis = ? AND locale = ?")
             defer { sqlite3_finalize(statement) }
-            var jobs: [PlaceLabelJob] = []
-            for place in places where !PlaceDisplayLabel(place: place).isComplete {
+            var work = PlaceLabelWork()
+            work.locatedPhotos = Int(try readMetadata(db)["located_photo_count"] ?? "0") ?? 0
+            for place in places {
+                let label = PlaceDisplayLabel(place: place)
+                work.names.count(label)
+                if label.isComplete {
+                    work.complete += 1
+                    work.coveredPhotos += place.photoCount
+                    continue
+                }
                 try bind(PlaceLabelBasis.key(place.coordinate), to: statement, at: 1, database: db)
                 try bind(localeIdentifier, to: statement, at: 2, database: db)
                 let status = sqlite3_step(statement)
@@ -1917,12 +1924,18 @@ extension SQLiteTravelIndexStore {
                     ? Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)) : nil
                 let terminal = status == SQLITE_ROW && sqlite3_column_int(statement, 2) != 0
                 reset(statement)
-                if !terminal, retry == nil || retry! <= now {
-                    jobs.append(PlaceLabelJob(place: place, attempts: attempts, nextRetryAt: retry))
+                guard !terminal else { continue }
+                work.pending += 1
+                if let retry, retry > now {
+                    work.nextRetry = min(work.nextRetry ?? retry, retry)
+                } else {
+                    work.ready += 1
+                    if work.jobs.count < limit {
+                        work.jobs.append(PlaceLabelJob(place: place, attempts: attempts, nextRetryAt: retry))
+                    }
                 }
-                if jobs.count >= limit { break }
             }
-            return jobs
+            return work
         }
     }
 
@@ -1969,24 +1982,6 @@ extension SQLiteTravelIndexStore {
                 result.offlinePlaceID = value.offlinePlaceID
                 return result
             }
-        }
-    }
-
-    func nextLabelRetry() throws -> Date? {
-        try withDatabase(create: false) { db in
-            let statement = try prepare(db, "SELECT retry_at FROM place_label_cache WHERE basis = ? AND locale = ? AND complete = 0 AND terminal = 0")
-            defer { sqlite3_finalize(statement) }
-            var earliest: Date?
-            for place in try readPlaces(db) where !PlaceDisplayLabel(place: place).isComplete {
-                try bind(PlaceLabelBasis.key(place.coordinate), to: statement, at: 1, database: db)
-                try bind(localeIdentifier, to: statement, at: 2, database: db)
-                if sqlite3_step(statement) == SQLITE_ROW, sqlite3_column_type(statement, 0) != SQLITE_NULL {
-                    let date = Date(timeIntervalSince1970: sqlite3_column_double(statement, 0))
-                    earliest = min(earliest ?? date, date)
-                }
-                reset(statement)
-            }
-            return earliest
         }
     }
 

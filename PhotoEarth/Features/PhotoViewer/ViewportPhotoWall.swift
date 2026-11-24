@@ -26,7 +26,7 @@ struct ViewportPhotoWall: View {
     var labelStates: [String: PlaceLabelLoadState] = [:]
     var resolvePlaceLabels: ([String]) async -> Void = { _ in }
     var onInteraction: () -> Void = {}
-    var analyticsLibrary: JourneyEventContext.Library?
+    var analyticsContext = JourneyEventContext()
     var cityJourneys: CityJourneyWallInput?
     @State private var journeyTopRequest = 0
     @State private var analyticsVisit = PhotoWallAnalyticsVisit()
@@ -76,7 +76,7 @@ struct ViewportPhotoWall: View {
         GeometryReader { geometry in
             wall(width: geometry.size.width - 2 * FullScreenMapLayout.contentHorizontalInset)
         }
-        .onAppear { analyticsVisit.begin(library: analyticsLibrary, analytics: .shared) }
+        .onAppear { analyticsVisit.begin(context: analyticsContext, analytics: .shared) }
         .onDisappear { analyticsVisit.end(analytics: .shared) }
     }
 
@@ -84,9 +84,7 @@ struct ViewportPhotoWall: View {
         let back: (() -> Void)? = isActive ? { handleBack() } : nil
         return VStack(spacing: 0) {
             header
-                .padding(.horizontal, 80)
-                .padding(.top, 60)
-                .padding(.bottom, 26)
+                .padding(TVControlLayout.photoHeaderInsets)
 
             if let cityJourneys, showsJourneyRows {
                 CityJourneyPhotoRows(input: cityJourneys, width: width, mosaic: usesMosaic, isActive: isActive,
@@ -298,7 +296,10 @@ struct ViewportPhotoWall: View {
                     .accessibilityIdentifier("photo-wall-slideshow")
             }
             if wallHasPhotos {
-                Button { usesMosaic.toggle() } label: {
+                Button {
+                    usesMosaic.toggle()
+                    ProductAnalytics.shared.capture(.wallAction, value: usesMosaic ? "mosaic" : "original", context: analyticsContext)
+                } label: {
                     TwoOptionControlLabel(secondSelected: !usesMosaic, focused: isLayoutSwitchFocused,
                                           minimumSegmentWidth: 70, segmentHeight: 70) {
                         Image(systemName: "square.grid.2x2.fill")

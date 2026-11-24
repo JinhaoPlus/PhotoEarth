@@ -30,7 +30,24 @@ nonisolated struct AnalyticsConfiguration {
 
 nonisolated struct JourneyEventContext: Sendable {
     enum Library: String, Sendable { case sample, personal, publicGlobe }
-    enum Entry: String, Sendable { case home, homeCity, recent, countries, topShelf, photoGlobe, globe, mapReview }
+    enum Entry: String, Sendable {
+        case home, homeCity, recent, countries, topShelf, photoGlobe, globe, mapReview
+
+        func wallScope(for collection: PlaceCollection?) -> EarthSlideshowScope.Kind {
+            guard let collection else { return .currentView }
+            switch collection.scope {
+            case .country: return .country
+            case .city: return .city
+            case .visits:
+                // A city can contain exactly one visit. The selected route owns its meaning.
+                switch self {
+                case .recent: return .recentVisit
+                case .countries, .homeCity, .photoGlobe, .topShelf: return .city
+                default: return .collection
+                }
+            }
+        }
+    }
     enum Music: String, Sendable { case none, online, appleMusic }
     enum Elapsed: String, Sendable {
         case under1m, from1to5m, from5to30m, atLeast30m
@@ -44,15 +61,26 @@ nonisolated struct JourneyEventContext: Sendable {
             }
         }
     }
+    enum OfferOrigin: String, Sendable { case settings, collection, globeWall, anniversary, slideshow }
+    enum StoreOperation: String, Sendable { case trial, lifetime, restore }
+    enum PickerStage: String, Sendable { case opening, playback }
+    enum ScanOrigin: String, Sendable { case initial, settings, preparation, emptyLibrary }
+    enum MusicChoice: String, Sendable { case off, recommended, category, track, appleMusic }
     var library: Library?
     var entry: Entry?
     var scope: EarthSlideshowScope.Kind?
     var music: Music?
     var elapsed: Elapsed?
+    var scanOrigin: ScanOrigin?
+    var offerOrigin: OfferOrigin?
+    var operation: StoreOperation?
+    var pickerStage: PickerStage?
+    var musicChoice: MusicChoice?
 
     var properties: [String: String] {
         ["library_mode": library?.rawValue, "entry": entry?.rawValue, "scope": scope?.rawValue,
-         "music_source": music?.rawValue, "elapsed_bucket": elapsed?.rawValue].compactMapValues { $0 }
+         "music_source": music?.rawValue, "elapsed_bucket": elapsed?.rawValue, "origin": offerOrigin?.rawValue ?? scanOrigin?.rawValue,
+         "operation": operation?.rawValue, "stage": pickerStage?.rawValue, "choice": musicChoice?.rawValue].compactMapValues { $0 }
     }
 }
 
@@ -72,6 +100,7 @@ nonisolated enum ProductEvent: String, CaseIterable {
     case welcomePresented = "photoearth_welcome_presented"
     case accessRequested = "photoearth_photo_access_requested"
     case scopePresented = "photoearth_scan_scope_presented"
+    case scopeEditFinished = "photoearth_scan_scope_edit_finished"
     case scopeDismissed = "photoearth_scan_scope_dismissed"
     case preparationAction = "photoearth_preparation_action"
     case preparationFailed = "photoearth_preparation_failed"
@@ -82,6 +111,25 @@ nonisolated enum ProductEvent: String, CaseIterable {
     case musicPickerOpened = "photoearth_music_picker_opened"
     case slideshowFinished = "photoearth_slideshow_finished"
     case settingsChanged = "photoearth_settings_changed"
+
+    case preparationCompleted = "photoearth_preparation_completed"
+    case countryOpened = "photoearth_country_opened"
+    case globeAction = "photoearth_globe_action"
+    case wallAction = "photoearth_wall_action"
+    case detailPlaybackRequested = "photoearth_detail_playback_requested"
+    case anniversaryAction = "photoearth_anniversary_action"
+    case slideshowContentReady = "photoearth_slideshow_content_ready"
+    case slideshowAction = "photoearth_slideshow_action"
+    case musicPickerResult = "photoearth_music_picker_result"
+    case musicAvailability = "photoearth_music_availability"
+    case settingsOpenedReference = "photoearth_settings_reference_opened"
+    case freeJourneySelected = "photoearth_free_journey_selected"
+    case offerPresented = "photoearth_offer_presented"
+    case storeRequested = "photoearth_store_requested"
+    case storeResult = "photoearth_store_result"
+
+    enum ShowAction: String { case journeyPicker, filterJourneys, bulkSelect, allJourneys, selectedJourneys, pauseResume, filmstrip, skipJourney,
+                                   originalAudio, musicTransport, retry, replay }
 
     static func languageTag(_ identifier: String?) -> String {
         guard let identifier else { return "unknown" }
@@ -96,7 +144,7 @@ nonisolated enum ProductEvent: String, CaseIterable {
         let os = ProcessInfo.processInfo.operatingSystemVersion
         var properties = ["platform": "tvOS", "os_version": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)",
                           "system_language": languageTag(Locale.preferredLanguages.first),
-                          "app_language": AppLocalization.localeIdentifier, "analytics_schema": "2"]
+                          "app_language": AppLocalization.localeIdentifier, "analytics_schema": "3"]
         if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
             properties["app_version"] = version
         }
@@ -124,14 +172,27 @@ nonisolated enum ProductEvent: String, CaseIterable {
         if let mode = fields["library_mode"] as? String, JourneyEventContext.Library(rawValue: mode) != nil {
             properties["library_mode"] = mode
         }
-        if [.wallOpened, .globeExplored].contains(self), let entry = fields["entry"] as? String,
+        if [.wallOpened, .wallBrowsingFinished, .wallAction, .globeAction, .globeExplored].contains(self), let entry = fields["entry"] as? String,
            JourneyEventContext.Entry(rawValue: entry) != nil { properties["entry"] = entry }
-        if self == .slideshowFinished, let scope = fields["scope"] as? String,
+        if [.slideshowFinished, .slideshowContentReady, .slideshowAction, .musicPickerOpened, .musicPickerResult, .musicAvailability, .wallBrowsingFinished, .wallAction].contains(self), let scope = fields["scope"] as? String,
            EarthSlideshowScope.Kind(rawValue: scope) != nil { properties["scope"] = scope }
-        if [.slideshowStarted, .slideshowFinished].contains(self), let music = fields["music_source"] as? String,
+        if [.slideshowStarted, .slideshowFinished, .musicPickerResult, .musicAvailability].contains(self), let music = fields["music_source"] as? String,
            JourneyEventContext.Music(rawValue: music) != nil { properties["music_source"] = music }
         if self == .slideshowFinished, let elapsed = fields["elapsed_bucket"] as? String,
            JourneyEventContext.Elapsed(rawValue: elapsed) != nil { properties["elapsed_bucket"] = elapsed }
+        if [.offerPresented, .storeRequested, .storeResult, .freeJourneySelected].contains(self),
+           let origin = fields["origin"] as? String, JourneyEventContext.OfferOrigin(rawValue: origin) != nil {
+            properties["origin"] = origin
+        }
+        if [.storeRequested, .storeResult].contains(self), let operation = fields["operation"] as? String,
+           JourneyEventContext.StoreOperation(rawValue: operation) != nil { properties["operation"] = operation }
+        if [.musicPickerOpened, .musicPickerResult, .musicAvailability].contains(self), let stage = fields["stage"] as? String,
+           JourneyEventContext.PickerStage(rawValue: stage) != nil { properties["stage"] = stage }
+        if self == .musicPickerResult, let choice = fields["choice"] as? String,
+           JourneyEventContext.MusicChoice(rawValue: choice) != nil { properties["choice"] = choice }
+        if [.scopeDismissed, .scopeEditFinished].contains(self), let origin = fields["origin"] as? String, JourneyEventContext.ScanOrigin(rawValue: origin) != nil {
+            properties["origin"] = origin
+        }
         guard let value else { return properties }
         switch self {
         case .photoAccessResult where ["granted", "denied", "undetermined"].contains(value),
@@ -139,25 +200,40 @@ nonisolated enum ProductEvent: String, CaseIterable {
             properties["result"] = value
         case .sidebarSelected where ["home", "recent", "countries", "anniversary", "settings"].contains(value):
             properties["screen"] = value
-        case .wallOpened where ["collection", "currentView"].contains(value),
+        case .wallOpened where ["country", "city", "recentVisit", "collection", "currentView"].contains(value),
              .slideshowRequested where EarthSlideshowScope.Kind(rawValue: value) != nil,
              .slideshowStarted where EarthSlideshowScope.Kind(rawValue: value) != nil:
             properties["scope"] = value
-        case .scopePresented where ["initial", "settings"].contains(value):
+        case .scopePresented where JourneyEventContext.ScanOrigin(rawValue: value) != nil:
             properties["origin"] = value
-        case .scopeDismissed where ["saved", "dismissed"].contains(value):
+        case .scopeDismissed where ["saved", "dismissed"].contains(value),
+             .scopeEditFinished where ["saved", "unchanged", "dismissed"].contains(value):
             properties["result"] = value
         case .wallBrowsingFinished where ["wall_only", "viewed_details"].contains(value):
             properties["result"] = value
         case .topShelfOpened where ["city", "globe"].contains(value):
             properties["destination"] = value
-        case .preparationAction where ["update", "labels", "rebuild", "pause", "resume"].contains(value):
+        case .preparationAction where ["update", "labels", "rebuild", "pause", "resume", "browse_now", "follow_camera", "pause_camera"].contains(value):
             properties["action"] = value
-        case .preparationFailed where LibraryPreparationMode(rawValue: value) != nil:
+        case .preparationCompleted where LibraryPreparationMode(rawValue: value) != nil,
+             .preparationFailed where LibraryPreparationMode(rawValue: value) != nil:
             properties["mode"] = value
         case .slideshowFinished where ["completed", "closed_before_start", "closed_after_start", "failed", "restarted"].contains(value):
             properties["result"] = value
-        case .settingsChanged where ["scan_scope", "transit_filter", "journey_minimum", "top_shelf", "globe_hints", "globe_imagery"].contains(value):
+        case .globeAction where ["zoom_controls", "current_view", "map_style"].contains(value),
+             .wallAction where ["mosaic", "original", "expand_journey"].contains(value),
+             .anniversaryAction where ["pick_date", "reset_today", "adjacent_day", "expand_year"].contains(value),
+             .slideshowAction where ShowAction(rawValue: value) != nil:
+            properties["action"] = value
+        case .detailPlaybackRequested where ["video", "livePhoto"].contains(value):
+            properties["media_kind"] = value
+        case .musicPickerResult where ["confirmed", "cancelled"].contains(value),
+             .musicAvailability where ["ready", "cached", "unavailable"].contains(value),
+             .storeResult where ["completed", "cancelled", "pending", "unsuccessful", "restored", "nothing_to_restore"].contains(value):
+            properties["result"] = value
+        case .settingsOpenedReference where ["privacy", "credits", "scan_details"].contains(value):
+            properties["reference"] = value
+        case .settingsChanged where ["excluded_albums", "camera_filter", "automatic_music", "transit_filter", "journey_minimum", "top_shelf", "globe_hints", "globe_imagery"].contains(value):
             properties["setting"] = value
         default: break
         }
@@ -168,12 +244,12 @@ nonisolated enum ProductEvent: String, CaseIterable {
 /// Shared by the wall's tiles. Only leaving the wall emits a summary.
 @MainActor final class PhotoWallAnalyticsVisit {
     private var consent: UInt64?
-    private var library: JourneyEventContext.Library?
+    private var context = JourneyEventContext()
     private var viewedDetails = false
 
-    func begin(library: JourneyEventContext.Library?, analytics: ProductAnalytics) {
-        guard consent == nil, let library, analytics.enabled else { return }
-        self.library = library
+    func begin(context: JourneyEventContext, analytics: ProductAnalytics) {
+        guard consent == nil, context.library != nil, analytics.enabled else { return }
+        self.context = context
         consent = analytics.consentRevision
     }
 
@@ -182,10 +258,10 @@ nonisolated enum ProductEvent: String, CaseIterable {
     func end(analytics: ProductAnalytics) {
         if let consent, consent == analytics.consentRevision {
             analytics.capture(.wallBrowsingFinished, value: viewedDetails ? "viewed_details" : "wall_only",
-                              context: .init(library: library))
+                              context: context)
         }
         consent = nil
-        library = nil
+        context = .init()
         viewedDetails = false
     }
 }

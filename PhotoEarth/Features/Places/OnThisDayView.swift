@@ -64,8 +64,12 @@ struct OnThisDayView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 36) {
-            header.padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .trailing, spacing: TVControlLayout.actionSpacing) {
+                header
+                LibraryPreparationPageEntry(model: model)
+            }
+            .padding(TVControlLayout.photoHeaderInsets)
             if failed {
                 Button(String(localized: "common.retry")) { attempt += 1 }
                     .frame(maxWidth: .infinity)
@@ -76,12 +80,13 @@ struct OnThisDayView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.top, 100)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .ignoresSafeArea(.container, edges: .top)
         .background(.black.opacity(reduceTransparency ? 1 : 0.64))
         .opacity(show == nil ? 1 : 0)
         .sheet(isPresented: $picker) {
             AnniversaryDatePicker(date: date, calendar: calendar, years: years, browser: browser, model: model) { selection in
+                reportAction(selection == nil ? "reset_today" : "pick_date")
                 chosen = selection.map { calendar.dateComponents([.month, .day], from: $0) }
                 picker = false
                 focus = .date
@@ -134,6 +139,10 @@ struct OnThisDayView: View {
         }
     }
 
+    private func reportAction(_ action: String) {
+        ProductAnalytics.shared.capture(.anniversaryAction, value: action, context: .init(library: model.analyticsLibrary))
+    }
+
     private func clearContent() {
         show?.cancel()
         show = nil
@@ -145,7 +154,24 @@ struct OnThisDayView: View {
     }
 
     private var header: some View {
-        HStack(spacing: 20) {
+        ZStack(alignment: .trailing) {
+            dateControls.frame(maxWidth: .infinity)
+            EarthSlideshowEntryButton(title: String(localized: "anniversary.play"), minimumHeight: 82, action: startShow)
+                .focused($focus, equals: .play)
+                .disabled(browser?.shelves.contains { !$0.records.isEmpty } != true)
+                .accessibilityIdentifier("anniversary-play")
+        }
+        .focusSection()
+        .onMoveCommand { direction in
+            guard direction == .down,
+                  let shelf = browser?.shelves.first(where: { !$0.records.isEmpty }),
+                  let first = shelf.records.first else { return }
+            focus = .photo(shelf.id, first.id)
+        }
+    }
+
+    private var dateControls: some View {
+        HStack(spacing: TVControlLayout.actionSpacing) {
             arrow(-1)
             Button { picker = true } label: {
                 HStack(spacing: 16) {
@@ -156,11 +182,6 @@ struct OnThisDayView: View {
             .focused($focus, equals: .date)
             .accessibilityIdentifier("anniversary-date")
             arrow(1)
-            Spacer()
-            EarthSlideshowEntryButton(title: String(localized: "anniversary.play"), minimumHeight: 82, action: startShow)
-                .focused($focus, equals: .play)
-                .disabled(browser?.shelves.contains { !$0.records.isEmpty } != true)
-                .accessibilityIdentifier("anniversary-play")
         }
         .buttonStyle(.glass)
     }
@@ -168,6 +189,7 @@ struct OnThisDayView: View {
     private func arrow(_ step: Int) -> some View {
         Button {
             guard let next = calendar.date(byAdding: .day, value: step, to: date) else { return }
+            reportAction("adjacent_day")
             chosen = calendar.dateComponents([.month, .day], from: next)
         } label: { Image(systemName: step < 0 ? "chevron.left" : "chevron.right") }
         .focused($focus, equals: step < 0 ? .previous : .next)
@@ -269,7 +291,10 @@ struct OnThisDayView: View {
                             Button {
                                 if row.expanded { session.shelves[index].expanded = false }
                                 else {
-                                    authorize(session, ranges: [row.range].compactMap { $0 }) { session.shelves[index].expanded = true }
+                                    authorize(session, ranges: [row.range].compactMap { $0 }) {
+                                        session.shelves[index].expanded = true
+                                        reportAction("expand_year")
+                                    }
                                 }
                             } label: { Image(systemName: row.expanded ? "chevron.up" : "chevron.down") }
                             .buttonStyle(.glass)

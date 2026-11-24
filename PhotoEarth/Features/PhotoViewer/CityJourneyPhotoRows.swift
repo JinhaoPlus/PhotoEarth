@@ -100,6 +100,9 @@ private struct JourneyRows: View {
                 if canExpand {
                     Button {
                         journey.isExpanded.toggle()
+                        if journey.isExpanded {
+                            ProductAnalytics.shared.capture(.wallAction, value: "expand_journey", context: .init(library: input.model.analyticsLibrary, scope: .city))
+                        }
                         if journey.isExpanded, page.records.count <= Journey.previewLimit { journey.load(app: input.model) }
                     } label: {
                         Label(journey.isExpanded

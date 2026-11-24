@@ -17,6 +17,7 @@
 | --- | --- |
 | 从欢迎页选示例，再走独立的准备路径。 | 欢迎页能选择两个入口。准备中可暂停和继续，Back 保留整理状态并恢复来源焦点，完成后进入同一地球，从设置能重开准备页。 [LibraryPreparationUITests](../../PhotoEarthUITests/LibraryPreparationUITests.swift) |
 | 在欢迎页和示例设置打开首扫范围，按 Back 后重开。取消一次已有图库的范围编辑。 | 恢复入口焦点及原范围，「开始扫描」「保存范围」分别提交首扫和编辑。 [JourneyScanScopeUITests](../../PhotoEarthUITests/JourneyScanScopeUITests.swift) |
+| 图库检查结束后展开「扫描详情」。 | 准备页显示「图库检查完成」，详情列出三类地名匹配结果。所有到访均已查过时，隐藏「继续补充地点名称」。 [LibraryPreparationTests](../../PhotoEarthTests/LibraryPreparationTests.swift) · [LibraryPreparationUITests](../../PhotoEarthUITests/LibraryPreparationUITests.swift) |
 | 在设置中更改每次到访的最低数量。 | 选预设后按 Back 放弃草稿，「保存」提交，退出后焦点都回设置项。 [LibraryPreparationUITests](../../PhotoEarthUITests/LibraryPreparationUITests.swift) |
 | 预置有交集的两个相册，保存排除，再取消排除。 | 重叠资产只计一次，符合资格的外部对照保留。解除排除后恢复应有素材。 [JourneyScanScopeUITests](../../PhotoEarthUITests/JourneyScanScopeUITests.swift) · [RealTVAlbumScopeUITests](../../PhotoEarthUITests/RealTVAlbumScopeUITests.swift) |
 | 切换「隐藏疑似途经照片」，并覆盖全库被隐藏的情况。 | 可见数量即时变化，关闭后恢复；全隐藏时仍能回设置恢复。 [TransitFilteringUITests](../../PhotoEarthUITests/TransitFilteringUITests.swift) |

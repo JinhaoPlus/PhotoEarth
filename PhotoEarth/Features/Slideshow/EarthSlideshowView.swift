@@ -21,6 +21,7 @@ struct EarthSlideshowView: View {
         case slideshowPrevious
         case slideshowPlayPause
         case slideshowNext
+        case previousJourney
         case nextJourney
         case slideshowSound
         case slideshowRestart
@@ -259,6 +260,9 @@ struct EarthSlideshowView: View {
                     default:
                         if overlayPlayback == nil { coordinator.setPaused(true) }
                     }
+                } else if case .photo = previous, focus != .slideshowPlayPause, overlayPlayback == nil {
+                    // From the far end of the rail, native focus can jump directly to the music panel.
+                    watchingControlFocus = .slideshowPlayPause
                 }
                 refreshControlAutoHide()
             }
@@ -351,10 +355,12 @@ struct EarthSlideshowView: View {
             SlideshowJourneyPicker(coordinator: coordinator) { showsJourneyPicker = false }
         }
         .sheet(isPresented: $showsMusicPicker, onDismiss: finishMusicPicker) {
-            SlideshowMusicSourceView(controller: music, dismiss: {
+            SlideshowMusicSourceView(controller: music, availability: coordinator.musicAvailability, dismiss: { choice in
+                coordinator.finishedMusicPicker(selection: selectedMusicSource, choice: choice)
                 didCommitMusicChoice = true
                 showsMusicPicker = false
             }, cancel: cancelMusicPicker)
+            .onAppear { coordinator.openedMusicPicker() }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("earth-slideshow")
@@ -451,7 +457,7 @@ struct EarthSlideshowView: View {
                         .focused($openingFocus, equals: .trips)
                 }
                 EarthSlideshowEntryButton(title: AppLocalization.string("slideshow.begin", defaultValue: "Start Slideshow")) {
-                    let soundtrack: JourneyEventContext.Music = music.selectedChoice == nil ? .none : (music.isUsingOnlineMusic ? .online : .appleMusic)
+                    let soundtrack = selectedMusicSource
                     if waitsForJourneyScope { pendingStartMusic = soundtrack }
                     else if let requestPlayback { requestPlayback(soundtrack) }
                     else { coordinator.beginPlayback(music: soundtrack) }
@@ -461,7 +467,6 @@ struct EarthSlideshowView: View {
                 .accessibilityIdentifier("slideshow-begin")
 
                 Button {
-                    coordinator.openedMusicPicker()
                     showsMusicPicker = true
                 } label: {
                     Label(openingSoundtrackTitle, systemImage: "music.note")
@@ -500,7 +505,10 @@ struct EarthSlideshowView: View {
     }
 
     private var journeyPickerButton: some View {
-        Button { showsJourneyPicker = true } label: {
+        Button {
+            coordinator.recordAction(.journeyPicker)
+            showsJourneyPicker = true
+        } label: {
             Label(SlideshowJourneyPicker.title, systemImage: "checklist")
                 .labelStyle(PageActionLabelStyle())
         }
@@ -685,6 +693,7 @@ struct EarthSlideshowView: View {
             Spacer()
             if coordinator.selectedJourneyIDs != nil { journeyPickerButton }
             Button(AppLocalization.string("common.retry", defaultValue: "Try Again")) {
+                coordinator.recordAction(.retry)
                 coordinator.retry()
             }
             .accessibilityIdentifier("slideshow-retry")
@@ -707,7 +716,8 @@ struct EarthSlideshowView: View {
             let canvasTopCorrection = max(0, -proxy.frame(in: .global).minY)
 
             VStack(spacing: 0) {
-                HStack {
+                HStack(alignment: .top) {
+                    journeyContext
                     Spacer()
                     soundtrackPanel
                 }
@@ -741,6 +751,9 @@ struct EarthSlideshowView: View {
 
     private var slideshowPlaybackControls: some View {
         HStack(spacing: TVControlLayout.toolbarSpacing) {
+            if coordinator.canSkipToPreviousJourney {
+                journeyButton(forward: false)
+            }
             iconControlButton(
                 AppLocalization.string("slideshow.previous", defaultValue: "Previous"),
                 systemImage: "backward.fill",
@@ -768,7 +781,7 @@ struct EarthSlideshowView: View {
                 coordinator.move(forward: true)
             }
             if coordinator.canSkipToNextJourney {
-                nextJourneyButton
+                journeyButton(forward: true)
             }
             Rectangle()
                 .fill(.white.opacity(0.22))
@@ -782,6 +795,7 @@ struct EarthSlideshowView: View {
                 focus: .slideshowSound,
                 identifier: "slideshow-sound"
             ) {
+                coordinator.recordAction(.originalAudio)
                 coordinator.soundEnabled.toggle()
             }
             iconControlButton(
@@ -816,15 +830,24 @@ struct EarthSlideshowView: View {
         }
     }
 
-    private var nextJourneyButton: some View {
-        let focused = watchingControlFocus == .nextJourney
+    private func journeyButton(forward: Bool) -> some View {
+        let focus: WatchingControlFocus = forward ? .nextJourney : .previousJourney
+        let focused = watchingControlFocus == focus
+        let title: String
+        if coordinator.scope.kind == .anniversary {
+            title = forward ? String(localized: "anniversary.next_year") : String(localized: "anniversary.previous_year")
+        } else {
+            title = forward ? AppLocalization.string("slideshow.next_journey", defaultValue: "Next Trip")
+                            : AppLocalization.string("slideshow.previous_journey", defaultValue: "Previous Trip")
+        }
         return Button {
             noteControlInteraction()
-            watchingControlFocus = .slideshowPlayPause
-            coordinator.skipToNextJourney()
+            if forward { coordinator.skipToNextJourney() } else { coordinator.skipToPreviousJourney() }
+            if forward ? !coordinator.canSkipToNextJourney : !coordinator.canSkipToPreviousJourney {
+                watchingControlFocus = .slideshowPlayPause
+            }
         } label: {
-            Label(coordinator.scope.kind == .anniversary ? String(localized: "anniversary.next_year") : AppLocalization.string("slideshow.next_journey", defaultValue: "Next Trip"),
-                  systemImage: "forward.end.fill")
+            Label(title, systemImage: forward ? "forward.end.fill" : "backward.end.fill")
                 .font(.system(size: 20, weight: .semibold))
                 .foregroundStyle(focused ? .black : .white)
                 .lineLimit(1)
@@ -835,12 +858,12 @@ struct EarthSlideshowView: View {
         }
         .buttonStyle(QuietPhotoButtonStyle())
         .focusEffectDisabled()
-        .focused($watchingControlFocus, equals: .nextJourney)
+        .focused($watchingControlFocus, equals: focus)
         .scaleEffect(focused && !reduceMotion ? 1.04 : 1)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: focused)
-        .accessibilityIdentifier("slideshow-next-journey")
+        .accessibilityIdentifier(forward ? "slideshow-next-journey" : "slideshow-previous-journey")
         .onDisappear {
-            if showsWatchingControls, watchingControlFocus == .nextJourney {
+            if showsWatchingControls, watchingControlFocus == focus {
                 watchingControlFocus = .slideshowPlayPause
             }
         }
@@ -861,6 +884,7 @@ struct EarthSlideshowView: View {
                 LazyHStack(spacing: 6) {
                     ForEach(coordinator.filmstrip) { item in
                         photoSelectionButton(item)
+                            .frame(width: 132)
                             .id(item.id)
                     }
                 }
@@ -870,8 +894,10 @@ struct EarthSlideshowView: View {
             .defaultScrollAnchor(.center, for: .alignment)
             .onChange(of: filmstripAnchorID, initial: true) { _, id in
                 coordinator.prepareFilmstrip(around: id)
+                // Native focus scrolls while browsing. Reveal the playhead only as far as needed
+                // when the playback bar takes focus or the slideshow advances.
                 guard let id, !isPhotoSelectionFocused else { return }
-                scroll.scrollTo(id, anchor: .center)
+                scroll.scrollTo(id)
             }
             .onDisappear { coordinator.prepareFilmstrip(around: nil) }
         }
@@ -1038,6 +1064,7 @@ struct EarthSlideshowView: View {
                 systemImage: "backward.end.fill", focus: .musicPrevious,
                 identifier: "slideshow-music-previous", compact: true
             ) {
+                coordinator.recordAction(.musicTransport)
                 Task { await music.skipToPrevious() }
             }
             iconControlButton(
@@ -1047,6 +1074,7 @@ struct EarthSlideshowView: View {
                 systemImage: music.wantsMusicPlayback ? "pause.fill" : "play.fill",
                 focus: .musicPlayPause, identifier: "slideshow-music-play-pause", compact: true
             ) {
+                coordinator.recordAction(.musicTransport)
                 music.toggleMusicPlayback()
             }
             iconControlButton(
@@ -1054,6 +1082,7 @@ struct EarthSlideshowView: View {
                 systemImage: "forward.end.fill", focus: .musicNext,
                 identifier: "slideshow-music-next", compact: true
             ) {
+                coordinator.recordAction(.musicTransport)
                 Task { await music.skipToNext() }
             }
         }
@@ -1168,9 +1197,11 @@ struct EarthSlideshowView: View {
                         .opacity(showsPhotoCaption ? 1 : 0)
                         .accessibilityHidden(!showsPhotoCaption)
                 }
-                journeyContext
-                    .padding(.leading, 72)
-                    .padding(.top, 58)
+                if coordinator.isBuffering && !showsWatchingControls {
+                    bufferingIndicator
+                        .padding(.leading, 72)
+                        .padding(.top, 58)
+                }
             }
             .frame(width: canvasWidth, height: canvasHeight, alignment: .topLeading)
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
@@ -1214,16 +1245,19 @@ struct EarthSlideshowView: View {
                     currentIndex: index, yearsOnly: coordinator.scope.kind == .anniversary
                 )
             }
-            if coordinator.isBuffering {
-                ProgressView()
-                    .tint(.white)
-                    .controlSize(.small)
-                    .padding(9)
-                    .background(.black.opacity(reduceTransparency ? 0.95 : 0.66), in: Circle())
-                    .accessibilityLabel(AppLocalization.string(
-                        "slideshow.loading_more", defaultValue: "Preparing the next memories…"))
-            }
+            if coordinator.isBuffering { bufferingIndicator }
         }
+        .allowsHitTesting(false)
+    }
+
+    private var bufferingIndicator: some View {
+        ProgressView()
+            .tint(.white)
+            .controlSize(.small)
+            .padding(9)
+            .background(.black.opacity(reduceTransparency ? 0.95 : 0.66), in: Circle())
+            .accessibilityLabel(AppLocalization.string(
+                "slideshow.loading_more", defaultValue: "Preparing the next memories…"))
     }
 
     /// The slideshow can be hosted in a presentation view whose unconstrained
@@ -1393,7 +1427,12 @@ struct EarthSlideshowView: View {
         }
     }
 
+    private var selectedMusicSource: JourneyEventContext.Music {
+        music.selectedChoice == nil ? .none : (music.isUsingOnlineMusic ? .online : .appleMusic)
+    }
+
     private func cancelMusicPicker() {
+        coordinator.finishedMusicPicker(selection: nil)
         music.cancelSelection()
         showsMusicPicker = false
     }

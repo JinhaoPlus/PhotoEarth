@@ -494,6 +494,7 @@ final class GlobeExperienceModel: ObservableObject {
         latestViewportCamera = nil
         latestViewportCameraDistance = nil
         presentation.toggleStyle()
+        ProductAnalytics.shared.capture(.globeAction, value: "map_style", context: .init(entry: .globe))
         settleRevision += 1
     }
 

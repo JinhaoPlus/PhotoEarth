@@ -28,6 +28,8 @@ import XCTest
         remote.press(.select)
         XCTAssertTrue(first.waitForExistence(timeout: 8))
         XCTAssertEqual(date.label, currentTitle)
+        XCTAssertTrue(focused(date))
+        attach("date-before-entering-photos", app)
         remote.press(.down)
         XCTAssertTrue(focused(first), app.debugDescription)
         XCTAssertTrue(app.staticTexts["anniversary-empty"].firstMatch.exists)
@@ -68,21 +70,31 @@ import XCTest
         let media = app.descendants(matching: .any)["slideshow-media"].firstMatch
         XCTAssertTrue(media.waitForExistence(timeout: 25), app.debugDescription)
         let rail = app.descendants(matching: .any)["slideshow-current-journey"].firstMatch
+        XCTAssertFalse(rail.exists)
+        remote.press(.playPause)
+        XCTAssertTrue(rail.waitForExistence(timeout: 5))
         XCTAssertTrue(rail.label.contains(String(year)), rail.label)
         attach("04-slideshow", app)
-        remote.press(.select)
         let play = app.buttons["slideshow-play-pause"]
         XCTAssertTrue(focused(play))
         remote.press(.right)
         remote.press(.right)
         XCTAssertTrue(focused(app.buttons["slideshow-next-journey"]))
         remote.press(.select)
-        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "NOT (label CONTAINS %@)", String(year)), object: rail)], timeout: 10), .completed)
+        XCTAssertEqual(XCTWaiter.wait(for: [XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == true AND NOT (label CONTAINS %@)", String(year)), object: rail)], timeout: 10), .completed)
         XCTAssertTrue(media.waitForExistence(timeout: 10))
-        if play.exists { remote.press(.menu) }
         let olderMedia = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value BEGINSWITH %@", "sample-tokyo-"), object: media)
         XCTAssertEqual(XCTWaiter.wait(for: [olderMedia], timeout: 10), .completed)
+        let previousYear = app.buttons["slideshow-previous-journey"]
+        for _ in 0..<5 where !previousYear.hasFocus { remote.press(.left) }
+        XCTAssertTrue(focused(previousYear))
+        XCTAssertEqual(previousYear.label, "上一个年份")
         attach("05-earlier-year", app)
+        remote.press(.select)
+        XCTAssertTrue(rail.label.contains(String(year)), rail.label)
+        XCTAssertTrue(focused(play))
+        XCTAssertFalse(previousYear.exists)
+        remote.press(.menu)
         app.confirmSlideshowExit()
         XCTAssertTrue(focused(app.buttons["anniversary-play"]), app.debugDescription)
     }
@@ -95,9 +107,17 @@ import XCTest
         let year = Calendar.current.component(.year, from: .now)
         let location = app.staticTexts["anniversary-locations-\(year)"]
         let columnX = location.frame.minX
-        XCTAssertGreaterThan(columnX, app.buttons["anniversary-previous"].frame.maxX)
+        let yearLabel = app.staticTexts["anniversary-year-\(year)"]
+        XCTAssertGreaterThan(columnX, yearLabel.frame.maxX)
+        let date = app.buttons["anniversary-date"].frame
+        let play = app.buttons["anniversary-play"].frame
+        XCTAssertEqual(date.midX, app.frame.midX, accuracy: 2)
+        XCTAssertEqual(date.midY, play.midY, accuracy: 2)
+        XCTAssertEqual(play.minY, app.frame.minY + 60, accuracy: 5)
+        XCTAssertEqual(play.maxX, app.frame.maxX - 80, accuracy: 2)
+        XCTAssertLessThan(app.buttons["anniversary-next"].frame.maxX, play.minX)
         remote.press(.down)
-        XCTAssertTrue(focused(first))
+        XCTAssertTrue(focused(first), app.debugDescription)
         for _ in 0..<5 { remote.press(.right) }
         let expand = app.buttons["anniversary-expand-\(year)"]
         XCTAssertTrue(focused(expand))
@@ -110,7 +130,7 @@ import XCTest
         let lower = app.buttons["viewport-photo-sample-banff-126"]
         XCTAssertTrue(focused(lower), app.debugDescription)
         XCTAssertEqual(lower.frame.minX, focusedX, accuracy: 2)
-        XCTAssertGreaterThan(lower.frame.minX, app.buttons["anniversary-previous"].frame.maxX)
+        XCTAssertGreaterThan(lower.frame.minX, yearLabel.frame.maxX)
         for _ in 0..<5 { remote.press(.up) }
         XCTAssertTrue(focused(first))
         XCTAssertEqual(location.frame.minX, columnX, accuracy: 2)
@@ -122,7 +142,7 @@ import XCTest
         let first = app.buttons["viewport-photo-sample-paris-1"]
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         remote.press(.down)
-        XCTAssertTrue(focused(first))
+        XCTAssertTrue(focused(first), app.debugDescription)
         let firstColumnX = first.frame.minX
         for _ in 0..<4 { remote.press(.right) }
         XCTAssertTrue(focused(app.buttons["viewport-photo-sample-banff-105"]))
@@ -154,7 +174,7 @@ import XCTest
         let fifth = app.buttons["viewport-photo-sample-banff-105"]
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         remote.press(.down)
-        XCTAssertTrue(focused(first))
+        XCTAssertTrue(focused(first), app.debugDescription)
         for _ in 0..<4 { remote.press(.right) }
         XCTAssertTrue(focused(fifth))
         let columnX = fifth.frame.minX

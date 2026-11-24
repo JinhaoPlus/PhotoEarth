@@ -61,6 +61,7 @@ struct MapReviewPinAnchor: Hashable {
         let currentCamera = map.camera.copy() as! MKMapCamera
         invalidateViewport()
         style = style.toggled
+        ProductAnalytics.shared.capture(.globeAction, value: "map_style", context: .init(entry: .mapReview))
         map.preferredConfiguration = style.configuration(realisticTerrain: false)
         map.setCamera(currentCamera, animated: false)
         publishGrid()

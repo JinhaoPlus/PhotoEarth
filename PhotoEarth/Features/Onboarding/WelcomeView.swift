@@ -6,6 +6,7 @@ struct WelcomeView: View {
     let begin: () -> Void
     let showDemo: () -> Void
     @Namespace private var welcomeFocus
+    @Environment(\.isEnabled) private var isEnabled
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var focusedAction: Action?
     private enum Action: Hashable { case connect, sample }
@@ -40,10 +41,10 @@ struct WelcomeView: View {
         }
         .focusScope(welcomeFocus)
         .defaultFocus($focusedAction, .connect, priority: .userInitiated)
-        .task(id: scenePhase) {
+        .task(id: scenePhase == .active && isEnabled) {
             // The persistent map and the window may exist before an active
             // welcome page. Set a real button target once this scene can focus.
-            guard scenePhase == .active else { return }
+            guard scenePhase == .active, isEnabled else { return }
             await Task.yield()
             guard !Task.isCancelled, focusedAction == nil else { return }
             focusedAction = .connect

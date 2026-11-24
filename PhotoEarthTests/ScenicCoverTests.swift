@@ -532,6 +532,62 @@ struct ScenicCoverTests {
         _ = await other.result
     }
 
+    @Test func coldVisitsOverlapAndCanceledCardFreesItsSlotWithoutSaving() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let store = SQLiteTravelIndexStore(databaseURL: folder.appendingPathComponent("index.sqlite"), hidesTransitPhotos: false)
+        let visits = (0..<5).map { place("visit-\($0)") }
+        let photos = visits.map { photo($0.id, place: $0.id) }
+        let index = TravelIndex(schemaVersion: TravelIndex.currentSchemaVersion, generatedAt: Date(timeIntervalSince1970: 10),
+                                sourcePhotoCount: photos.count, locatedPhotoCount: photos.count, places: visits, journeys: [])
+        try await store.save(.init(index: index, photos: photos))
+        var started: [String] = []
+        var waiting: [String: CheckedContinuation<Void, Never>] = [:]
+        var peak = 0
+        let selector = ScenicCoverSelector(store: store) { record in
+            started.append(record.id)
+            await withCheckedContinuation {
+                waiting[record.id] = $0
+                peak = max(peak, waiting.count)
+            }
+            return scenic
+        }
+        let tasks = visits.map { visit in
+            Task { try await selector.select(for: [visit], revision: "10.0", fallback: nil,
+                                             priorityVisitID: visit.id, usesCityPoster: true) }
+        }
+        defer {
+            for task in tasks { task.cancel() }
+            for continuation in waiting.values { continuation.resume() }
+        }
+        func waitForStarts(_ count: Int) async throws {
+            let deadline = ContinuousClock.now.advanced(by: .seconds(5))
+            while started.count < count, ContinuousClock.now < deadline { await Task.yield() }
+            try #require(started.count == count)
+        }
+        try await waitForStarts(2)
+        // The first winner is published while the other card still waits.
+        let first = started[0]
+        let firstIndex = try #require(visits.firstIndex { $0.id == first })
+        waiting.removeValue(forKey: first)?.resume()
+        #expect(try await tasks[firstIndex].value?.assetID == first)
+        try await waitForStarts(4)
+        let canceled = started[1]
+        let offset = try #require(visits.firstIndex { $0.id == canceled })
+        tasks[offset].cancel()
+        do { _ = try await tasks[offset].value; Issue.record("Canceled card received a cover") }
+        catch is CancellationError {}
+        waiting.removeValue(forKey: canceled)?.resume()
+        try await waitForStarts(5)
+        for id in Array(waiting.keys) { waiting.removeValue(forKey: id)?.resume() }
+        for (i, visit) in visits.enumerated() where i != offset {
+            #expect(try await tasks[i].value?.assetID == visit.id)
+        }
+        let saved = try await store.savedVisitCovers(for: visits.map(\.id), excluding: [])
+        #expect(peak == 3 && saved.count == 4 && saved[canceled] == nil)
+        #expect(try await store.coverAnalyses(for: [canceled], revision: "10.0").isEmpty)
+    }
+
     @Test func concurrentRequestsSerializeAndCanceledAnalysisCannotWrite() async throws {
         let store = CoverTestStore(photos: [photo("old")])
         var running = 0, peak = 0

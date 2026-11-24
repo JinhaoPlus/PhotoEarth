@@ -26,7 +26,10 @@ struct PlaceLibraryView: View {
                 ZStack {
                     PlaceCollectionGrid(model: model,
                                         collections: countries, isActive: isActive && selectedCountry == nil,
-                                        open: { selectedCountryID = $0.id })
+                                        open: { country in
+                                            selectedCountryID = country.id
+                                            ProductAnalytics.shared.capture(.countryOpened, context: .init(library: model.analyticsLibrary))
+                                        })
                         .opacity(selectedCountry == nil ? 1 : 0)
                         .disabled(selectedCountry != nil)
                         .accessibilityHidden(selectedCountry != nil)
@@ -67,7 +70,7 @@ private struct PlaceCollectionGrid: View {
     var isActive = true
     let open: (PlaceCollection) -> Void
 
-    @State private var limit = 15
+    @State private var limit = PlaceGridPaging.libraryColumns * 4
     @State private var presentation: Presentation?
     private struct CoverInput {
         let key: String
@@ -92,18 +95,16 @@ private struct PlaceCollectionGrid: View {
     private let columnSpacing: CGFloat = 28
     private let allPhotosFocusID = "library-country-photos"
     private let emptyFocusID = "library-empty"
-    private let loadMoreFocusID = "library-load-more"
 
     var body: some View {
-        let input = PresentationInput(collections: collections.prefix(limit),
+        let input = PresentationInput(collections: collections.prefix(limit + PlaceGridPaging.libraryColumns - 1), target: limit,
                                       calendar: .current, locale: AppLocalization.locale)
         let presentation = self.presentation ?? makePresentation(input)
-        let hasMore = input.collections.count < collections.count
         let topFocusID = allPhotos != nil ? allPhotosFocusID : (presentation.cards.first?.collection.id ?? emptyFocusID)
         let handlesBack = isActive && (isReturningToTop || (focusedID != nil && (isBelowPageTop || back != nil)))
         let contentKey = "\(isActive):\(model.index?.contentRevision ?? ""):\(model.coverRevision):" + presentation.membership
         GeometryReader { geometry in
-            let width = (geometry.size.width - 2 * FullScreenMapLayout.contentHorizontalInset - 3 * columnSpacing) / 4
+            let width = (geometry.size.width - 2 * FullScreenMapLayout.contentHorizontalInset - CGFloat(PlaceGridPaging.libraryColumns - 1) * columnSpacing) / CGFloat(PlaceGridPaging.libraryColumns)
             let focusIndex = focusedID.flatMap { presentation.positions[$0] }
             let focusRow = focusIndex.map { presentation.rowIndices[$0] } ?? 0
             // Four-column library cards need a slightly wider row buffer than
@@ -178,13 +179,6 @@ private struct PlaceCollectionGrid: View {
                                           residentCollectionIDs: residentCollectionIDs,
                                           focusIndex: focusIndex, focusRow: focusRow)
                     }
-
-                    if hasMore {
-                        Button(AppLocalization.string("library.load_more", defaultValue: "Show More Places")) { loadMore() }
-                            .buttonStyle(.glass)
-                            .focused($focusedID, equals: loadMoreFocusID)
-                            .accessibilityIdentifier(loadMoreFocusID)
-                    }
                 }
                 .padding(.horizontal, FullScreenMapLayout.contentHorizontalInset)
                 .padding(.top, 110)
@@ -229,12 +223,11 @@ private struct PlaceCollectionGrid: View {
             }
             rememberedFocusID = id
             guard let index = presentation.positions[id], index >= presentation.cards.count - 4 else { return }
-            loadMore()
+            loadMore(after: presentation.cards.count)
         }
         .task(id: isActive) {
             guard isActive, let rememberedFocusID else { return }
             let isAvailable = rememberedFocusID == topFocusID || presentation.positions[rememberedFocusID] != nil
-                || (hasMore && rememberedFocusID == loadMoreFocusID)
             await Task.yield()
             guard !Task.isCancelled else { return }
             focusedID = isAvailable ? rememberedFocusID : topFocusID
@@ -286,7 +279,7 @@ private struct PlaceCollectionGrid: View {
         var cardsToPrepare: [Card] = []
         for card in cards {
             guard let place = card.collection.latestPlace,
-                  preparedPlaceIDs.contains(place.id) || preparedPlaceIDs.count < limit else { continue }
+                  preparedPlaceIDs.contains(place.id) || preparedPlaceIDs.count < cards.count else { continue }
             preparedPlaceIDs.insert(place.id)
             let key = scenicKey(for: card)
             if scenicAssets[card.collection.id]?.key != key, coverInputs[card.collection.id]?.key != key {
@@ -338,10 +331,14 @@ private struct PlaceCollectionGrid: View {
         await labels
     }
 
-    private func loadMore() { limit = min(limit + 10, collections.count) }
+    private func loadMore(after displayedCount: Int) {
+        guard isActive, displayedCount >= limit, displayedCount < collections.count else { return }
+        limit = displayedCount + 2 * PlaceGridPaging.libraryColumns
+    }
 
     private struct PresentationInput: Equatable {
         let collections: ArraySlice<PlaceCollection>
+        let target: Int
         let calendar: Calendar
         let locale: Locale
     }
@@ -369,7 +366,14 @@ private struct PlaceCollectionGrid: View {
     private func makePresentation(_ input: PresentationInput) -> Presentation {
         let previous = self.presentation
         let canReuseCaptions = previous?.calendar == input.calendar && previous?.locale == input.locale
-        let cards = input.collections.enumerated().map { index, collection in
+        let pageEnd = PlaceGridPaging.pageEnd(through: input.target, count: input.collections.count,
+                                              columns: PlaceGridPaging.libraryColumns) { index in
+            guard groupsVisitsByMonth, let previous = input.collections[index - 1].latestPlace?.endDate,
+                  let current = input.collections[index].latestPlace?.endDate else { return false }
+            return !input.calendar.isDate(previous, equalTo: current, toGranularity: .month)
+        }
+        let page = input.collections.prefix(pageEnd)
+        let cards = page.enumerated().map { index, collection in
             if canReuseCaptions, let previous, previous.cards.indices.contains(index),
                previous.cards[index].collection == collection {
                 return previous.cards[index]
@@ -392,7 +396,7 @@ private struct PlaceCollectionGrid: View {
                         accessibilitySummary: accessibilitySummary, usesScenicCover: collection.representsSingleCity,
                         placeKey: collection.placeIDs.sorted().map { "\($0.utf8.count):\($0)" }.joined())
         }
-        let sections = gridSections(for: Array(input.collections), calendar: input.calendar)
+        let sections = gridSections(for: Array(page), calendar: input.calendar)
         let ranges = sections.flatMap(\.rowRanges)
         let positions = Dictionary(uniqueKeysWithValues: cards.enumerated().map { ($0.element.collection.id, $0.offset) })
         let rowIndices = ranges.enumerated().flatMap { index, row in Array(repeating: index, count: row.count) }
@@ -421,8 +425,8 @@ private struct PlaceCollectionGrid: View {
     }
 
     private func rowRanges(in range: Range<Int>) -> [Range<Int>] {
-        stride(from: range.lowerBound, to: range.upperBound, by: 4).map {
-            $0..<min($0 + 4, range.upperBound)
+        stride(from: range.lowerBound, to: range.upperBound, by: PlaceGridPaging.libraryColumns).map {
+            $0..<min($0 + PlaceGridPaging.libraryColumns, range.upperBound)
         }
     }
 
@@ -441,7 +445,7 @@ private struct PlaceCollectionGrid: View {
             }
             VStack(alignment: .leading, spacing: 30) {
                 ForEach(section.rowRanges, id: \.lowerBound) { row in
-                    collectionRow(row, cards: presentation.cards, width: width,
+                    collectionRow(row, presentation: presentation, width: width,
                                   residentCollectionIDs: residentCollectionIDs, focusIndex: focusIndex,
                                   isFocusedRow: presentation.rowIndices[row.lowerBound] == focusRow && focusIndex != nil)
                 }
@@ -451,13 +455,14 @@ private struct PlaceCollectionGrid: View {
 
     private func collectionRow(
         _ row: Range<Int>,
-        cards: [Card],
+        presentation: Presentation,
         width: CGFloat,
         residentCollectionIDs: Set<String>,
         focusIndex: Int?,
         isFocusedRow: Bool
     ) -> some View {
-        HStack(alignment: .top, spacing: columnSpacing) {
+        let cards = presentation.cards
+        return HStack(alignment: .top, spacing: columnSpacing) {
             ForEach(row, id: \.self) { index in
                 let card = cards[index]
                 let id = card.collection.id
@@ -472,6 +477,11 @@ private struct PlaceCollectionGrid: View {
         // that contains only one card and jump to a later month instead.
         .frame(maxWidth: .infinity, alignment: .leading)
         .focusSection()
+        .onScrollVisibilityChange(threshold: 0.05) { visible in
+            guard visible, let start = PlaceGridPaging.preloadStart(in: presentation.ranges, columns: PlaceGridPaging.libraryColumns),
+                  row.lowerBound >= start else { return }
+            loadMore(after: cards.count)
+        }
     }
 
     private struct ImageResidencyKey: Hashable {

@@ -1,11 +1,13 @@
 import XCTest
 
 extension XCUIApplication {
-    /// tvOS can give its native sidebar initial focus on a cold launch.
-    /// Use the remote to enter Home before testing actions inside its content.
+    /// Enter Home content if focus is already in the native sidebar.
     @MainActor func enterHomeContent() {
         let entry = buttons["overview-explore-button"]
-        guard entry.waitForExistence(timeout: 12), !entry.hasFocus else { return }
+        guard entry.waitForExistence(timeout: 15) else { return }
+        let opening = descendants(matching: .any)["app-opening"].firstMatch
+        XCTAssertTrue(opening.waitForNonExistence(timeout: 15), debugDescription)
+        guard !entry.hasFocus else { return }
         XCUIRemote.shared.press(.right)
         let arrival = XCTNSPredicateExpectation(predicate: NSPredicate(format: "hasFocus == true"), object: entry)
         XCTAssertEqual(XCTWaiter.wait(for: [arrival], timeout: 6), .completed)

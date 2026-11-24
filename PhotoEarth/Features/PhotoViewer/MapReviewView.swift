@@ -291,7 +291,7 @@ struct MapReviewView: View {
             loadMore: loadMore, close: closeWall, isActive: active, selectedPhotoID: $wallFocusID,
             errorMessage: session.pageError, canRetry: hasCurrentWallSnapshot, totalPhotoCount: session.total,
             countErrorMessage: countError, retryPhotoCount: countRetry, startSlideshow: startSlideshow,
-            labelStates: app.placeLabelStates, resolvePlaceLabels: resolveLabels, analyticsLibrary: app.analyticsLibrary
+            labelStates: app.placeLabelStates, resolvePlaceLabels: resolveLabels, analyticsContext: .init(library: app.analyticsLibrary, entry: .mapReview, scope: .currentView)
         )
         .opacity(slideshow == nil ? 1 : 0)
         .disabled(!active)
@@ -314,6 +314,7 @@ struct MapReviewView: View {
     }
     private func openControls() {
         guard exploring, !showsControls else { return }
+        ProductAnalytics.shared.capture(.globeAction, value: "zoom_controls", context: .init(library: app.analyticsLibrary, entry: .mapReview))
         camera.setControlsPresented(true); isMapFocused = false; showsControls = true
     }
     private func closeControls() {

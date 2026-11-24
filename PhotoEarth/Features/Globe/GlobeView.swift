@@ -31,6 +31,15 @@ struct GlobeView: View {
             }
         }
 
+        var offerOrigin: JourneyEventContext.OfferOrigin {
+            switch self {
+            case .collection: .collection
+            case .globeWall: .globeWall
+            case .anniversary: .anniversary
+            case .slideshow: .slideshow
+            }
+        }
+
         var fixedPlaces: PlaceCollection? {
             switch self {
             case .collection(let collection, _): collection
@@ -54,6 +63,7 @@ struct GlobeView: View {
     var locationDestination: PhotoGlobeDestination?
     var closeLocationExploration: (() -> Void)?
     @State private var experience = GlobeExperienceModel()
+    @Environment(OpeningWordmarkFlight.self) private var opening: OpeningWordmarkFlight?
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var isGlobeFocused: Bool
@@ -83,11 +93,13 @@ struct GlobeView: View {
     @State private var selectedPhotoPreview: UIImage?
     @State private var destination: Destination = .home
     @State private var anniversaryDetail: AnniversaryDetailSelection?
-    @State private var presentsDirectHome = false
+    @State private var presentsDirectHome = true
     private var showsSidebarContent: Bool {
         layer == .overview && navigationVisible && collection == nil && slideshow == nil
     }
 
+    @State private var collectionEntry: JourneyEventContext.Entry = .countries
+    @State private var exploreEntry: JourneyEventContext.Entry = .home
     @State private var collection: PlaceCollection?
     @State private var wallReader: SQLiteTravelIndexStore?
     @State private var wallHasReadSession = false
@@ -112,7 +124,7 @@ struct GlobeView: View {
     @State private var scanTarget: TravelPlace?
     @State private var scanSessionStart = Date()
     @State private var hasPresentedLibrary = false
-    @State private var isInitialGlobeReady = false
+    @State private var revealedGlobeScenes: Set<InitialGlobeScene> = []
     @State private var didPrepareOverview = false
     @State private var overviewReturnCamera: GlobeCameraState?
     @AppStorage("photoEarth.waitsForInitialGlobeRender") private var isGlobeImageryWaitEnabled = true
@@ -129,14 +141,26 @@ struct GlobeView: View {
             && model.isPreparationPresented && model.preparationProgress.phase.isWorking
             && followsScan && !reduceMotion && scenePhase == .active
     }
-    private var waitsForInitialGlobeRender: Bool {
-        isGlobeImageryWaitEnabled && !isInitialGlobeReady
-            && navigationVisible && !model.isPreparationPresented && !isAwaitingUserLocation
+    private var coveredGlobeScene: InitialGlobeScene? {
+        guard isGlobeImageryWaitEnabled, locationDestination == nil, !model.isExploringPublicGlobe else { return nil }
+        let scene: InitialGlobeScene
+        if model.phase == .welcome {
+            scene = .welcome
+        } else if navigationVisible && (destination == .home || layer != .overview) {
+            scene = .home
+        } else {
+            return nil
+        }
+        return revealedGlobeScenes.contains(scene) ? nil : scene
     }
-    private var showsInitialGlobeCover: Bool {
-        isGlobeImageryWaitEnabled && !isInitialGlobeReady
-            && navigationVisible && !model.isPreparationPresented
-            && (destination == .home || layer != .overview)
+    private var revealedOpeningScene: InitialGlobeScene? {
+        guard locationDestination == nil, !model.isExploringPublicGlobe, coveredGlobeScene == nil else { return nil }
+        if model.phase == .welcome { return .welcome }
+        return showsHome ? .home : nil
+    }
+    private var initialRenderScene: InitialGlobeScene? {
+        let scene = coveredGlobeScene
+        return scene == .home && isAwaitingUserLocation ? nil : scene
     }
     private var homeFrameContext: HomeGlobeFrame.Context {
         guard scenePhase == .active, navigationVisible, !model.isExploringPublicGlobe,
@@ -179,26 +203,35 @@ struct GlobeView: View {
                     contentRevision: mapContentRevision,
                     exploresByScale: layer != .overview,
                     homeFrameContext: homeFrameContext,
-                    allowsHomeDrift: !reduceMotion && !showsInitialGlobeCover && isOverviewInteractive,
+                    allowsHomeDrift: !reduceMotion && coveredGlobeScene == nil && isOverviewInteractive,
                     focusedSatelliteCity: layer == .overview && scenePhase == .active && destination == .home
                         && navigationVisible && collection == nil && slideshow == nil ? focusedSatelliteCity : nil,
                     preferredPlaceID: locationDestination == nil ? nil : PhotoGlobeDestination.markerID,
                     size: proxy.size,
                     showsUserLocation: layer == .overview && destination == .home && model.usesLivePhotoLibrary && navigationVisible,
-                    waitsForInitialRender: waitsForInitialGlobeRender,
+                    initialRenderScene: initialRenderScene,
                     onUserLocationUpdate: receiveUserLocation,
-                    onInitialRenderReady: revealInitialGlobe
+                    onInitialRenderReady: { [initialRenderScene] in
+                        if let initialRenderScene { revealInitialGlobe(initialRenderScene) }
+                    }
                 )
                 .frame(width: proxy.size.width, height: proxy.size.height)
                 .transaction { $0.animation = nil }
                 .ignoresSafeArea()
 
                 cinematicMask
-
-                if showsInitialGlobeCover {
-                    InitialGlobeLoadingCover()
-                        .transition(.opacity)
-                }
+                    .overlay {
+                        if coveredGlobeScene != nil {
+                            Color.black
+                                .overlay { SpaceBackdrop() }
+                                .ignoresSafeArea()
+                                .allowsHitTesting(false)
+                                .accessibilityElement(children: .ignore)
+                                .accessibilityLabel(AppLocalization.string("globe.initial_render.message", defaultValue: "Preparing the satellite view"))
+                                .accessibilityIdentifier("globe-initial-render-cover")
+                                .transition(.opacity)
+                        }
+                    }
 
                 if locationDestination == nil && (model.phase == .globe || (hasPresentedLibrary && model.isPreparationPresented)) {
                     libraryNavigation
@@ -280,7 +313,8 @@ struct GlobeView: View {
                         canOpenMapReview: collectionWallSession?.membership?.reviewOrigin != nil && wallSnapshot != nil,
                         labelStates: model.placeLabelStates,
                         resolvePlaceLabels: resolveWallLabels,
-                        onInteraction: wallCountScheduling.deferForInteraction, analyticsLibrary: model.analyticsLibrary
+                        onInteraction: wallCountScheduling.deferForInteraction,
+                        analyticsContext: .init(library: model.analyticsLibrary, entry: wallEntry, scope: wallEntry.wallScope(for: wallCollection))
                     )
                     .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                     .opacity(slideshow == nil && mapReviewOrigin == nil ? 1 : 0)
@@ -348,7 +382,7 @@ struct GlobeView: View {
             }
         }
         .sheet(isPresented: $presentsOffer, onDismiss: finishPurchaseOffer) {
-            PurchaseOffers(store: purchases, requestedTitle: requestedAction?.title)
+            PurchaseOffers(store: purchases, requestedTitle: requestedAction?.title, origin: requestedAction?.offerOrigin)
         }
         .overlay {
             if scopeCheck != nil { ProgressView().allowsHitTesting(false) }
@@ -372,7 +406,7 @@ struct GlobeView: View {
         }
         .alert(AppLocalization.string("error.wall.index", defaultValue: "The photo index is temporarily unavailable. Try again."), isPresented: $scopeReadFailed) {}
         .fullScreenCover(item: $collection, onDismiss: finishCollectionDismissal) { selected in
-            CollectionPhotoWall(model: model, collection: selected, controlGlobe: { target, reducedMotion in
+            CollectionPhotoWall(model: model, collection: selected, entry: collectionEntry, controlGlobe: { target, reducedMotion in
                 controlSlideshowGlobe(target, reducedMotion)
             }, restoreGlobe: restoreGlobeAfterSlideshow) {
                 if destination == .home, layer == .overview { restoreHomeCamera() }
@@ -405,8 +439,14 @@ struct GlobeView: View {
 
     var body: some View {
         presentedScene
+        .onChange(of: revealedOpeningScene, initial: true) { _, scene in
+            if locationDestination == nil, let opening, !opening.finished { opening.revealedScene = scene }
+        }
+        .onChange(of: model.phase != .loading && model.phase != .welcome && !showsHome, initial: true) { _, bypassesHome in
+            if locationDestination == nil && bypassesHome { opening?.finish() }
+        }
         .onChange(of: model.pendingTopShelfRoute, initial: true) { _, _ in openPendingShelfAction() }
-        .onChange(of: showsHome && scenePhase == .active && !showsInitialGlobeCover && model.scanScope == nil
+        .onChange(of: showsHome && scenePhase == .active && coveredGlobeScene == nil && model.scanScope == nil
                   ? model.analyticsLibrary : nil, initial: true) { _, mode in
             if let mode { ProductAnalytics.shared.capture(.homePresented, context: .init(library: mode)) }
         }
@@ -442,11 +482,6 @@ struct GlobeView: View {
             refreshMapContent()
             experience.refreshPhotos() // Drop candidates captured under the previous filter policy.
             // Metadata updates never relocate the user's browsing camera.
-        }
-        .onChange(of: model.isInitialLibraryReady) { _, ready in
-            if ready && !hasPresentedLibrary && destination == .home {
-                presentsDirectHome = true
-            }
         }
         .onChange(of: model.isPreparationPresented) { _, presented in
             guard locationDestination == nil, !model.isExploringPublicGlobe else { return }
@@ -558,19 +593,19 @@ struct GlobeView: View {
             guard !Task.isCancelled else { return }
             if userLocation == nil { isAwaitingUserLocation = false }
         }
-        .task(id: waitsForInitialGlobeRender) {
-            guard waitsForInitialGlobeRender else { return }
+        .task(id: initialRenderScene) {
+            guard let scene = initialRenderScene else { return }
             do { try await Task.sleep(for: .seconds(10)) } catch { return }
-            guard !Task.isCancelled, waitsForInitialGlobeRender else { return }
+            guard !Task.isCancelled else { return }
             // MapKit may never report a fully rendered frame on a poor connection.
-            revealInitialGlobe()
+            revealInitialGlobe(scene)
         }
     }
 
     @ViewBuilder private var libraryNavigation: some View {
         if presentsDirectHome {
-            // Mounting the native tab view opens its sidebar on tvOS. After a first
-            // scan, let Home own focus until the user asks for navigation.
+            // Mounting TabView opens its sidebar on tvOS. Let Home take the first
+            // focus, and mount the tabs when the user asks for navigation.
             overviewTab
                 .padding(.top, 60)
                 .overlay(alignment: .topLeading) {
@@ -683,7 +718,10 @@ struct GlobeView: View {
         if purchases.access.permitsLibrary {
             perform(action)
         } else if let journey, freeJourneyID.isEmpty || freeJourneyID == journey {
-            if freeJourneyID.isEmpty { freeJourneyID = journey }
+            if freeJourneyID.isEmpty {
+                freeJourneyID = journey
+                ProductAnalytics.shared.capture(.freeJourneySelected, context: .init(offerOrigin: action.offerOrigin))
+            }
             perform(action)
         } else {
             purchases.clearNotice()
@@ -778,7 +816,6 @@ struct GlobeView: View {
                 OnThisDayView(model: model, isActive: destination == .anniversary && navigationVisible && scenePhase == .active,
                               detail: $anniversaryDetail, requestAccess: { request(.anniversary($0)) }, controlGlobe: controlSlideshowGlobe,
                               restoreGlobe: restoreGlobeAfterSlideshow)
-                    .modifier(LibraryPreparationChrome(model: model))
             } label: {
                 Label(AppLocalization.string("sidebar.anniversary", defaultValue: "On This Day"), systemImage: "calendar")
             }
@@ -845,8 +882,9 @@ struct GlobeView: View {
                 usesGreatCircle: true
             )
         }
+        collectionEntry = entry
         collection = selected
-        ProductAnalytics.shared.capture(.wallOpened, value: "collection", context: .init(library: model.analyticsLibrary, entry: entry))
+        ProductAnalytics.shared.capture(.wallOpened, value: entry.wallScope(for: selected).rawValue, context: .init(library: model.analyticsLibrary, entry: entry))
     }
 
     private var directManipulationSurface: some View {
@@ -916,10 +954,10 @@ struct GlobeView: View {
         experience.transitionCamera(to: coordinate, distance: GlobeCameraState.orbitalDistance, overviewFraming: 1)
     }
 
-    private func revealInitialGlobe() {
-        guard isGlobeImageryWaitEnabled, !isInitialGlobeReady else { return }
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.8)) {
-            isInitialGlobeReady = true
+    private func revealInitialGlobe(_ scene: InitialGlobeScene) {
+        guard scene == initialRenderScene else { return }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 1)) {
+            _ = revealedGlobeScenes.insert(scene)
         }
     }
 
@@ -952,6 +990,7 @@ struct GlobeView: View {
             overviewReturnCamera = experience.camera
         }
         isOverviewInteractive = false
+        exploreEntry = entry
         exploreCity = city
         wallGeneration = UUID()
         selectedPhoto = nil
@@ -992,6 +1031,7 @@ struct GlobeView: View {
     }
 
     private func useCurrentView() {
+        ProductAnalytics.shared.capture(.globeAction, value: "current_view", context: .init(library: model.analyticsLibrary, entry: exploreEntry))
         exploreCity = nil
         experience.refreshPhotos()
         closeControls()
@@ -1023,6 +1063,10 @@ struct GlobeView: View {
         experience.transitionCamera(to: camera.center, distance: camera.distance, animated: false, overviewFraming: 1)
     }
 
+    private var wallEntry: JourneyEventContext.Entry {
+        exploreEntry == .home ? .globe : exploreEntry
+    }
+
     private func openPhotoWall() {
         guard layer == .explore else { return }
         mapReviewOrigin = nil
@@ -1050,8 +1094,8 @@ struct GlobeView: View {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.44)) {
             layer = .photoWall
         }
-        ProductAnalytics.shared.capture(.wallOpened, value: wallCollection == nil ? "currentView" : "collection",
-                                        context: .init(library: model.analyticsLibrary, entry: .globe))
+        ProductAnalytics.shared.capture(.wallOpened, value: wallEntry.wallScope(for: wallCollection).rawValue,
+                                        context: .init(library: model.analyticsLibrary, entry: wallEntry))
         loadNextWallPage()
     }
 
@@ -1199,7 +1243,7 @@ struct GlobeView: View {
         guard membership != nil || (wallHasReadSession && wallSnapshot != nil) else { return }
         let scope = EarthSlideshowScope(id: collection?.id ?? "viewport-\(wallGeneration)",
             title: collection?.title ?? AppLocalization.string("memory_strip.title", defaultValue: "Photos in this view"),
-            kind: collection == nil ? .currentView : .collection)
+            kind: wallEntry.wallScope(for: collection))
         let source = frozenWallPlaces.places.isEmpty ? places : frozenWallPlaces.places
         let show = model.makeEarthSlideshow(scope: scope,
             places: membership?.matchingVisits ?? source,
@@ -1365,6 +1409,7 @@ struct GlobeView: View {
 
     private func openControls() {
         guard layer == .explore, !showsControls else { return }
+        ProductAnalytics.shared.capture(.globeAction, value: "zoom_controls", context: .init(library: model.analyticsLibrary, entry: exploreEntry))
         experience.setZoomControlsPresented(true)
         isGlobeFocused = false
         showsControls = true
@@ -1398,7 +1443,7 @@ private struct GlobeMapLayer: View {
     let preferredPlaceID: String?
     let size: CGSize
     let showsUserLocation: Bool
-    let waitsForInitialRender: Bool
+    let initialRenderScene: InitialGlobeScene?
     let onUserLocationUpdate: (GeoCoordinate) -> Void
     let onInitialRenderReady: () -> Void
 
@@ -1428,7 +1473,7 @@ private struct GlobeMapLayer: View {
             nativeCameraFeedback: experience.nativeCameraFeedback,
             photoWallViewportCapture: experience.photoWallViewportCapture,
             preferredPlaceID: preferredPlaceID,
-            waitsForInitialRender: waitsForInitialRender,
+            initialRenderScene: initialRenderScene,
             homeFrameContext: homeFrameContext,
             advanceHomeDrift: homeDriftStep,
             mapStyle: renderedPresentation.style,
@@ -1443,30 +1488,5 @@ private struct GlobeMapLayer: View {
             onInitialRenderReady: onInitialRenderReady
         )
         .frame(width: size.width, height: size.height)
-    }
-}
-
-private struct InitialGlobeLoadingCover: View {
-    var body: some View {
-        ZStack {
-            SpaceBackdrop(quality: .standard)
-
-            VStack(spacing: 18) {
-                ProgressView()
-                    .controlSize(.large)
-                    .tint(Color(red: 0.78, green: 0.88, blue: 0.97))
-                Text(AppLocalization.string(
-                    "globe.initial_render.message",
-                    defaultValue: "Preparing the satellite view"
-                ))
-                    .font(.system(size: 29, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.92))
-            }
-            .shadow(color: .black.opacity(0.72), radius: 12, y: 3)
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("globe-initial-render-cover")
     }
 }

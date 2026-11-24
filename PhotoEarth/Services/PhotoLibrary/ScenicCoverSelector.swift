@@ -232,15 +232,15 @@ nonisolated enum CoverAnalysisPreview {
         let expires: Date
     }
     private let store: any ScenicCoverStoring
+    private var hasFinishedVisitInBatch = false
     private final class PreviewBudget {
         var remaining: Duration = .seconds(12)
     }
     private let analyze: @MainActor (PhotoAssetRecord, PreviewBudget?) async throws -> ScenicCoverAnalysis?
     private var jobs: [Job] = []
-    private var current: Job?
+    private var running: [UUID: (job: Job, task: Task<Void, Never>)] = [:]
     private typealias Reply = CheckedContinuation<PhotoPreviewMetadata?, Error>
     private var subscribers: [UUID: [UUID: Reply]] = [:]
-    private var worker: Task<Void, Never>?
     private var memo: [String: Cached] = [:]
     private var notifications = Set<AnyCancellable>()
     private var epoch = UUID()
@@ -288,7 +288,7 @@ nonisolated enum CoverAnalysisPreview {
             try Task.checkCancellation()
             return try await withCheckedThrowingContinuation { continuation in
                 if let visit = job.visitID,
-                   let existing = ([current].compactMap { $0 } + jobs).first(where: {
+                   let existing = (running.values.map(\.job) + jobs).first(where: {
                        $0.visitID == visit && $0.revision == revision && $0.excluded == excluded &&
                        $0.fallback?.assetID == safeFallback?.assetID && subscribers[$0.id] != nil
                    }) {
@@ -306,7 +306,8 @@ nonisolated enum CoverAnalysisPreview {
 
     func invalidate() {
         epoch = UUID(); memo = [:]
-        worker?.cancel()
+        hasFinishedVisitInBatch = false
+        for entry in running.values { entry.task.cancel() }
         jobs.removeAll()
         let pending = subscribers
         subscribers.removeAll()
@@ -321,29 +322,44 @@ nonisolated enum CoverAnalysisPreview {
         reply.resume(throwing: CancellationError())
         guard subscribers[jobID]?.isEmpty == true else { return }
         subscribers.removeValue(forKey: jobID)
-        if current?.id == jobID { worker?.cancel() }
-        else { jobs.removeAll { $0.id == jobID } }
+        if let entry = running[jobID] { entry.task.cancel() }
+        else {
+            jobs.removeAll { $0.id == jobID }
+            pump()
+        }
     }
 
     private func pump() {
-        guard worker == nil, !jobs.isEmpty else { return }
-        let job = jobs.removeFirst()
-        current = job
-        let token = epoch
-        worker = Task {
-            let result: Result<PhotoPreviewMetadata?, Error>
-            do {
-                let selection = try await process(job, epoch: token)
-                try Task.checkCancellation()
-                result = .success(selection)
-            } catch { result = .failure(error) }
-            if let replies = subscribers.removeValue(forKey: job.id) {
-                for reply in replies.values { reply.resume(with: result) }
+        // Independent visits can wait for previews while the shared Vision actor
+        // scores another card. A collection may include any of those visits.
+        // Start with two cards for a prompt first result. Once it is ready,
+        // two cards can fetch previews alongside the one being scored.
+        let limit = hasFinishedVisitInBatch ? 3 : 2
+        while running.count < limit, let next = jobs.first {
+            if !running.isEmpty {
+                guard let visit = next.visitID,
+                      running.values.allSatisfy({ $0.job.visitID != nil && $0.job.visitID != visit }) else { return }
             }
-            current = nil
-            worker = nil
-            pump()
+            let job = jobs.removeFirst()
+            let token = epoch
+            running[job.id] = (job, Task { await run(job, epoch: token) })
         }
+    }
+
+    private func run(_ job: Job, epoch token: UUID) async {
+        let result: Result<PhotoPreviewMetadata?, Error>
+        do {
+            let selection = try await process(job, epoch: token)
+            try Task.checkCancellation()
+            result = .success(selection)
+        } catch { result = .failure(error) }
+        if let replies = subscribers.removeValue(forKey: job.id) {
+            for reply in replies.values { reply.resume(with: result) }
+        }
+        running.removeValue(forKey: job.id)
+        if running.isEmpty && jobs.isEmpty { hasFinishedVisitInBatch = false }
+        else if token == epoch, job.visitID != nil, case .success(.some) = result { hasFinishedVisitInBatch = true }
+        pump()
     }
 
     private func process(_ job: Job, epoch token: UUID) async throws -> PhotoPreviewMetadata? {

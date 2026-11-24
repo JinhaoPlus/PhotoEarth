@@ -24,6 +24,7 @@ struct PhotoDetailView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @State private var requestedMediaKinds = Set<PhotoMediaKind>()
     @State private var retryIsVisible = false
     @State private var browsing = PhotoBrowsingSession()
     @State private var prefetcher = PhotoNeighborPrefetcher()
@@ -73,7 +74,7 @@ struct PhotoDetailView: View {
                     .focusEffectDisabled()
                     .focused($focus, equals: .photo)
                     .onTapGesture {
-                        if focus == .photo, playback.isPlayable { playback.toggle(record) }
+                        if focus == .photo, playback.isPlayable { togglePlayback() }
                     }
                     .onMoveCommand(perform: moveFocusOrPhoto)
                     .accessibilityAddTraits(playback.isPlayable ? .isButton : [])
@@ -153,7 +154,7 @@ struct PhotoDetailView: View {
         .task(id: record.placeID) { await resolvePlaceLabel() }
         .onPlayPauseCommand {
             guard locationDestination == nil, playback.isPlayable else { return }
-            playback.toggle(record)
+            togglePlayback()
         }
         .onDisappear {
             prefetcher.cancel()
@@ -296,6 +297,14 @@ struct PhotoDetailView: View {
         )
     }
 
+    private func togglePlayback() {
+        if !playback.isPlaying, requestedMediaKinds.insert(playback.kind).inserted {
+            ProductAnalytics.shared.capture(.detailPlaybackRequested, value: playback.kind == .video ? "video" : "livePhoto",
+                                            context: .init(library: locationLibrary?.analyticsLibrary))
+        }
+        playback.toggle(record)
+    }
+
     private func moveFocusOrPhoto(_ direction: MoveCommandDirection) {
         switch direction {
         case .left: movePhoto(forward: false)
@@ -397,7 +406,7 @@ struct PhotoDetailView: View {
             Spacer(minLength: 0)
             if playback.isPlayable {
                 Button {
-                    playback.toggle(record)
+                    togglePlayback()
                 } label: {
                     PlaybackButtonFace(symbol: playback.isPlaying ? "pause.fill" : "play.fill", isFocused: focus == .playback)
                 }

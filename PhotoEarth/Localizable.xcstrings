@@ -662,6 +662,59 @@
         }
       }
     },
+    "anniversary.previous_year": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Previous year in the show"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一个年份"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上一個年份"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "前の年へ"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zum vorherigen Jahr"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Année précédente"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Año anterior"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anno precedente"
+          }
+        }
+      }
+    },
     "anniversary.play": {
       "extractionState": "manual",
       "localizations": {
@@ -10612,59 +10665,6 @@
         }
       }
     },
-    "library.load_more" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weitere Orte anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show More Places"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar más lugares"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher plus de lieux"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra altri luoghi"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ほかの場所を表示"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "显示更多地点"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "顯示更多地點"
-          }
-        }
-      }
-    },
     "library.rescan" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -12639,49 +12639,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Benannte Orte: %1$@ / %2$@"
+            "value" : "Überprüfte Orte: %1$@ / %2$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Places named: %1$@ / %2$@"
+            "value" : "Places checked: %1$@ / %2$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lugares con nombre: %1$@ / %2$@"
+            "value" : "Lugares revisados: %1$@ / %2$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lieux identifiés : %1$@ / %2$@"
+            "value" : "Lieux vérifiés : %1$@ / %2$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Luoghi identificati: %1$@ / %2$@"
+            "value" : "Luoghi verificati: %1$@ / %2$@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地名を確認済み：%1$@ / %2$@か所"
+            "value" : "確認した場所：%1$@ / %2$@"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已确定地名：%1$@ / %2$@"
+            "value" : "已检查地点 %1$@ / %2$@"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已確認地名：%1$@ / %2$@"
+            "value" : "已檢查地點 %1$@ / %2$@"
           }
         }
       }
@@ -13961,49 +13961,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fotoprüfung abgeschlossen"
+            "value" : "Prüfung der Mediathek abgeschlossen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Photo Check Complete"
+            "value" : "Library Check Complete"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Revisión de fotos completada"
+            "value" : "Revisión de la fototeca completada"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vérification des photos terminée"
+            "value" : "Vérification de la photothèque terminée"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Verifica delle foto completata"
+            "value" : "Verifica della libreria completata"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "写真の確認が完了しました"
+            "value" : "写真ライブラリの確認が完了しました"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "照片检查已完成"
+            "value" : "图库检查完成"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "照片檢查已完成"
+            "value" : "圖庫檢查完成"
           }
         }
       }
@@ -15446,49 +15446,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Besuche mit Ortsnamen: %1$@ / %2$@"
+            "value" : "Besuche: %1$@ · Stadt ermittelt: %2$@ · Nur Land oder Region: %3$@ · Ortsname unbekannt: %4$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visits with place names: %1$@ / %2$@"
+            "value" : "Visits: %1$@ · City identified: %2$@ · Country or region only: %3$@ · Unknown: %4$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visitas con nombre de lugar: %1$@ / %2$@"
+            "value" : "Visitas: %1$@ · Ciudad identificada: %2$@ · Solo país o región: %3$@ · Lugar desconocido: %4$@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visites avec un nom de lieu : %1$@ / %2$@"
+            "value" : "Visites : %1$@ · Ville identifiée : %2$@ · Pays ou région uniquement : %3$@ · Lieu inconnu : %4$@"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Visite con luogo identificato: %1$@ / %2$@"
+            "value" : "Visite: %1$@ · Città identificata: %2$@ · Solo Paese o area geografica: %3$@ · Luogo sconosciuto: %4$@"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "地名が分かった訪問：%1$@ / %2$@"
+            "value" : "全%1$@回の訪問のうち、都市を特定できた訪問は%2$@回、国または地域のみは%3$@回、地名不明は%4$@回です。"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已有地名的到访 %1$@ / %2$@"
+            "value" : "共 %1$@ 次到访，其中 %2$@ 次已识别城市，%3$@ 次仅识别到国家或地区，%4$@ 次地名未知。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "已有地名的到訪 %1$@ / %2$@"
+            "value" : "共 %1$@ 次到訪，其中 %2$@ 次已辨識城市，%3$@ 次僅辨識出國家或地區，%4$@ 次地名不詳。"
           }
         }
       }
@@ -20679,6 +20679,59 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "下一段旅程"
+          }
+        }
+      }
+    },
+    "slideshow.previous_journey" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorherige Reise"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Previous Trip"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaje anterior"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voyage précédent"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Viaggio precedente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "前の旅へ"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一段旅程"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上一段旅程"
           }
         }
       }

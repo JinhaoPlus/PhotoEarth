@@ -17,6 +17,7 @@ final class OverviewScrollingUITests: XCTestCase {
         app.useSimplifiedChineseTestLanguage()
         app.launch()
         app.enterHomeContent()
+        XCTAssertFalse(app.buttons["overview-load-more"].exists)
         for row in 0...1 {
             XCUIRemote.shared.press(.down)
             XCTAssertTrue(waitForRow(row, app: app))

@@ -32,7 +32,7 @@ struct LibraryPreparationView: View {
                         .font(.system(size: 32, weight: .light))
                         .accessibilityIdentifier("preparation-ready")
                 }
-                if let place = model.recentlyPreparedPlace, PlaceDisplayLabel(place: place).isComplete {
+                if progress.phase == .labeling, let place = model.recentlyPreparedPlace, PlaceDisplayLabel(place: place).isComplete {
                     let name = PlaceDisplayLabel(place: place).styledName(citySize: 32)
                     Text(AttributedString(localized: "preparation.recent_place", defaultValue: "Just added · \(name)",
                                           locale: AppLocalization.locale))
@@ -56,14 +56,6 @@ struct LibraryPreparationView: View {
                         .lineSpacing(5).frame(maxWidth: 1050, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                if let retry = progress.retryAt, progress.phase == .waiting {
-                    Text(AppLocalization.format(
-                        "preparation.retry_at",
-                        defaultValue: "Continues automatically · %@",
-                        retry.formatted(.dateTime.hour().minute().locale(AppLocalization.locale))
-                    ))
-                        .font(.system(size: 22)).foregroundStyle(.white.opacity(0.65))
-                }
             }
             .padding(32)
             .floatingSurface(in: RoundedRectangle(cornerRadius: 26))
@@ -72,17 +64,20 @@ struct LibraryPreparationView: View {
             GlassEffectContainer(spacing: TVControlLayout.actionSpacing) {
                 HStack(spacing: TVControlLayout.actionSpacing) {
                     if model.phase == .scanning && model.canBrowsePreparedLibrary {
-                        Button(AppLocalization.string("preparation.browse_now", defaultValue: "Explore Now"), action: model.closePreparation)
+                        Button(AppLocalization.string("preparation.browse_now", defaultValue: "Explore Now"), action: {
+                            ProductAnalytics.shared.capture(.preparationAction, value: "browse_now")
+                            model.closePreparation()
+                        })
                             .focused($focus, equals: .browse)
                             .accessibilityIdentifier("preparation-browse")
                     }
 
                     if model.usesLivePhotoLibrary && progress.phase == .failed {
-                        Button(AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning"), action: model.showScanScope)
+                        Button(AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning"), action: { model.showScanScope(from: .preparation) })
                             .focused($focus, equals: .scope)
                             .accessibilityIdentifier("preparation-scan-scope")
                     }
-                    if progress.phase != .complete && progress.phase != .idle {
+                    if progress.phase.isWorking || progress.phase == .paused || progress.phase == .failed {
                         Button(scanActionTitle) {
                             Task {
                                 if progress.phase.isWorking { await model.pausePreparation() }
@@ -95,7 +90,10 @@ struct LibraryPreparationView: View {
                     if !reduceMotion && progress.phase.isWorking {
                         Button(followsDiscoveries
                             ? AppLocalization.string("preparation.pause_camera", defaultValue: "Pause Camera Movement")
-                            : AppLocalization.string("preparation.follow_places", defaultValue: "Follow New Places")) { followsDiscoveries.toggle() }
+                            : AppLocalization.string("preparation.follow_places", defaultValue: "Follow New Places")) {
+                                followsDiscoveries.toggle()
+                                ProductAnalytics.shared.capture(.preparationAction, value: followsDiscoveries ? "follow_camera" : "pause_camera")
+                            }
                             .focused($focus, equals: .camera)
                             .accessibilityIdentifier("preparation-camera")
                     }
@@ -181,6 +179,18 @@ struct LibraryPreparationEntry: View {
 struct LibraryPreparationChrome: ViewModifier {
     @ObservedObject var model: AppModel
     var aboveHomeActions = false
+    func body(content: Content) -> some View {
+        content.overlay(alignment: aboveHomeActions ? .topLeading : .topTrailing) {
+            LibraryPreparationPageEntry(model: model)
+                .frame(maxWidth: .infinity, alignment: aboveHomeActions ? .leading : .trailing)
+                .focusSection()
+                .padding(.top, 48).padding(.horizontal, 80)
+        }
+    }
+}
+
+struct LibraryPreparationPageEntry: View {
+    @ObservedObject var model: AppModel
     @FocusState private var entryFocused: Bool
     @State private var restoresEntry = false
     private var showsEntry: Bool {
@@ -189,31 +199,23 @@ struct LibraryPreparationChrome: ViewModifier {
             && model.preparationProgress.phase != .partial
     }
 
-    func body(content: Content) -> some View {
-        content.overlay(alignment: .top) {
-            if showsEntry {
-                HStack {
-                    if !aboveHomeActions { Spacer() }
-                    LibraryPreparationEntry(progress: model.preparationProgress) {
-                        restoresEntry = true
-                        model.showPreparation()
-                    }
-                    .focused($entryFocused)
-                    if aboveHomeActions { Spacer() }
-                }
-                .focusSection()
-                .padding(.top, 48).padding(.horizontal, 80)
+    var body: some View {
+        if showsEntry {
+            LibraryPreparationEntry(progress: model.preparationProgress) {
+                restoresEntry = true
+                model.showPreparation()
             }
-        }
-        .task(id: model.isPreparationPresented) {
-            guard !model.isPreparationPresented, restoresEntry else { return }
-            // Allow the retained page and its native default focus to return
-            // before restoring the button that opened the scan scene.
-            do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
-            guard !Task.isCancelled else { return }
-            restoresEntry = false
-            guard showsEntry else { return }
-            entryFocused = true
+            .focused($entryFocused)
+            .task(id: model.isPreparationPresented) {
+                guard !model.isPreparationPresented, restoresEntry else { return }
+                // Allow the retained page and its native default focus to return
+                // before restoring the button that opened the scan scene.
+                do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
+                guard !Task.isCancelled else { return }
+                restoresEntry = false
+                guard showsEntry else { return }
+                entryFocused = true
+            }
         }
     }
 }

@@ -70,7 +70,7 @@ import XCTest
         XCTAssertEqual(properties["scope"] as? String, "collection")
         XCTAssertEqual(properties["entry"] as? String, "recent")
         XCTAssertEqual(properties["library_mode"] as? String, "sample")
-        XCTAssertEqual(properties["analytics_schema"] as? String, "2")
+        XCTAssertEqual(properties["analytics_schema"] as? String, "3")
         XCTAssertEqual(properties["product"] as? String, "photoearth")
         XCTAssertEqual(properties["$geoip_disable"] as? Bool, true)
         XCTAssertEqual(properties["$process_person_profile"] as? Bool, false)
@@ -147,6 +147,8 @@ import XCTest
 
     func testAllEventsCarryBuildAndLanguageWithoutPrivateFields() {
         let fields = ["entry": "private-metadata", "music_source": "private-metadata", "asset_id": "private-metadata",
+                      "origin": "private-metadata", "operation": "private-metadata", "stage": "private-metadata",
+                      "choice": "private-metadata", "transaction_id": "private-metadata", "query": "private-metadata",
                       "scope": "private-metadata", "library_mode": "private-metadata", "app_version": "private-metadata"]
         for event in ProductEvent.allCases {
             let properties = event.properties(value: "private-metadata", fields: fields)
@@ -167,14 +169,14 @@ import XCTest
     func testWallReportsOnlyOneOutcomeEvenAfterManyDetailSelections() async throws {
         let analytics = try makeAnalytics()
         let visit = PhotoWallAnalyticsVisit()
-        visit.begin(library: .sample, analytics: analytics)
+        visit.begin(context: .init(library: .sample, entry: .homeCity, scope: .city), analytics: analytics)
         for _ in 0..<100 { visit.openedDetail() }
         await drain()
         let queue = try storageRoot().appendingPathComponent("posthog.queueFolder.uuid")
         XCTAssertFalse(FileManager.default.fileExists(atPath: queue.path))
         visit.end(analytics: analytics)
         visit.end(analytics: analytics)
-        visit.begin(library: .personal, analytics: analytics)
+        visit.begin(context: .init(library: .personal, entry: .globe, scope: .currentView), analytics: analytics)
         visit.end(analytics: analytics)
         await drain()
         let files = try FileManager.default.contentsOfDirectory(at: queue, includingPropertiesForKeys: nil)
@@ -183,7 +185,10 @@ import XCTest
             let event = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
             XCTAssertEqual(event["event"] as? String, ProductEvent.wallBrowsingFinished.rawValue)
             let properties = try XCTUnwrap(event["properties"] as? [String: Any])
-            return try XCTUnwrap(properties["result"] as? String)
+            let result = try XCTUnwrap(properties["result"] as? String)
+            XCTAssertEqual(properties["scope"] as? String, result == "viewed_details" ? "city" : "currentView")
+            XCTAssertEqual(properties["entry"] as? String, result == "viewed_details" ? "homeCity" : "globe")
+            return result
         }
         XCTAssertEqual(results.sorted(), ["viewed_details", "wall_only"])
     }
@@ -221,6 +226,98 @@ import XCTest
         XCTAssertEqual(properties["scope"] as? String, "library")
     }
 
+    func testPlaybackPickerAndControlsReachSDKWithBoundedValues() async throws {
+        let analytics = try makeAnalytics()
+        let show = makeShow(analytics)
+        show.start(waitingForConfirmation: true)
+        show.beginPlayback(music: .online)
+        show.openedMusicPicker()
+        show.openedMusicPicker()
+        for _ in 0..<20 { show.recordAction(.musicTransport) }
+        show.finishedMusicPicker(selection: .appleMusic, choice: .appleMusic)
+        show.finishedMusicPicker(selection: nil)
+        show.cancel()
+        await drain()
+        let queue = try storageRoot().appendingPathComponent("posthog.queueFolder.uuid")
+        let events = try FileManager.default.contentsOfDirectory(at: queue, includingPropertiesForKeys: nil).map {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: $0)) as? [String: Any])
+        }
+        func props(_ event: ProductEvent) -> [[String: Any]] {
+            events.filter { $0["event"] as? String == event.rawValue }.compactMap { $0["properties"] as? [String: Any] }
+        }
+        XCTAssertEqual(props(.musicPickerOpened).count, 1)
+        XCTAssertEqual(props(.musicPickerOpened).first?["stage"] as? String, "playback")
+        XCTAssertEqual(props(.slideshowAction).compactMap { $0["action"] as? String }, ["musicTransport"])
+        XCTAssertEqual(props(.musicPickerResult).compactMap { $0["result"] as? String }.sorted(), ["cancelled", "confirmed"])
+        let committed = try XCTUnwrap(props(.musicPickerResult).first { $0["result"] as? String == "confirmed" })
+        XCTAssertEqual(committed["choice"] as? String, "appleMusic")
+        XCTAssertEqual(committed["scope"] as? String, "library")
+        XCTAssertEqual(props(.slideshowFinished).first?["music_source"] as? String, "appleMusic")
+        XCTAssertTrue(props(.slideshowContentReady).isEmpty)
+    }
+
+    func testWallScopeFollowsTheRouteEvenWhenACityHasOnlyOneVisit() throws {
+        let place = try XCTUnwrap(SampleTravelIndex.make().index.places.first)
+        let city = PlaceCollection.city(containing: place, in: [place])
+        for entry: JourneyEventContext.Entry in [.homeCity, .photoGlobe, .countries, .topShelf] {
+            XCTAssertEqual(entry.wallScope(for: city), .city)
+            XCTAssertEqual(entry.wallScope(for: nil), .currentView)
+        }
+        let visit = try XCTUnwrap(PlaceCollection.recent([place]).first)
+        XCTAssertEqual(JourneyEventContext.Entry.recent.wallScope(for: visit), .recentVisit)
+        let country = try XCTUnwrap(PlaceCollection.countries([place]).first)
+        XCTAssertEqual(JourneyEventContext.Entry.countries.wallScope(for: country), .country)
+    }
+
+    func testReadyMediaReportsOneContentMilestoneForTheShow() async throws {
+        let analytics = try makeAnalytics()
+        let sample = SampleTravelIndex.make()
+        let photo = try XCTUnwrap(sample.photos.first)
+        let place = try XCTUnwrap(sample.index.places.first { $0.id == photo.placeID })
+        let snapshot = try SlideshowSnapshot(places: [place], journeys: [])
+        try snapshot.append([photo])
+        var config = EarthSlideshowConfiguration.standard
+        config.earthIntroDuration = 0.02
+        config.chapterTitleDuration = 0.02
+        let show = EarthSlideshowCoordinator(scope: .init(id: "private-metadata", title: "", kind: .city),
+                                             places: [place], analyticsLibrary: .sample, analytics: analytics,
+                                             configuration: config, reduceMotion: false,
+                                             makeSnapshot: { snapshot }, cameraAction: { _, _ in })
+        show.start()
+        defer { show.cancel() }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(6))
+        while show.phase != .presentingItem && ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertEqual(show.phase, .presentingItem)
+        for _ in 0..<3 { show.markCurrentItemReady(photo.id) }
+        await drain()
+        let queue = try storageRoot().appendingPathComponent("posthog.queueFolder.uuid")
+        let milestones = try FileManager.default.contentsOfDirectory(at: queue, includingPropertiesForKeys: nil)
+            .compactMap { url -> [String: Any]? in
+                let event = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+                guard event["event"] as? String == ProductEvent.slideshowContentReady.rawValue else { return nil }
+                return event["properties"] as? [String: Any]
+            }
+        XCTAssertEqual(milestones.count, 1)
+        XCTAssertEqual(milestones.first?["scope"] as? String, "city")
+        XCTAssertNil(milestones.first?["asset_id"])
+    }
+
+    func testStoreAndScanFieldsStayOnTheCorrespondingEvents() {
+        let context = JourneyEventContext(offerOrigin: .anniversary, operation: .trial)
+        let result = ProductEvent.storeResult.properties(value: "completed", fields: context.properties)
+        XCTAssertEqual(result["origin"] as? String, "anniversary")
+        XCTAssertEqual(result["operation"] as? String, "trial")
+        XCTAssertEqual(result["result"] as? String, "completed")
+        let scan = ProductEvent.scopeEditFinished.properties(value: "saved", fields: ["origin": "emptyLibrary"])
+        XCTAssertEqual(scan["origin"] as? String, "emptyLibrary")
+        let other = ProductEvent.anniversaryAction.properties(value: "expand_year", fields: context.properties)
+        XCTAssertNil(other["origin"])
+        XCTAssertNil(other["operation"])
+        XCTAssertEqual(other["action"] as? String, "expand_year")
+    }
+
     func testReenabledAnalyticsDoesNotReportPreviousShow() async throws {
         let analytics = try makeAnalytics()
         let show = makeShow(analytics)
@@ -228,6 +325,9 @@ import XCTest
         analytics.setEnabled(false)
         analytics.setEnabled(true)
         show.openedMusicPicker()
+        show.recordAction(.journeyPicker)
+        show.musicAvailability(.appleMusic, "ready")
+        show.finishedMusicPicker(selection: .online, choice: .recommended)
         show.cancel()
         analytics.capture(.foregrounded)
         await drain()

@@ -142,7 +142,7 @@ final class PurchaseStore: ObservableObject {
         }
     }
 
-    enum PurchaseOutcome { case completed, cancelled, pending, unsuccessful }
+    enum PurchaseOutcome: String { case completed, cancelled, pending, unsuccessful, restored, nothingToRestore = "nothing_to_restore" }
 
     func purchase(_ id: String) async -> PurchaseOutcome {
         guard !busy, let product = products[id] else { return .unsuccessful }
@@ -170,15 +170,21 @@ final class PurchaseStore: ObservableObject {
         return .unsuccessful
     }
 
-    func restore() async {
-        guard !busy else { return }
+    func restore() async -> PurchaseOutcome {
+        guard !busy else { return .unsuccessful }
         busy = true
         notice = nil
         defer { busy = false }
         do {
             try await AppStore.sync()
             await refreshAccess()
-            if !access.permitsLibrary { notice = .nothingToRestore }
-        } catch { notice = .failed }
+            if access.permitsLibrary { return .restored }
+            notice = .nothingToRestore
+            return .nothingToRestore
+        } catch {
+            notice = .failed
+            if let storeError = error as? StoreKitError, case .userCancelled = storeError { return .cancelled }
+            return .unsuccessful
+        }
     }
 }

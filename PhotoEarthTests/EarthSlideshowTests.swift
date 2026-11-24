@@ -909,6 +909,23 @@ struct EarthSlideshowTests {
         #expect(show.currentItem?.id == "asset-1-0")
         show.skipToNextJourney()
         #expect(show.currentItem?.id == "asset-0-0")
+        #expect(show.canSkipToPreviousJourney)
+        show.skipToPreviousJourney()
+        #expect(show.currentItem?.id == "asset-1-0")
+        #expect(!show.canSkipToPreviousJourney && show.isPaused == paused)
+        show.prepareFilmstrip(around: "asset-1-0")
+        try await waitUntil { show.filmstrip.count >= 18 }
+        #expect(show.filmstrip.prefix(18).map(\.id) == (0..<18).map { "asset-1-\($0)" })
+        while show.filmstrip.count < source.count {
+            let count = show.filmstrip.count
+            show.prepareFilmstrip(around: show.filmstrip.last?.id)
+            try await waitUntil { show.filmstrip.count > count }
+            try #require(show.filmstrip.count > count)
+        }
+        #expect(show.filmstrip.map(\.id) == source.map(\.id))
+        show.skipToNextJourney()
+        try await waitUntil { show.currentItem?.id == "asset-0-0" }
+        #expect(show.isPaused == paused)
         show.restart()
         try await waitUntil { show.phase == .presentingItem }
         #expect(show.currentJourney?.id == "newer" && show.canSkipToNextJourney)

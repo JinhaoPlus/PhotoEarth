@@ -4,6 +4,7 @@ import UIKit
 struct CollectionPhotoWall: View {
     @ObservedObject var model: AppModel
     let collection: PlaceCollection
+    let entry: JourneyEventContext.Entry
     let controlGlobe: @MainActor @Sendable (EarthSlideshowCameraTarget, Bool) -> Void
     let restoreGlobe: () -> Void
     let close: () -> Void
@@ -57,7 +58,7 @@ struct CollectionPhotoWall: View {
                               openMapReview: { mapReviewOrigin = actionPage.membership?.reviewOrigin },
                               canOpenMapReview: session.membership?.reviewOrigin != nil,
                               labelStates: model.placeLabelStates,
-                              resolvePlaceLabels: resolveLabels, analyticsLibrary: model.analyticsLibrary,
+                              resolvePlaceLabels: resolveLabels, analyticsContext: .init(library: model.analyticsLibrary, entry: entry, scope: entry.wallScope(for: collection)),
                               cityJourneys: collection.groupsPhotosByJourney ? CityJourneyWallInput(
                                   model: model, session: session, focusJourney: { focusedJourney = $0 }, select: { journey, photo, image in
                                       detailJourney = journey
@@ -148,7 +149,7 @@ struct CollectionPhotoWall: View {
         let scope = EarthSlideshowScope(
             id: collection.id,
             title: collection.journeyDateText.map { "\(collection.title) · \($0)" } ?? collection.title,
-            kind: slideshowScopeKind
+            kind: entry.wallScope(for: collection)
         )
         let coordinator = model.makeEarthSlideshow(scope: scope, places: membership.matchingVisits,
                                                    reader: membership.reader, collectionExclusions: session.excludedAssetIDs,
@@ -156,16 +157,6 @@ struct CollectionPhotoWall: View {
                                                    cameraAction: controlGlobe)
         slideshow = coordinator
         coordinator.start(waitingForConfirmation: true)
-    }
-
-    private var slideshowScopeKind: EarthSlideshowScope.Kind {
-        switch collection.scope {
-        case .country: .country
-        case .city: .city
-        case .visits:
-            collection.places.count == 1 ? .recentVisit
-                : (collection.representsSingleCity ? .city : .collection)
-        }
     }
 
     private func finishSlideshow() {

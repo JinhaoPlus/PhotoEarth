@@ -85,7 +85,8 @@ struct LocalizationTests {
 
         verify("settings.photos_and_scan", simplified: "照片与扫描", traditional: "照片與掃描")
         verify("settings.journeys_on_home", simplified: "显示最近到访的城市", traditional: "顯示最近到訪的城市")
-        verify("settings.label_summary", simplified: "已有地名的到访 %1$@ / %2$@", traditional: "已有地名的到訪 %1$@ / %2$@")
+        verify("preparation.title.checked", simplified: "图库检查完成", traditional: "圖庫檢查完成")
+        verify("settings.label_summary", simplified: "共 %1$@ 次到访，其中 %2$@ 次已识别城市，%3$@ 次仅识别到国家或地区，%4$@ 次地名未知。", traditional: "共 %1$@ 次到訪，其中 %2$@ 次已辨識城市，%3$@ 次僅辨識出國家或地區，%4$@ 次地名不詳。")
         verify("settings.last_organized", simplified: "上次整理：%@", traditional: "上次整理：%@")
         verify("settings.complete_places", simplified: "继续补充地点名称", traditional: "繼續補充地點名稱")
         verify("settings.rebuild", simplified: "重新扫描照片和视频", traditional: "重新掃描照片和影片")
@@ -454,7 +455,7 @@ struct LocalizationTests {
         #expect(beforeJapaneseLookup.locatedPhotoCount == 1)
         #expect(beforeJapaneseLookup.places[0].name.isEmpty)
         #expect(beforeJapaneseLookup.places[0].country == nil)
-        #expect(try await japaneseStore.placeLabelJobs(now: Date()).count == 1)
+        #expect(try await japaneseStore.placeLabelWork(now: Date()).jobs.count == 1)
 
         _ = try await japaneseStore.recordLabelAttempt(
             beforeJapaneseLookup.places[0],
@@ -477,7 +478,7 @@ struct LocalizationTests {
         #expect(englishReload.places[0].country == "Australia")
         #expect(japaneseReload.places[0].name == "シドニー")
         #expect(japaneseReload.places[0].country == "オーストラリア")
-        #expect(try await japaneseStore.placeLabelJobs(now: Date()).isEmpty)
+        #expect(try await japaneseStore.placeLabelWork(now: Date()).jobs.isEmpty)
 
         let simplifiedStore = SQLiteTravelIndexStore(databaseURL: url, locale: Locale(identifier: "zh-Hans"))
         let beforeSimplifiedLookup = try #require(try await simplifiedStore.load())

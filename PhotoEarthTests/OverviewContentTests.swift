@@ -259,6 +259,22 @@ import UIKit
         #expect(model.structureRevision == revision)
     }
 
+    @Test func scrollingToTheLastCardAppendsOnceEvenWhenFocusFollows() throws {
+        let model = OverviewContentModel(images: .init(requester: OverviewTestRequester(), automaticScheduling: false),
+                                         latestCovers: { _ in [:] })
+        model.receive(index(count: 27))
+        model.setActive(true)
+        defer { model.setActive(false) }
+        let boundary = try #require(model.shelves.last?.items.last?.id)
+        model.visibilityChanged(boundary, visible: true)
+        model.focusChanged("place-\(boundary)")
+        #expect(model.loadedCount == 25)
+        let next = try #require(model.shelves.last?.items.last?.id)
+        model.visibilityChanged(next, visible: true)
+        #expect(model.loadedCount == 27 && !model.hasMore)
+        #expect(model.restoredFocusID == "place-\(boundary)")
+    }
+
     @Test func yearGroupsKeepOneHeadingAcrossPaginationAndShortRowsKeepTheirScrollTarget() {
         let model = OverviewContentModel(images: .init(requester: OverviewTestRequester(), automaticScheduling: false), latestCovers: { _ in [:] })
         var snapshot = index(count: 30)
@@ -271,11 +287,11 @@ import UIKit
         }
         model.receive(snapshot)
         #expect(model.shelves.filter(\.showsYearHeading).map(\.year) == [2025, 2024])
-        #expect(model.shelves.map { $0.items.count } == [5, 3, 2])
+        #expect(model.shelves.map { $0.items.count } == [5, 3, 5])
         model.expand()
         #expect(model.shelves.filter(\.showsYearHeading).map(\.year) == [2025, 2024, 2023])
-        #expect(model.shelves.map { $0.items.count } == [5, 3, 5, 5, 2])
-        #expect(model.shelves.flatMap(\.items).map(\.id) == Array(snapshot.places.dropFirst(5).prefix(20)).map(\.id))
+        #expect(model.shelves.map { $0.items.count } == [5, 3, 5, 5, 5])
+        #expect(model.shelves.flatMap(\.items).map(\.id) == Array(snapshot.places.dropFirst(5).prefix(23)).map(\.id))
         for shelf in model.shelves {
             #expect(shelf.items.allSatisfy { calendar.component(.year, from: $0.place.endDate) == shelf.year })
             for item in shelf.items { #expect(model.scrollTarget("place-\(item.id)") == shelf.id) }

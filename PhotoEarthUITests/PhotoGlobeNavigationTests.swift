@@ -8,20 +8,19 @@ final class PhotoGlobeNavigationTests: XCTestCase {
         app.launchArguments = ["--demo"]
         app.useTestLanguage("en", locale: "en_US")
         app.launch()
-        app.enterHomeContent()
-
         let explore = app.buttons["overview-explore-button"]
+        XCTAssertTrue(explore.waitForExistence(timeout: 12))
         XCTAssertTrue(focus(explore))
         XCTAssertEqual(explore.label, "Explore the Globe")
-        attach(app, "Explore the Globe — focused")
+        attach(app, "Explore the Globe — cold launch focus")
+        XCUIRemote.shared.press(.select)
+        XCTAssertTrue(focus(app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch))
+        XCUIRemote.shared.press(.menu)
+        XCTAssertTrue(focus(explore))
         XCUIRemote.shared.press(.right)
         XCTAssertTrue(focus(app.buttons["overview-slideshow"]))
         attach(app, "Explore the Globe — resting")
         XCUIRemote.shared.press(.left)
-        XCTAssertTrue(focus(explore))
-        XCUIRemote.shared.press(.select)
-        XCTAssertTrue(focus(app.descendants(matching: .any)["globe-direct-manipulation"].firstMatch))
-        XCUIRemote.shared.press(.menu)
         XCTAssertTrue(focus(explore))
     }
 

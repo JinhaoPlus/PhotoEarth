@@ -87,7 +87,7 @@ struct SettingsView: View {
 
             Group {
                 if showsPurchaseDetail {
-                    PurchaseOffers(store: purchases, settingsFocus: $offerAction)
+                    PurchaseOffers(store: purchases, origin: .settings, settingsFocus: $offerAction)
                 } else {
                     categoryDetails
                 }
@@ -130,14 +130,15 @@ struct SettingsView: View {
                 focusedControl = .purchase
             }
         }
-        .sheet(item: $reference, onDismiss: { focusedControl = category == .music ? .credits : .policy }) {
-            SettingsReferenceView(reference: $0)
+        .sheet(item: $reference, onDismiss: { focusedControl = category == .music ? .credits : .policy }) { item in
+            SettingsReferenceView(reference: item)
+                .onAppear { analytics.capture(.settingsOpenedReference, value: item.rawValue) }
         }
         .task(id: model.isPreparationPresented) {
             guard !model.isPreparationPresented, let action = returnScanAction else { return }
             do { try await Task.sleep(for: .milliseconds(180)) } catch { return }
             guard !Task.isCancelled, model.phase == .globe else { return }
-            focusedControl = action == .complete && incompletePlaceCount == 0 ? .update : action
+            focusedControl = action == .complete && !model.preparationProgress.canContinuePlaceNames ? .update : action
             returnScanAction = nil
         }
     }
@@ -205,7 +206,10 @@ struct SettingsView: View {
     private var musicSettings: some View {
         VStack(alignment: .leading, spacing: 20) {
             settingSwitch(String(localized: "settings.music.automatic"),
-                          isOn: Binding(get: { !automaticMusicOff }, set: { automaticMusicOff = !$0 }),
+                          isOn: Binding(get: { !automaticMusicOff }, set: { enabled in
+                              automaticMusicOff = !enabled
+                              analytics.capture(.settingsChanged, value: "automatic_music")
+                          }),
                           identifier: "settings-music-automatic")
                 .focused($focusedControl, equals: .automaticMusic)
             caption(String(localized: "settings.music.automatic_help"))
@@ -322,6 +326,7 @@ struct SettingsView: View {
                 actionRow(AppLocalization.string("settings.scan_details", defaultValue: "Scan Details"),
                           symbol: showsScanDetails ? "chevron.up" : "chevron.down") {
                     showsScanDetails.toggle()
+                    if showsScanDetails { analytics.capture(.settingsOpenedReference, value: "scan_details") }
                 }
                 .accessibilityValue(showsScanDetails
                     ? AppLocalization.string("settings.expanded", defaultValue: "Expanded")
@@ -378,14 +383,21 @@ struct SettingsView: View {
         caption(AppLocalization.string("settings.privacy_message", defaultValue: "Capture times, locations, and camera information help organize your trips on this Apple TV. Your original photos and videos stay unchanged."))
         caption(AppLocalization.format("settings.last_organized", defaultValue: "Last organized %@",
                                        dateString(index.generatedAt)))
+            .task(id: index.contentRevision) { await model.refreshScanDetails() }
         if let check = model.lastLibraryCheck {
             caption(AppLocalization.format("settings.last_checked", defaultValue: "Photos checked %@", dateString(check)))
         }
-        let missing = incompletePlaceCount
-        caption(AppLocalization.format("settings.label_summary", defaultValue: "Visits with place names: %1$@ / %2$@",
-                                       AppLocalization.number(index.places.count - missing),
-                                       AppLocalization.number(index.places.count)))
-        if missing > 0 {
+        if let names = model.preparationProgress.visitNames {
+            caption(AppLocalization.format("settings.label_summary", defaultValue: "Visits: %1$@ · City identified: %2$@ · Country or region only: %3$@ · Unknown: %4$@",
+                                           AppLocalization.number(names.total), AppLocalization.number(names.city),
+                                           AppLocalization.number(names.regionOnly), AppLocalization.number(names.unknown)))
+                .accessibilityIdentifier("settings-place-name-summary")
+        }
+        if model.preparationProgress.phase == .complete, let retry = model.preparationProgress.retryAt {
+            caption(AppLocalization.format("preparation.retry_at", defaultValue: "Continues automatically · %@",
+                                           retry.formatted(.dateTime.hour().minute().locale(AppLocalization.locale))))
+        }
+        if model.preparationProgress.canContinuePlaceNames {
             actionRow(AppLocalization.string("settings.complete_places", defaultValue: "Complete Place Names")) {
                 returnScanAction = .complete
                 Task { await model.updateLibrary(.labels) }
@@ -454,9 +466,5 @@ struct SettingsView: View {
 
     private func dateString(_ date: Date) -> String {
         date.formatted(.dateTime.year().month().day().hour().minute().locale(AppLocalization.locale))
-    }
-
-    private var incompletePlaceCount: Int {
-        model.index?.places.filter { !PlaceDisplayLabel(place: $0).isComplete }.count ?? 0
     }
 }

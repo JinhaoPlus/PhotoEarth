@@ -232,12 +232,15 @@ final class AppModel: ObservableObject {
     @Published private(set) var lastLibraryCheck: Date?
     struct ScanScopePresentation: Identifiable {
         let id = UUID()
-        let startsFirstScan: Bool
+        let origin: JourneyEventContext.ScanOrigin
+        let consentRevision = ProductAnalytics.shared.consentRevision
+        var startsFirstScan: Bool { origin == .initial }
     }
 
     @Published private(set) var scanScope: ScanScopePresentation?
     @Published private(set) var sampleConnectionDenied = false
     @Published private(set) var scanScopeRevision = 0
+    private var firstScanConsent: UInt64?
     private var isRequestingPhotoAccess = false
     private static let deferredScanScopeKey = "travelScan.deferredInitialChoice.v1"
     private var preparation: LibraryPreparationCoordinator?
@@ -402,12 +405,18 @@ final class AppModel: ObservableObject {
         guard !isRequestingPhotoAccess, scanScope == nil else { return }
         isRequestingPhotoAccess = true
         defer { isRequestingPhotoAccess = false }
-        ProductAnalytics.shared.capture(.accessRequested, context: .init(library: isUsingSampleData ? .sample : nil))
+        let analytics = ProductAnalytics.shared
+        let consent = analytics.consentRevision
+        let context = JourneyEventContext(library: isUsingSampleData ? .sample : nil)
+        analytics.capture(.accessRequested, context: context)
         let status = await photoLibrary.requestAuthorization()
-        switch status {
-        case .authorized, .limited: ProductAnalytics.shared.capture(.photoAccessResult, value: "granted")
-        case .denied, .restricted: ProductAnalytics.shared.capture(.photoAccessResult, value: "denied")
-        case .notDetermined: ProductAnalytics.shared.capture(.photoAccessResult, value: "undetermined")
+        if analytics.consentRevision == consent {
+            let result = switch status {
+            case .authorized, .limited: "granted"
+            case .denied, .restricted: "denied"
+            case .notDetermined: "undetermined"
+            }
+            analytics.capture(.photoAccessResult, value: result, context: context)
         }
         guard status == .authorized || status == .limited else {
             if isUsingSampleData { sampleConnectionDenied = true }
@@ -425,20 +434,23 @@ final class AppModel: ObservableObject {
 
     private func presentInitialScanScope() {
         withdrawTopShelf()
-        scanScope = ScanScopePresentation(startsFirstScan: true)
+        scanScope = ScanScopePresentation(origin: .initial)
         ProductAnalytics.shared.capture(.scopePresented, value: "initial")
     }
 
-    func showScanScope() {
+    func showScanScope(from origin: JourneyEventContext.ScanOrigin = .settings) {
         guard usesLivePhotoLibrary, scanScope == nil else { return }
-        scanScope = ScanScopePresentation(startsFirstScan: false)
-        ProductAnalytics.shared.capture(.scopePresented, value: "settings")
+        scanScope = ScanScopePresentation(origin: origin)
+        ProductAnalytics.shared.capture(.scopePresented, value: origin.rawValue)
     }
 
     func cancelScanScope() {
         guard let scanScope else { return }
+        if scanScope.consentRevision == ProductAnalytics.shared.consentRevision {
+            ProductAnalytics.shared.capture(scanScope.startsFirstScan ? .scopeDismissed : .scopeEditFinished,
+                                            value: "dismissed", context: .init(scanOrigin: scanScope.origin))
+        }
         if scanScope.startsFirstScan {
-            ProductAnalytics.shared.capture(.scopeDismissed, value: "dismissed")
             UserDefaults.standard.set(true, forKey: Self.deferredScanScopeKey)
         }
         self.scanScope = nil
@@ -455,17 +467,29 @@ final class AppModel: ObservableObject {
         try Task.checkCancellation()
         guard scanScope?.id == presentation.id, !isExploringPublicGlobe else { throw CancellationError() }
         guard PhotoKitLibrary.hasReadAccess else { throw LibraryPreparationError.unavailable }
-        let changed = preferences != TravelScanPreferences.load()
+        let previous = TravelScanPreferences.load()
+        let changed = preferences != previous
         try preferences.save()
         scanScope = nil
+        if presentation.consentRevision == ProductAnalytics.shared.consentRevision {
+            ProductAnalytics.shared.capture(presentation.startsFirstScan ? .scopeDismissed : .scopeEditFinished,
+                                            value: presentation.startsFirstScan || changed ? "saved" : "unchanged",
+                                            context: .init(scanOrigin: presentation.origin))
+        }
+        if previous.excludedAlbums != preferences.excludedAlbums {
+            ProductAnalytics.shared.capture(.settingsChanged, value: "excluded_albums")
+        }
+        if previous.excludesMissingCamera != preferences.excludesMissingCamera {
+            ProductAnalytics.shared.capture(.settingsChanged, value: "camera_filter")
+        }
         if presentation.startsFirstScan {
-            ProductAnalytics.shared.capture(.scopeDismissed, value: "saved")
+            firstScanConsent = ProductAnalytics.shared.consentRevision
             ProductAnalytics.shared.capture(.firstScanRequested)
             UserDefaults.standard.removeObject(forKey: Self.deferredScanScopeKey)
             startConnectingLibrary()
             installPreparation()
         } else if changed || (index == nil && preparationProgress.phase == .failed) {
-            if changed { ProductAnalytics.shared.capture(.settingsChanged, value: "scan_scope") }
+            firstScanConsent = nil
             invalidatePublishedScope()
             if !isPreparationPresented { startConnectingLibrary() }
         } else {
@@ -532,6 +556,7 @@ final class AppModel: ObservableObject {
     }
 
     func useSampleData() {
+        firstScanConsent = nil
         ProductAnalytics.shared.capture(.sampleOpened)
         withdrawTopShelf()
         cancelScanScope()
@@ -1161,6 +1186,10 @@ final class AppModel: ObservableObject {
         retainPreparationFocus()
         await preparation?.pause(userInitiated: true)
     }
+    func refreshScanDetails() async {
+        await preparation?.refreshIdleLabelWork()
+    }
+
     func resumePreparation() async {
         ProductAnalytics.shared.capture(.preparationAction, value: "resume")
         await preparation?.request(preparationProgress.needsMetadata ? .update : .labels)
@@ -1287,9 +1316,6 @@ final class AppModel: ObservableObject {
             },
             onProgress: { [weak self] progress in
                 guard let self, !self.isUsingSampleData, self.librarySession == session else { return }
-                if progress.phase == .failed, self.preparationProgress.phase != .failed {
-                    ProductAnalytics.shared.capture(.preparationFailed, value: progress.mode.rawValue)
-                }
                 self.preparationProgress = progress
                 // Metadata readiness owns the initial handoff. Place-name
                 // retries may continue for hours without retaining onboarding.
@@ -1332,8 +1358,11 @@ final class AppModel: ObservableObject {
             return
         }
         let firstCommit = index == nil && phase == .scanning
-        if firstCommit {
-            ProductAnalytics.shared.capture(.firstIndexReady, value: value.locatedPhotoCount == 0 ? "empty" : "ready")
+        if let consent = firstScanConsent {
+            firstScanConsent = nil
+            if consent == ProductAnalytics.shared.consentRevision {
+                ProductAnalytics.shared.capture(.firstIndexReady, value: value.locatedPhotoCount == 0 ? "empty" : "ready")
+            }
         }
         if index?.contentRevision != value.contentRevision {
             scenicCovers?.invalidate()
@@ -1380,6 +1409,7 @@ final class AppModel: ObservableObject {
     }
 
     private func loseLibraryAccess(_ access: PhotoLibraryAccess) async {
+        firstScanConsent = nil
         withdrawTopShelf()
         scanScope = nil
         if case .journey = pendingTopShelfRoute { pendingTopShelfRoute = nil }

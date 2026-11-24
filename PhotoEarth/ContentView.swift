@@ -35,7 +35,7 @@ struct ContentView: View {
                 .accessibilityHidden(!globeAcceptsInput)
             switch model.isExploringPublicGlobe ? .globe : model.phase {
             case .loading:
-                ScanningView()
+                EmptyView()
             case .welcome:
                 if model.canBrowsePreparedLibrary {
                     MessageView(symbol: "globe.asia.australia",
@@ -65,7 +65,7 @@ struct ContentView: View {
                     primaryAction: model.useSampleData,
                     secondaryTitle: model.usesLivePhotoLibrary ? AppLocalization.string("scan.scope.title", defaultValue: "Albums to Exclude from Scanning") : AppLocalization.string("library.rescan", defaultValue: "Scan Again"),
                     secondaryAction: {
-                        if model.usesLivePhotoLibrary { model.showScanScope() }
+                        if model.usesLivePhotoLibrary { model.showScanScope(from: .emptyLibrary) }
                         else { Task { await model.rescan() } }
                     },
                     secondaryIdentifier: model.usesLivePhotoLibrary ? "empty-library-scan-scope" : "empty-library-rescan"
@@ -90,6 +90,12 @@ struct ContentView: View {
                     secondaryTitle: AppLocalization.string("sample.view", defaultValue: "View Sample Trip"),
                     secondaryAction: model.useSampleData
                 )
+            }
+            if model.phase == .welcome && !model.isExploringPublicGlobe {
+                HomeWordmark(scene: .welcome)
+                    .padding(.trailing, 80)
+                    .padding(.top, 60)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

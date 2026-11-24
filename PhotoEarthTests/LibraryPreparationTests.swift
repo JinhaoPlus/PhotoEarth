@@ -82,7 +82,7 @@ struct LibraryPreparationTests {
         #expect(rebuilt.places[0].id != old.places[0].id)
         #expect(rebuilt.places[0].name == named.name)
         #expect(rebuilt.places[0].country == named.country)
-        #expect(try await db.placeLabelJobs(now: Date()).isEmpty)
+        #expect(try await db.placeLabelWork(now: Date()).jobs.isEmpty)
     }
 
     @Test func sameIDWithEditedCoordinateDoesNotInheritOldCityOrAcceptStaleWrite() async throws {
@@ -145,8 +145,17 @@ struct LibraryPreparationTests {
         let loaded = try #require(try await reopened.load())
         #expect(loaded.places[0].country == "测试国家")
         #expect(!PlaceDisplayLabel(place: loaded.places[0]).isComplete)
-        #expect(try await reopened.placeLabelJobs(now: Date()).isEmpty)
-        #expect(try await reopened.placeLabelJobs(now: retry.addingTimeInterval(1)).count == 1)
+        let deferred = try await reopened.placeLabelWork(now: Date())
+        #expect(deferred.pending == 1 && deferred.ready == 0 && deferred.jobs.isEmpty)
+        #expect(deferred.nextRetry != nil)
+        var progress = LibraryPreparationProgress()
+        progress.updateLabelWork(deferred)
+        progress.finishLabelPass()
+        #expect(progress.phase == .complete && !progress.canContinuePlaceNames)
+        #expect(progress.retryAt != nil && progress.fraction == nil)
+        let due = try await reopened.placeLabelWork(now: retry.addingTimeInterval(1))
+        progress.updateLabelWork(due)
+        #expect(due.jobs.count == 1 && progress.canContinuePlaceNames)
     }
 
     @Test func stableMissingPlacemarkIsPersistedWithoutSchedulingAnotherRetry() async throws {
@@ -162,8 +171,8 @@ struct LibraryPreparationTests {
 
         let reopened = SQLiteTravelIndexStore(databaseURL: folder.appendingPathComponent("index.sqlite"))
         #expect(try await reopened.isLabelTerminal(for: index.places[0]))
-        #expect(try await reopened.placeLabelJobs(now: .distantFuture).isEmpty)
-        #expect(try await reopened.nextLabelRetry() == nil)
+        #expect(try await reopened.placeLabelWork(now: .distantFuture).jobs.isEmpty)
+        #expect(try await reopened.placeLabelWork(now: Date()).nextRetry == nil)
 
         let catalog = try JourneyPlaceCatalog.shared
         let tokyo = try catalog.label(.init(latitude: 35.686963, longitude: 139.749462), locale: Locale(identifier: "zh-Hans"))
@@ -245,11 +254,50 @@ struct LibraryPreparationTests {
         let (db, folder) = store(); defer { try? FileManager.default.removeItem(at: folder) }
         let model = makeModel(PreparationTestLibrary(records: [photo("a")]), db) { _ in PlaceDisplayLabel(city: "", country: "测试国家") }
         await model.start()
-        try await until { model.preparationProgress.phase == .partial }
+        try await until { model.preparationProgress.phase == .complete }
         #expect(model.canBrowsePreparedLibrary)
         #expect(model.preparationProgress.completePlaces == 0)
-        #expect(model.preparationProgress.fraction == 0)
+        #expect(model.preparationProgress.fraction == nil)
+        #expect(model.preparationProgress.remainingPlaces == 0)
+        #expect(!model.preparationProgress.canContinuePlaceNames)
         #expect(model.preparationProgress.attemptedPlaces == 1)
+        await model.setSceneActive(false)
+    }
+
+    @Test func restoredPartialScanWithTerminalResultsShowsCompletedCheck() async throws {
+        let (db, folder) = store(); defer { try? FileManager.default.removeItem(at: folder) }
+        // Distinct visits can share the same cached lookup at an exact coordinate.
+        let records = (0..<702).map { i in
+            photo("visit-\(i)", lat: i < 693 ? 10 : (i < 701 ? 20 : 30),
+                  time: Double(i) * 7 * 86_400, favorite: true)
+        }
+        let index = try await activate(db, records)
+        let labels = [
+            (10.0, PlaceDisplayLabel(city: "City", country: "Country")),
+            (20.0, PlaceDisplayLabel(city: "", country: "Country")),
+            (30.0, PlaceDisplayLabel(city: "", country: nil))
+        ]
+        for (latitude, label) in labels {
+            let visit = try #require(index.places.first { $0.coordinate.latitude == latitude })
+            _ = try await db.recordLabelAttempt(visit, label: label, attempts: 1,
+                                                nextRetryAt: nil, terminal: !label.isComplete)
+        }
+        var legacy = LibraryPreparationProgress()
+        legacy.phase = .partial
+        legacy.notice = .partialLabels
+        legacy.remainingPlaces = 9
+        try await db.savePreparationProgress(legacy)
+
+        let model = makeModel(PreparationTestLibrary(records: records), db) { _ in
+            Issue.record("A settled visit was looked up again")
+            return nil
+        }
+        await model.start()
+        try await until { model.preparationProgress.phase == .complete }
+        let names = try #require(model.preparationProgress.visitNames)
+        #expect(names.total == 702 && names.city == 693 && names.regionOnly == 8 && names.unknown == 1)
+        #expect(model.preparationProgress.remainingPlaces == 0 && !model.preparationProgress.canContinuePlaceNames)
+        #expect(model.preparationProgress.fraction == nil)
         await model.setSceneActive(false)
     }
 
@@ -273,6 +321,7 @@ struct LibraryPreparationTests {
         }
         await restarted.start()
         #expect(restarted.preparationProgress.userPaused)
+        #expect(restarted.preparationProgress.canContinuePlaceNames)
         #expect(resumedCalls == 0)
         await restarted.resumePreparation()
         try await until { restarted.preparationProgress.phase == .complete }

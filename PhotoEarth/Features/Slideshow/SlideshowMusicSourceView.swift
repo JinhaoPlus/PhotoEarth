@@ -30,7 +30,8 @@ struct SlideshowMusicSourceView: View {
     }
 
     @ObservedObject var controller: SlideshowMusicController
-    let dismiss: () -> Void
+    let availability: (JourneyEventContext.Music, String) -> Void
+    let dismiss: (JourneyEventContext.MusicChoice) -> Void
     let cancel: () -> Void
 
     @State private var source: Source
@@ -43,8 +44,10 @@ struct SlideshowMusicSourceView: View {
     @State private var connectionTask: Task<Void, Never>?
     @FocusState private var pickerFocus: PickerFocus?
 
-    init(controller: SlideshowMusicController, dismiss: @escaping () -> Void, cancel: @escaping () -> Void) {
+    init(controller: SlideshowMusicController, availability: @escaping (JourneyEventContext.Music, String) -> Void,
+         dismiss: @escaping (JourneyEventContext.MusicChoice) -> Void, cancel: @escaping () -> Void) {
         self.controller = controller
+        self.availability = availability
         self.dismiss = dismiss
         self.cancel = cancel
         _source = State(initialValue: controller.selectedChoice != nil && !controller.isUsingOnlineMusic
@@ -258,7 +261,7 @@ struct SlideshowMusicSourceView: View {
         if controller.isConnecting || controller.accessState == .checking {
             ProgressView(AppLocalization.string("slideshow.music.checking", defaultValue: "Checking Apple Music…"))
         } else if controller.accessState == .available {
-            AppleMusicSelectionView(controller: controller, didSelect: dismiss)
+            AppleMusicSelectionView(controller: controller, didSelect: { dismiss(.appleMusic) })
         } else if controller.accessState == .notSubscribed {
             VStack(spacing: 18) {
                 Image(systemName: "music.note")
@@ -313,7 +316,11 @@ struct SlideshowMusicSourceView: View {
 
     private func connectAppleMusic() {
         guard !controller.isConnecting else { return }
-        connectionTask = Task { await controller.connect() }
+        connectionTask = Task {
+            let connected = await controller.connect()
+            guard !Task.isCancelled else { return }
+            availability(.appleMusic, connected ? "ready" : "unavailable")
+        }
     }
 
     private func catalogBrowser(_ playlists: [OnlineSlideshowPlaylist]) -> some View {
@@ -345,7 +352,7 @@ struct SlideshowMusicSourceView: View {
         let isPlaying = playlist.id == selectedPlaylistID
         return Button {
             if isPlaying && controller.playbackError == nil {
-                dismiss()
+                dismiss(playlist.id == OnlineSlideshowPlaylist.recommendedID ? .recommended : .category)
             } else if let track = playlist.tracks.first {
                 chooseTrack(track, in: playlist, explicitTrackChoice: false)
             }
@@ -463,7 +470,7 @@ struct SlideshowMusicSourceView: View {
     private var clearMusicButton: some View {
         Button {
             controller.turnOffMusic()
-            dismiss()
+            dismiss(.off)
         } label: {
             Label(AppLocalization.string("slideshow.music.turn_off", defaultValue: "Turn Off Soundtrack"),
                   systemImage: "speaker.slash")
@@ -500,8 +507,10 @@ struct SlideshowMusicSourceView: View {
             let playlists = snapshot.playlists
             browsedPlaylistID = (playlists.first { $0.id == selectedPlaylistID } ?? playlists.first)?.id
             catalog = .loaded(snapshot)
+            availability(.online, snapshot.isCached ? "cached" : "ready")
         } catch {
             guard !Task.isCancelled else { return }
+            availability(.online, "unavailable")
             let code = (error as? URLError)?.code
             catalog = .failed(offline: code == .notConnectedToInternet || code == .networkConnectionLost)
         }
@@ -526,7 +535,8 @@ struct SlideshowMusicSourceView: View {
         guard !Task.isCancelled else { return }
         self.pendingSelection = nil
         if selected {
-            dismiss()
+            if pendingSelection.explicitTrackChoice { dismiss(.track) }
+            else { dismiss(pendingSelection.playlist.id == OnlineSlideshowPlaylist.recommendedID ? .recommended : .category) }
         } else {
             selectionFailed = true
             pickerFocus = .track(pendingSelection.track.id)

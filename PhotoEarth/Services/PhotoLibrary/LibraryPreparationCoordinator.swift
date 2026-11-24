@@ -49,7 +49,15 @@ final class LibraryPreparationCoordinator {
 
     func restoreAndStart() async {
         if let saved = try? await store.loadPreparationProgress() { progress = saved }
-        try? await refreshCounts()
+        if currentIndex() != nil, let work = try? await store.placeLabelWork(now: Date(), limit: 0) {
+            progress.updateLabelWork(work)
+            if progress.phase == .partial {
+                if progress.userPaused { progress.phase = .paused; progress.notice = nil }
+                else if work.ready == 0 { progress.finishLabelPass() }
+                else { progress.phase = .labeling; progress.notice = nil }
+                try? await persist(force: true)
+            }
+        }
         onProgress(progress)
         ensureObserving()
         guard !progress.userPaused, active else { return }
@@ -168,6 +176,13 @@ final class LibraryPreparationCoordinator {
     }
 
     private func run(_ initialMode: LibraryPreparationMode, generation run: UUID) async {
+        let analytics = ProductAnalytics.shared
+        let consent = analytics.consentRevision
+        func report(_ event: ProductEvent) {
+            if generation == run, consent == analytics.consentRevision {
+                analytics.capture(event, value: progress.mode.rawValue)
+            }
+        }
         do {
             var mode = initialMode
             while true {
@@ -198,12 +213,14 @@ final class LibraryPreparationCoordinator {
                         continue
                     }
                 }
+                report(.preparationCompleted)
                 return
             }
         } catch is CancellationError {
             // pause() owns the final checkpoint; never overwrite a newer run.
         } catch LibraryPreparationError.unavailable {
             guard generation == run else { return }
+            report(.preparationFailed)
             progress.phase = .failed
             progress.notice = .libraryUnavailable
             onProgress(progress)
@@ -211,6 +228,7 @@ final class LibraryPreparationCoordinator {
             await onUnavailable()
         } catch {
             guard generation == run else { return }
+            report(.preparationFailed)
             progress.phase = .failed
             progress.notice = .saveFailed
             onProgress(progress)
@@ -352,7 +370,6 @@ final class LibraryPreparationCoordinator {
             }
             onIndex(index)
             progress.needsMetadata = false
-            try await refreshCounts()
             try await persist(force: true)
             return
         }
@@ -416,28 +433,26 @@ final class LibraryPreparationCoordinator {
     }
 
     private func completeLabels(generation run: UUID) async throws -> Bool {
-        try await refreshCounts()
-        progress.phase = .labeling
         progress.attemptedPlaces = 0
-        try await persist(force: true)
         while true {
             try check(run)
             if requestedMode != nil { return true }
-            let jobs = try await store.placeLabelJobs(now: Date())
-            if jobs.isEmpty {
-                try await refreshCounts()
-                progress.phase = progress.remainingPlaces == 0 ? .complete : .partial
-                progress.retryAt = try await store.nextLabelRetry()
-                progress.notice = progress.remainingPlaces == 0
-                    ? (progress.locatedPhotos == 0
-                        ? .noLocatedPhotos
-                        : .savedOnDevice)
-                    : .partialLabels
+            let work = try await store.placeLabelWork(now: Date())
+            try check(run)
+            if requestedMode != nil { return true }
+            progress.updateLabelWork(work)
+            if work.jobs.isEmpty {
+                progress.finishLabelPass()
                 try await persist(force: true)
+                try check(run)
                 if let date = progress.retryAt { scheduleWake(at: date) }
                 return false
             }
-            for job in jobs {
+            if progress.phase != .labeling || progress.attemptedPlaces == 0 {
+                progress.phase = .labeling
+                try await persist(force: true)
+            }
+            for job in work.jobs {
                 try check(run)
                 if requestedMode != nil { return true }
                 let resolution = await resolver.resolution(for: job.place, priority: .library)
@@ -454,10 +469,16 @@ final class LibraryPreparationCoordinator {
                     nextRetryAt: retry,
                     terminal: !resolution.shouldRetry && label?.isComplete != true
                 ) {
+                    try check(run)
                     if !PlaceDisplayLabel(place: job.place).isComplete,
                        PlaceDisplayLabel(place: place).isComplete {
                         progress.completePlaces = min(progress.totalPlaces, progress.completePlaces + 1)
                         progress.coveredPhotos += place.photoCount
+                    }
+                    progress.readyPlaces = max(0, (progress.readyPlaces ?? 0) - 1)
+                    if let retry {
+                        progress.retryAt = min(progress.retryAt ?? retry, retry)
+                    } else {
                         progress.remainingPlaces = max(0, progress.remainingPlaces - 1)
                     }
                     onLabel(place)
@@ -474,16 +495,18 @@ final class LibraryPreparationCoordinator {
         }
     }
 
-    private func refreshCounts() async throws {
-        // UI may optimistically show a foreground lookup before its write.
-        // Progress counts only committed records, including after a crash.
-        guard let index = try await store.load() else { return }
-        progress.locatedPhotos = index.locatedPhotoCount
-        progress.totalPlaces = index.places.count
-        let complete = index.places.filter { PlaceDisplayLabel(place: $0).isComplete }
-        progress.completePlaces = complete.count
-        progress.coveredPhotos = complete.reduce(0) { $0 + $1.photoCount }
-        progress.remainingPlaces = index.places.count - complete.count
+    /// A foreground lookup or a visibility change can finish or expose work while the job is paused.
+    func refreshIdleLabelWork() async {
+        guard worker == nil, !progress.needsMetadata else { return }
+        let run = generation
+        guard let work = try? await store.placeLabelWork(now: Date(), limit: 0),
+              generation == run, worker == nil, !Task.isCancelled else { return }
+        progress.updateLabelWork(work)
+        if !progress.userPaused, progress.phase == .complete, active {
+            if work.pending == 0 { wake?.cancel(); wake = nil }
+            else if work.ready == 0, let retry = work.nextRetry { scheduleWake(at: retry) }
+        }
+        onProgress(progress)
     }
 
     private func persist(

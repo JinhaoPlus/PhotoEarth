@@ -58,6 +58,9 @@ struct SlideshowJourneyPicker: View {
             guard index == nil else { return }
             index = await Self.prepareIndex(coordinator.availableJourneys)
         }
+        .onChange(of: location) { _, value in
+            if value != Location() { coordinator.recordAction(.filterJourneys) }
+        }
         .onChange(of: focus) { _, target in
             if case let .section(value) = target { section = value }
         }
@@ -220,6 +223,7 @@ struct SlideshowJourneyPicker: View {
             ? AppLocalization.format("slideshow.remove_matches", defaultValue: "Deselect %lld trips", Int64(ids.count))
             : AppLocalization.format("slideshow.select_matches", defaultValue: "Select %lld trips", Int64(ids.count))
         return Button(title) {
+            coordinator.recordAction(.bulkSelect)
             if remove { draft.subtract(ids) }
             else { draft.formUnion(ids) }
         }

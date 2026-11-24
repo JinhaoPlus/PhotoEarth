@@ -3,17 +3,22 @@ import StoreKit
 
 struct PurchaseGate: View {
     @StateObject private var store = PurchaseStore()
+    @State private var opening = OpeningWordmarkFlight()
     @Environment(\.scenePhase) private var phase
     @State private var incomingURL: URL?
 
     var body: some View {
-        Group {
-            if store.access == .checking {
-                ScanningView()
-            } else {
+        ZStack {
+            if store.access != .checking {
                 ContentView(incomingURL: $incomingURL)
+                    .disabled(!opening.finished && opening.destination == nil)
+                    .accessibilityHidden(!opening.finished && opening.destination == nil)
+            }
+            if !opening.finished {
+                OpeningPresentation(flight: opening)
             }
         }
+        .environment(opening)
         .environmentObject(store)
         .preferredColorScheme(.dark)
         .task { await store.start() }
@@ -32,6 +37,7 @@ struct PurchaseGate: View {
 struct PurchaseOffers: View {
     @ObservedObject var store: PurchaseStore
     var requestedTitle: String?
+    var origin: JourneyEventContext.OfferOrigin?
     @Environment(\.dismiss) private var dismiss
     enum Action: Hashable { case trial, buy, restore, retry, back }
     var settingsFocus: FocusState<Action?>.Binding?
@@ -89,7 +95,7 @@ struct PurchaseOffers: View {
 
                 HStack(spacing: 24) {
                     if !inSettings { returnButton }
-                    Button { Task { await store.restore() } } label: {
+                    Button { Task { await perform(.restore) } } label: {
                         actionLabel(String(localized: "purchase.restore"))
                     }
                         .focused(focus, equals: .restore).accessibilityIdentifier("purchase-restore")
@@ -107,6 +113,7 @@ struct PurchaseOffers: View {
             .padding(.horizontal, inSettings ? 20 : 64).padding(.vertical, inSettings ? 10 : 54)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .onAppear { ProductAnalytics.shared.capture(.offerPresented, context: .init(offerOrigin: origin)) }
         .task(id: canStartTrial) {
             guard !inSettings else { return }
             if sheetFocus == nil || sheetFocus == .restore {
@@ -129,13 +136,13 @@ struct PurchaseOffers: View {
 
     @ViewBuilder private var primaryButtons: some View {
         if canStartTrial {
-            Button { Task { await purchase(PurchaseStore.trialID) } } label: {
+            Button { Task { await perform(.trial) } } label: {
                 actionLabel(String(localized: "purchase.trial"))
             }
                 .focused(focus, equals: .trial).accessibilityIdentifier("purchase-trial")
         }
         if let full, store.access != .unverified {
-            Button { Task { await purchase(PurchaseStore.lifetimeID) } } label: {
+            Button { Task { await perform(.lifetime) } } label: {
                 actionLabel(AppLocalization.format("purchase.full", defaultValue: "Buy Full Version · %@ (one time)", full.displayPrice))
             }
                 .focused(focus, equals: .buy).accessibilityIdentifier("purchase-buy")
@@ -149,8 +156,21 @@ struct PurchaseOffers: View {
         }
     }
 
-    private func purchase(_ id: String) async {
-        if await store.purchase(id) == .cancelled, !inSettings { dismiss() }
+    private func perform(_ operation: JourneyEventContext.StoreOperation) async {
+        guard !store.busy else { return }
+        let analytics = ProductAnalytics.shared
+        let consent = analytics.consentRevision
+        let context = JourneyEventContext(offerOrigin: origin, operation: operation)
+        analytics.capture(.storeRequested, context: context)
+        let result: PurchaseStore.PurchaseOutcome = switch operation {
+        case .trial: await store.purchase(PurchaseStore.trialID)
+        case .lifetime: await store.purchase(PurchaseStore.lifetimeID)
+        case .restore: await store.restore()
+        }
+        if consent == analytics.consentRevision {
+            analytics.capture(.storeResult, value: result.rawValue, context: context)
+        }
+        if operation != .restore, result == .cancelled, !inSettings { dismiss() }
     }
 
     private var returnButton: some View {

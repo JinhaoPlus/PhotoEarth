@@ -1,20 +1,5 @@
 import SwiftUI
 
-struct ScanningView: View {
-    var body: some View {
-        ZStack {
-            SpaceBackdrop()
-            VStack(spacing: 30) {
-                ProgressView()
-                    .controlSize(.extraLarge)
-                    .tint(.cyan)
-                Text(AppLocalization.string("scanning.title", defaultValue: "Opening PHOTO EARTH…"))
-                    .font(.largeTitle.bold())
-            }
-        }
-    }
-}
-
 struct MessageView: View {
     let symbol: String
     let title: String

@@ -9,6 +9,8 @@ enum FullScreenMapLayout {
     static let contentHorizontalInset: CGFloat = 120
 }
 
+enum InitialGlobeScene: Hashable { case welcome, home }
+
 struct MapKitEarthView: UIViewRepresentable {
     let places: [TravelPlace]
     var horizontalPresentationOffset: CGFloat = 0
@@ -21,7 +23,7 @@ struct MapKitEarthView: UIViewRepresentable {
     var nativeCameraFeedback: NativeGlobeCameraFeedback? = nil
     var photoWallViewportCapture: PhotoWallViewportCapture? = nil
     var preferredPlaceID: String? = nil
-    var waitsForInitialRender: Bool = false
+    var initialRenderScene: InitialGlobeScene? = nil
     var homeFrameContext: HomeGlobeFrame.Context = .inactive
     var advanceHomeDrift: ((GlobeCameraState, Double) -> GlobeCameraState?)?
     var mapStyle: PhotoMapStyle = .satellite
@@ -75,7 +77,7 @@ struct MapKitEarthView: UIViewRepresentable {
             nativeCameraFeedback: nativeCameraFeedback,
             photoWallViewportCapture: photoWallViewportCapture,
             preferredPlaceID: preferredPlaceID,
-            waitsForInitialRender: waitsForInitialRender,
+            initialRenderScene: initialRenderScene,
             homeFrameContext: homeFrameContext,
             advanceHomeDrift: advanceHomeDrift,
             mapStyle: mapStyle,
@@ -150,7 +152,7 @@ struct MapKitEarthView: UIViewRepresentable {
         private var viewportGeneration = 0
         private var initialRenderGeneration = 0
         private var fullyRenderedCamera: GlobeCameraState?
-        private var waitsForInitialRender = false
+        private var initialRenderScene: InitialGlobeScene?
         private var hasDeliveredInitialRender = false
         private var onViewportSettled: (PhotoViewportSnapshot) -> Void
         private var onUserLocationUpdate: (GeoCoordinate) -> Void
@@ -184,7 +186,7 @@ struct MapKitEarthView: UIViewRepresentable {
             nativeCameraFeedback: NativeGlobeCameraFeedback? = nil,
             photoWallViewportCapture: PhotoWallViewportCapture? = nil,
             preferredPlaceID: String? = nil,
-            waitsForInitialRender: Bool = false,
+            initialRenderScene: InitialGlobeScene? = nil,
             homeFrameContext: HomeGlobeFrame.Context = .inactive,
             advanceHomeDrift: ((GlobeCameraState, Double) -> GlobeCameraState?)? = nil,
             mapStyle: PhotoMapStyle = .satellite,
@@ -221,11 +223,11 @@ struct MapKitEarthView: UIViewRepresentable {
             let beginsObservingScale = self.onScaleChanged == nil && onScaleChanged != nil
             self.onScaleChanged = onScaleChanged
             if onScaleChanged == nil { deliveredScale = nil }
-            let wasWaitingForInitialRender = self.waitsForInitialRender
-            let beganWaitingForInitialRender = waitsForInitialRender && !wasWaitingForInitialRender
-            self.waitsForInitialRender = waitsForInitialRender
-            if wasWaitingForInitialRender && !waitsForInitialRender {
+            let initialSceneChanged = self.initialRenderScene != initialRenderScene
+            if initialSceneChanged {
                 cancelPendingInitialRender()
+                self.initialRenderScene = initialRenderScene
+                hasDeliveredInitialRender = false
             }
             let margins = MapKitEarthView.legalLayoutMargins(
                 horizontalPresentationOffset: horizontalPresentationOffset
@@ -370,7 +372,7 @@ struct MapKitEarthView: UIViewRepresentable {
             }
 
             scheduleHomeDrift(in: mapView)
-            if beganWaitingForInitialRender, fullyRenderedCamera == lastCamera {
+            if initialSceneChanged, initialRenderScene != nil, fullyRenderedCamera == lastCamera {
                 scheduleInitialRenderReady(from: mapView)
             }
 
@@ -598,7 +600,7 @@ struct MapKitEarthView: UIViewRepresentable {
         }
 
         private func scheduleInitialRenderReady(from mapView: MKMapView) {
-            guard waitsForInitialRender, !hasDeliveredInitialRender, !isManipulating,
+            guard initialRenderScene != nil, !hasDeliveredInitialRender, !isManipulating,
                   fullyRenderedCamera == lastCamera,
                   mapView.bounds.width > 1, mapView.bounds.height > 1 else { return }
             cancelPendingInitialRender()
@@ -607,7 +609,7 @@ struct MapKitEarthView: UIViewRepresentable {
             let work = DispatchWorkItem { [weak self, weak mapView] in
                 guard let self, let mapView,
                       self.initialRenderGeneration == generation,
-                      self.waitsForInitialRender,
+                      self.initialRenderScene != nil,
                       !self.hasDeliveredInitialRender,
                       !self.isManipulating,
                       self.lastCamera == renderedCamera,

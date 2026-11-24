@@ -84,6 +84,9 @@ import UIKit
     private var reduceMotion: Bool
     private var photoSpacing = SlideshowPhotoSpacing()
     private var selected = Set<String>()
+    // Already admitted photos removed from the queue by a jump can be restored on a rewind.
+    private var detachedPhotos = Set<String>()
+    private var interruptedJourneys = Set<Int>()
     private var viewed = Set<String>()
     private var visitedPlaces = Set<EarthSlideshowChapter.ID>()
     private var lastShownVisit: TravelPlace?
@@ -102,7 +105,9 @@ import UIKit
     private var requestTime: ContinuousClock.Instant?
     private var requestConsent: UInt64 = 0
     private var didReportMusicPicker = false
+    private var reportedActions: Set<ProductEvent.ShowAction> = []
     private var soundtrack = JourneyEventContext.Music.none
+    private var didReportContentReady = false
     private var didReportPlaybackStart = false
     private var suspended = false
     private var resumesAfterSuspension = false
@@ -142,6 +147,7 @@ import UIKit
         if let ids {
             guard !ids.isEmpty, ids.isSubset(of: availableJourneys.map(\.id)) else { return }
         }
+        recordAction(ids == nil ? .allJourneys : .selectedJourneys)
         selectedJourneyIDs = ids
         prepareFromStart(waitingForConfirmation: true)
     }
@@ -174,10 +180,21 @@ import UIKit
     var displayedJourneyIndex: Int? {
         displayedChapter.flatMap { pages.segmentIndex(forVisitID: $0.visit.id) }
     }
+    var canSkipToPreviousJourney: Bool {
+        guard canNavigateJourneys, let currentJourneyIndex,
+              let first = filmstrip.first, let firstSegment = pages.segmentIndex(forVisitID: first.placeID)
+        else { return false }
+        return firstSegment < currentJourneyIndex
+    }
+
     var canSkipToNextJourney: Bool {
+        canNavigateJourneys && currentJourneyNumber > 0 && currentJourneyNumber < journeyCount
+    }
+
+    private var canNavigateJourneys: Bool {
         switch phase {
         case .earthIntro, .chapterTitle, .earthChapterBridge, .presentingItem, .transitioningItem:
-            return pendingJourneyIndex == nil && currentJourneyNumber > 0 && currentJourneyNumber < journeyCount
+            return pendingJourneyIndex == nil
         default: return false
         }
     }
@@ -279,6 +296,7 @@ import UIKit
         guard !suspended, !newlyVisible.isEmpty, ids.count > 1,
               ids == canvasPage?.descriptor.ids, ids == collageTiles.map(\.id),
               let item = currentItem, let chapter = currentChapter, item.id == ids.first else { return }
+        reportContentReady()
         visitedPlaces.insert(chapter.id)
         lastShownVisit = chapter.visit
         if newlyVisible.contains(0) { lastViewedAssetID = item.id }
@@ -308,8 +326,10 @@ import UIKit
         endReport("restarted")
         requestTime = .now
         requestConsent = analytics.consentRevision
+        didReportContentReady = false
         didReportPlaybackStart = false
         didReportMusicPicker = false
+        reportedActions.removeAll()
         analytics.capture(.slideshowRequested, value: scope.kind.rawValue, context: .init(library: analyticsLibrary))
         prepareFromStart(waitingForConfirmation: waitingForConfirmation)
     }
@@ -332,6 +352,8 @@ import UIKit
         followsFilmstripOrder = false
         filmstrip = []
         playlistRecords = nil
+        detachedPhotos.removeAll()
+        interruptedJourneys.removeAll()
         currentItem = nil
         nextItemForPrefetch = nil
         filmstripTargetCount = nil
@@ -435,8 +457,16 @@ import UIKit
                             // Media retries only revisit items already admitted to this show.
                             return self.retryingMedia || self.scope.kind == .anniversary || self.photoSpacing.admit(record)
                         }
+                        // Preserve capture order when a reread mixes previously chosen photos and unread ones.
+                        let batch: [PhotoAssetRecord]
+                        if detachedPhotos.isEmpty || retryingMedia {
+                            batch = eligible
+                        } else {
+                            let newIDs = Set(eligible.map(\.id))
+                            batch = page.records.filter { newIDs.contains($0.id) || detachedPhotos.contains($0.id) }
+                        }
                         let firstAdded = filmstrip.count
-                        do { try append(eligible, visit: request.visit) }
+                        do { try append(batch, visit: request.visit) }
                         catch { fail(error); return }
                         selection?.commit(keeping: eligible)
                         pages.finish(request, next: page.next)
@@ -478,6 +508,7 @@ import UIKit
         try archive.append(records, visitID: visit.id)
         playlistRecords = archive
         for record in records {
+            detachedPhotos.remove(record.id)
             selected.insert(record.id)
             unavailable.removeValue(forKey: record.id)
             filmstrip.append(.init(id: record.id, placeID: visit.id, date: record.creationDate,
@@ -486,7 +517,7 @@ import UIKit
         }
         try refreshPlaybackItems()
         warmNextPage()
-        preparation.readyCount += records.count
+        preparation.readyCount = selected.count
         preparation.stage = .ready
         if needsCurrentItem, pendingJourneyIndex == nil {
             preparePresentationPage()
@@ -502,10 +533,37 @@ import UIKit
         }
     }
 
+    private var canReport: Bool {
+        requestTime != nil && analytics.enabled && analytics.consentRevision == requestConsent
+    }
+
+    func recordAction(_ action: ProductEvent.ShowAction) {
+        guard canReport, reportedActions.insert(action).inserted else { return }
+        analytics.capture(.slideshowAction, value: action.rawValue, context: .init(library: analyticsLibrary, scope: scope.kind))
+    }
+
+    private func pickerContext(music: JourneyEventContext.Music? = nil) -> JourneyEventContext {
+        .init(library: analyticsLibrary, scope: scope.kind, music: music,
+              pickerStage: awaitsPlaybackConfirmation ? .opening : .playback)
+    }
+
     func openedMusicPicker() {
-        guard !didReportMusicPicker, requestTime != nil, analytics.consentRevision == requestConsent else { return }
+        guard canReport, !didReportMusicPicker else { return }
         didReportMusicPicker = true
-        analytics.capture(.musicPickerOpened, context: .init(library: analyticsLibrary))
+        analytics.capture(.musicPickerOpened, context: pickerContext())
+    }
+
+    func finishedMusicPicker(selection: JourneyEventContext.Music?, choice: JourneyEventContext.MusicChoice? = nil) {
+        if let selection { soundtrack = selection }
+        guard canReport else { return }
+        var context = pickerContext(music: selection)
+        context.musicChoice = choice
+        analytics.capture(.musicPickerResult, value: selection == nil ? "cancelled" : "confirmed", context: context)
+    }
+
+    func musicAvailability(_ source: JourneyEventContext.Music, _ result: String) {
+        guard canReport else { return }
+        analytics.capture(.musicAvailability, value: result, context: pickerContext(music: source))
     }
 
     func beginPlayback(music: JourneyEventContext.Music = .none) {
@@ -585,7 +643,10 @@ import UIKit
         fill()
     }
 
-    func restart() { start() }
+    func restart() {
+        start()
+        recordAction(.replay)
+    }
     func showControls() { showsControls = true }
     func hideControls() { showsControls = false }
     func toggleControls() { showsControls.toggle() }
@@ -593,7 +654,9 @@ import UIKit
     func togglePause() {
         switch phase {
         case .idle, .preparing, .completed, .failed, .cancelled: return
-        default: setPaused(!isPaused)
+        default:
+            recordAction(.pauseResume)
+            setPaused(!isPaused)
         }
     }
 
@@ -655,6 +718,7 @@ import UIKit
             let tiles = image.map { [SlideshowCollageFrames.Tile(id: assetID, ratio: filmstrip[itemIndex].ratio, image: $0)] } ?? []
             commitCanvas(tiles: tiles)
             pageDidAppear = true
+            reportContentReady()
             if !inspectingPhoto, displayedPage[assetID] == nil { displayedPage[assetID] = assetID }
             lastViewedAssetID = assetID
             viewed.insert(assetID)
@@ -666,6 +730,12 @@ import UIKit
         default: return
         }
         finishDisplayingPage()
+    }
+
+    private func reportContentReady() {
+        guard !didReportContentReady, canReport else { return }
+        didReportContentReady = true
+        analytics.capture(.slideshowContentReady, context: .init(library: analyticsLibrary, scope: scope.kind))
     }
 
     private func commitCanvas(tiles: [SlideshowCollageFrames.Tile]) {
@@ -774,6 +844,7 @@ import UIKit
 
     func removeAssets(_ ids: Set<String>) {
         if canvasPage.map({ !ids.isDisjoint(with: $0.descriptor.ids) }) == true { canvasPage = nil }
+        detachedPhotos.subtract(ids)
         excluded.formUnion(ids)
         if !openingCandidateIDs.isEmpty {
             openingCandidateIDs.subtract(ids)
@@ -837,6 +908,7 @@ import UIKit
     func selectPausedItem(_ assetID: String) {
         guard isPaused, pendingJourneyIndex == nil,
               let index = filmstrip.firstIndex(where: { $0.id == assetID }) else { return }
+        recordAction(.filmstrip)
         followsFilmstripOrder = true
         if index == itemIndex, pageCount == 1, !preparingCollage,
            phase == .presentingItem || phase == .transitioningItem {
@@ -848,8 +920,39 @@ import UIKit
         showItem(at: index, manual: true, single: true)
     }
 
+    private func detachPhotos(in range: Range<Int>) {
+        detachedPhotos.formUnion(filmstrip[range].map(\.id))
+        filmstrip.removeSubrange(range)
+    }
+
+    func skipToPreviousJourney() {
+        guard canSkipToPreviousJourney, let currentJourneyIndex,
+              let last = filmstrip[..<itemIndex].last(where: { pages.segmentIndex(forVisitID: $0.placeID) != currentJourneyIndex }),
+              let target = pages.segmentIndex(forVisitID: last.placeID),
+              let first = filmstrip.firstIndex(where: { pages.segmentIndex(forVisitID: $0.placeID) == target })
+        else { return }
+        recordAction(.skipJourney)
+        cancelTimer()
+        navigationDirection = -1
+        followsFilmstripOrder = true
+        showItem(at: first, manual: true)
+        if interruptedJourneys.remove(target) != nil,
+           let end = filmstrip[first...].firstIndex(where: { pages.segmentIndex(forVisitID: $0.placeID) != target }) {
+            // Reconnect the retained prefix to the unread part of the trip. Later trips can be
+            // read back in capture order, reusing the original selection and similarity decisions.
+            invalidateProducer()
+            retryingMedia = false
+            let lastKept = filmstrip[end - 1]
+            detachPhotos(in: end..<filmstrip.endIndex)
+            pages.resume(inVisit: lastKept.placeID, after: .init(date: lastKept.date, id: lastKept.id))
+            do { try refreshPlaybackItems() } catch { fail(error); return }
+        }
+        fill()
+    }
+
     func skipToNextJourney() {
         guard canSkipToNextJourney, let currentJourneyIndex else { return }
+        recordAction(.skipJourney)
         let target = currentJourneyIndex + 1
         if preparingCollage { resetPresentationPage() }
         collageLookahead.cancel()
@@ -864,7 +967,8 @@ import UIKit
         }
         // A previous-photo press after the jump returns to the photo the
         // viewer left, even when several skipped frames were prefetched.
-        filmstrip.removeSubrange(following..<(next ?? filmstrip.endIndex))
+        if next != following { interruptedJourneys.insert(currentJourneyIndex) }
+        detachPhotos(in: following..<(next ?? filmstrip.endIndex))
         if next != nil {
             showItem(at: following, manual: true)
         } else {
@@ -995,6 +1099,8 @@ import UIKit
         followsFilmstripOrder = false
         filmstrip = []
         playlistRecords = nil
+        detachedPhotos.removeAll()
+        interruptedJourneys.removeAll()
         currentItem = nil
         nextItemForPrefetch = nil
         filmstripTargetCount = nil
