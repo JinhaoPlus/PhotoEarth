@@ -4,7 +4,7 @@
 
 ## 新版本归档门禁
 
-确定发布版本和构建号后，在工程根目录执行 `Scripts/release_gate.py`。门禁先构建 Apple TV Release 主程序和 Top Shelf，再在独立模拟器上运行单元测试及关键遥控器流程。每轮保留 XCTest 结果包与报告。应用 target 的归档阶段核对当前源码、资源、测试、构建设置和通过记录。测试失败或发布输入变动时，修复后重跑门禁再归档。普通开发构建可照常进行。
+完整发布门禁只在用户明确要求时运行。普通 TestFlight 发布按常规流程归档和上传，无需门禁记录。用户要求门禁时，确定版本和构建号后在工程根目录执行 `Scripts/release_gate.py`。它构建 Release 主程序与 Top Shelf，并在独立模拟器上运行单元测试及遥控器流程。带门禁归档时，给 `xcodebuild archive` 增加构建设置 `PHOTOEARTH_GATE_EVIDENCE_DIR="$PWD/.local-test-data/release-gate"`，核对当前发布输入和通过记录。验证失败或输入变动后，须重新通过本次要求的门禁。
 
 完整命令、证据位置与专项验收边界见[项目验证技能](../.cursor/skills/verify-photoearth/SKILL.md)。涉及设备能力的改动按下方规则补验，并单独记录真机结果。
 

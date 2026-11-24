@@ -130,10 +130,12 @@ def inspect_results(bundle, device_id):
 
 
 def check_archive():
-    if not RECEIPT.is_file():
+    evidence_dir = Path(os.environ.get("PHOTOEARTH_GATE_EVIDENCE_DIR") or GATE)
+    receipt_path = evidence_dir / RECEIPT.name
+    if not receipt_path.is_file():
         raise ValueError("Run Scripts/release_gate.py before archiving.")
-    receipt = json.loads(RECEIPT.read_text())
-    run = GATE / receipt["run"]
+    receipt = json.loads(receipt_path.read_text())
+    run = evidence_dir / receipt["run"]
     if (receipt["sourceSHA256"] != fingerprint()
             or receipt["settings"] != {k: os.environ[k] for k in SETTINGS}
             or not (run / "Tests.xcresult/Info.plist").is_file()

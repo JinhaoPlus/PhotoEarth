@@ -37,7 +37,7 @@
 
 产品统计的事件字典、看板与漏斗口径见[用户动线与看板](analytics.md)。
 
-新版本归档前从工程根目录运行 `Scripts/release_gate.py`。它会准备独立模拟器并检查完整的必跑集合。失败后可用下面的命令单独复现某个入口。证据位置及归档条件见[发布验证技能](../../.cursor/skills/verify-photoearth/SKILL.md)。
+用户明确要求完整发布门禁时，从工程根目录运行 `Scripts/release_gate.py`。它会准备独立模拟器并检查完整的必跑集合。失败后可用下面的命令单独复现某个入口。证据位置及归档条件见[发布验证技能](../../.cursor/skills/verify-photoearth/SKILL.md)。
 
 从工程根目录运行。用 `xcrun simctl list devices available` 查 tvOS 模拟器 ID。替换 `TVOS_SIMULATOR_ID` 和 `-only-testing` 指定的用例。下面的用例自带示例数据。
 

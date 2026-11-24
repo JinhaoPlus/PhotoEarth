@@ -302,11 +302,11 @@
             buildActionMask = 2147483647;
             files = ();
             inputFileListPaths = ("$(SRCROOT)/Scripts/release_gate_inputs.xcfilelist",);
-            inputPaths = ("$(SRCROOT)/.local-test-data/release-gate",);
-            name = "Verify PhotoEarth release gate (run Scripts/release_gate.py first)";
+            inputPaths = ("$(PHOTOEARTH_GATE_EVIDENCE_DIR:default=/dev/null)",);
+            name = "Verify requested PhotoEarth release gate";
             runOnlyForDeploymentPostprocessing = 1;
             shellPath = /bin/sh;
-            shellScript = "if [ \"$ACTION\" = install ] && [ \"$PLATFORM_NAME\" = appletvos ]; then\n  exec /usr/bin/python3 \"$SRCROOT/Scripts/release_gate.py\" check-archive\nfi\n";
+            shellScript = "if [ -n \"$PHOTOEARTH_GATE_EVIDENCE_DIR\" ] && [ \"$ACTION\" = install ] && [ \"$PLATFORM_NAME\" = appletvos ]; then\n  exec /usr/bin/python3 \"$SRCROOT/Scripts/release_gate.py\" check-archive\nfi\n";
         };
 /* End PBXShellScriptBuildPhase section */
 

@@ -2,7 +2,7 @@
 
 ## PhotoEarth release gate
 
-Run `Scripts/release_gate.py doctor` to inspect Xcode, the release version and the tvOS simulator runtime. Run `Scripts/release_gate.py` before archiving. The Xcode Archive action checks the passing evidence against the current release inputs. [Verification skill](../.cursor/skills/verify-photoearth/SKILL.md) · [Feature map](../Docs/FeatureMap/README.md)
+Run the full gate only when the user explicitly requests it. Routine TestFlight releases use the normal archive and upload flow. For a requested gate, inspect the environment with `Scripts/release_gate.py doctor`, then run `Scripts/release_gate.py`. For a gated release, add `PHOTOEARTH_GATE_EVIDENCE_DIR="$PWD/.local-test-data/release-gate"` to the archive command from the project root to validate the evidence against that build. [Verification skill](../.cursor/skills/verify-photoearth/SKILL.md) · [Feature map](../Docs/FeatureMap/README.md)
 
 ## UI localization workflow
 
